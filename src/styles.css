@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource-variable/inter";
+@import "misans/lib/Normal/MiSans-Regular.min.css";
+@import "misans/lib/Normal/MiSans-Semibold.min.css";
 @import "@fontsource-variable/geist-mono";
 
 @custom-variant dark (&:is(.dark *));
@@ -26,9 +27,18 @@ body {
   --animate-toast-success-even: toast-success-even 0.32s cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-error-odd: toast-error-odd 0.28s cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-error-even: toast-error-even 0.28s cubic-bezier(0.5, 1, 0.89, 1);
-  --font-heading: "Inter", sans-serif;
+  --font-heading:
+    "MiSans", "MiSans VL", var(--font-source-sans, "PingFang SC"), "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --font-mono: "Geist Mono", monospace;
-  --font-sans: "Inter", sans-serif;
+  --font-sans:
+    "MiSans", "MiSans VL", var(--font-source-sans, "PingFang SC"), "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-weight-semibold: 520;
+  --font-weight-bold: 520;
+  /* Tailwind v4 preflight 用 --default-font-family 设置 html 默认字体。 */
+  --default-font-family: var(--font-sans);
+  --default-mono-font-family: var(--font-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -251,7 +261,9 @@ body {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground;
+    font-synthesis-weight: none;
+    -webkit-font-smoothing: antialiased;
   }
   code,
   kbd,
