@@ -1,13 +1,14 @@
 .DEFAULT_GOAL := help
 
-.PHONY: voice-install voice-download voice-console voice-dev voice-start help install dev build preview test test-watch coverage typecheck check fix deploy db-migrate db-migrate-remote
+.PHONY: api-dev api-build voice-install voice-download voice-console voice-dev voice-start help install dev build preview test test-watch coverage typecheck check fix deploy db-migrate db-migrate-remote
 
 help:
 	@printf '%s\n' \
 	  'make voice-install / voice-download  安装语音依赖 / 下载模型' \
 	  'make voice-console / voice-dev / voice-start  语音终端 / 开发 / 生产' \
+	  'make api-dev / api-build  单独启动 API / 验证 API 构建' \
 	  'make install     安装依赖' \
-	  'make dev         启动开发服务（http://localhost:3000）' \
+	  'make dev         启动 Web（3000）和 API（8787）' \
 	  'make build       构建生产产物' \
 	  'make preview     构建并预览生产版本' \
 	  'make test        运行测试' \
@@ -73,3 +74,9 @@ voice-dev:
 
 voice-start:
 	bun run --filter @ai-interview/voice-agent start
+
+api-dev:
+	bun run dev --filter=@ai-interview/api
+
+api-build:
+	bun run build --filter=@ai-interview/api

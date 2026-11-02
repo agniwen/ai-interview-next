@@ -1,167 +1,143 @@
-# 后端架构与多平台部署讨论
+# 后端架构与多平台部署
 
-日期：2026-11-02
+更新日期：2026-11-02。
 
-状态：讨论草案，正在通过逐项访谈确认。本文记录目标和候选方案，不是已批准的实施规范。未确认的建议不能作为新增依赖、拆分服务或部署基础设施的授权。
+本文区分已确认设计、当前实现和未来候选方案。Sainoa 是重新实现的产品：不根据旧项目 `ai-interview` 预设功能、领域模型、数据库结构或权限模型；只有用户明确要求时才参考旧项目。
 
-## 已明确的目标
+## 已确认的边界
 
-- `ai-interview-next` 是重构版本；`ai-interview` 只作为业务规模参考，不要求继承其架构和依赖。
-- 使用 TanStack Start，默认考虑 Cloudflare 部署，同时允许 Vercel、Node host 等部署选择。
-- 使用 monorepo，应用放在 `apps/`，包放在 `packages/`，采用 `@ai-interview/*` 命名。
-- 后端需要考虑扩容、伸缩和微服务；具体服务数量、边界和拆分时机尚未确认。
-- 正在评估 TypeScript / Node.js、Hono 以及服务间 RPC；尚未最终确认后端技术组合。
+- Monorepo：应用放在 `apps/`，共享包放在 `packages/`，TypeScript workspace 使用 `@ai-interview/*` 命名。
+- `apps/web` 使用 TanStack Start，负责页面与 SSR；当前默认部署到 Cloudflare。
+- Core API 与 Processing API 合并为 `apps/api`，使用 Hono。业务模块按实际需求增加，模块间直接调用函数，不预设独立微服务。
+- 保留 `packages/core-client`，作为 TypeScript 消费者调用统一 API 的入口，不另建重复的 `api-client`。
+- `apps/voice-agent` 使用 Python LiveKit Agents，承担实时语音会话执行。
+- 服务拆分以独立运行时、伸缩或明确业务边界为依据，不按功能名称提前拆分。
 
-## 已有实现
-
-- `apps/web`：TanStack Start 应用，当前使用 Cloudflare Vite 插件。
-- `packages/typescript-config`：共享 TypeScript 配置。
-- Bun workspaces、Turborepo 构建编排和缓存。
-- Vitest 单元测试、覆盖率、监听命令，以及统一类型检查和 Ultracite 检查。
-- 尚未实现本文讨论的独立后端服务、服务客户端、消息系统或多平台部署组合。
-
-## 已确认的架构决策
-
-- 第一版将 Core API 与 Processing API 合并为 `apps/api`，统一提供业务接口、任务提交、状态与报告查询。
-- API 内部按业务模块组织，不为这些模块预设独立网络服务。未来拆分需有明确的独立伸缩、发布或业务边界需求。
-- 保留 `packages/core-client`（`@ai-interview/core-client`）作为合并后 API 的统一类型化调用入口；不另建功能重复的 `api-client`。
-- 后台执行仍建议放在独立的 `apps/worker`，其部署平台与运行方式待确认。
-
-## 候选服务边界
-
-以下为助手建议，待用户逐项确认。
-
-| 模块            | 职责                                           | 部署位置                            |
-| --------------- | ---------------------------------------------- | ----------------------------------- |
-| Web / BFF       | 页面、SSR、面向页面的接口组合                  | TanStack Start 应用，部署方式待确认 |
-| Core            | 工作区、权限、岗位、候选人、面试安排和回答记录 | 合并后的 API                        |
-| Processing 接口 | 任务提交、状态、报告查询                       | 合并后的 API                        |
-| Processing 执行 | 解析、转录、评分、报告生成                     | 建议独立 Worker，待确认             |
-| Realtime        | 实时语音连接和会话执行                         | 按需求独立部署，待确认              |
-
-Core 与 Processing 是当前方案中的业务模块名称，不代表必须拆成独立微服务。API 与 Worker 可以作为同一后端的不同运行入口，共享适当的业务实现。
-
-## 候选代码组织
+## 当前实现
 
 ```text
 apps/
-  web/
+  web/                         TanStack Start；现有认证使用 Better Auth + D1
   api/
-  worker/
-  realtime/
+    src/
+      app.ts                   Hono 路由组装，目前仅 GET /health
+      index.ts                 Cloudflare Worker 入口
+      types.ts                 公开 AppType 类型
+    wrangler.jsonc
+  voice-agent/                 Python LiveKit starter，uv 管理依赖
 packages/
-  core/
-  processing/
-  api-contracts/
   core-client/
+    src/index.ts               createCoreClient，基于 Hono RPC
+    tests/client.test.ts       客户端与真实 Hono app 的请求链路测试
   typescript-config/
-deploy/
-  compose/
-  cloudflare/
 ```
 
-该目录树表达候选职责，不要求一次性创建所有目录。服务入口负责协议适配、配置、资源初始化和生命周期；业务包按业务能力组织。Hono Context、平台 bindings 和 HTTP 响应类型留在入口层。
+API starter 没有业务模块、数据库、认证、队列或 LiveKit 集成。现有 Better Auth 保留在 Web，没有在本次迁移。Python Agent 尚未接入业务 API，Web 也尚未接入 core-client。
 
-## 共享和通信方案
+API 采用 Zod 4 定义输入 schema，通过 `@hono/standard-validator` 接入 Standard Schema。输入在 HTTP 入口校验一次，后续处理通过 `c.req.valid()` 使用已校验的数据；客户端继续从 Hono 路由推断输入和响应类型。暂不接入 OpenAPI 生成。
 
-- 纯函数和通用基础设施接入可以通过共享包本地复用；共享包本身不是远程服务。
-- 服务自己的 API 和消费者可以共用该服务的内部业务实现。
-- 合并后的 API 内部模块通过函数调用协作，不为了模块分层增加 RPC。
-- 跨服务业务能力通过公开 API 或消息使用，不直接导入对方业务实现或查询对方数据库。
-- 同步调用候选为 HTTP + Hono RPC；客户端只引入必要类型和调用逻辑，不携带服务端运行代码。
-- Hono RPC 提供 TypeScript 推断，不自动提供运行时校验、服务发现、鉴权、重试或版本兼容。
-- 耗时任务使用持久化任务或事件。任务表达执行请求，事件表达已发生的业务事实。
-- 独立发布需要兼容旧调用方和已排队消息，并明确超时、重复执行、权限及请求关联信息。
+`/health` 不接受查询参数，未声明的参数由严格对象 schema 拒绝，返回中间件默认的 400 JSON 错误（`success`、`error`、`data`）；无查询参数时保持原有调用方式。
 
-## Core Client
+API 的 `/health` 返回 `200 {"status":"ok"}`，只表示入口可以响应，不检查尚未接入的外部依赖。未知路径使用 Hono 默认 404。
 
-已确认保留 `@ai-interview/core-client` 的客户端设计。这里的 Core 指统一后端 API，不表示恢复独立的 `core-api` 部署单元。Hono RPC 仍为具体实现候选。
+`app.ts` 不读取平台环境变量，也不初始化数据库。平台资源在引入时从入口注入，业务代码不直接依赖 Hono Context 或 Cloudflare bindings。
 
-### 职责与调用关系
+## 共享代码与服务调用
+
+共享包用于同语言的代码复用；服务 API 用于跨进程、跨语言的能力调用。客户端负责通信，业务规则由提供能力的服务执行。
 
 ```text
-Web 服务端 / 其他服务
+Web / TypeScript 服务
   → @ai-interview/core-client
-  → HTTP
-  → apps/api
-  → 业务模块和数据访问
+  → API
+
+Python voice-agent
+  → Python CoreClient（有实际调用需求后实现）
+  → 同一个 API
 ```
 
-- 客户端封装类型化接口调用，部署地址和凭据由调用方提供，包内不固定平台地址、不读取部署密钥。
-- 服务端公开输入、输出和状态码契约；客户端仅依赖必要的公开类型及请求逻辑，不包含数据库驱动、业务实现或 Cloudflare bindings。
-- 若使用 Hono RPC，通过稳定的类型导出消费路由类型；具体类型出口和声明构建方式在实现时确定，避免从应用内部源码深路径导入。
-- Web 服务端可以使用服务端凭据。若浏览器也使用客户端，必须使用适合浏览器的认证方式，不能将服务凭据传入浏览器；是否允许浏览器直连 API 待确认。
-- 合并后的 API 内部继续通过函数调用协作，不通过客户端绕回自身。Worker 仅在需要远程 API 能力时使用客户端，不要求所有操作都走 RPC。
+API 提供业务能力及相应授权。Voice Agent 编排实时对话，通过工具调用使用这些能力。Agent 的提示词不替代 API 授权；调用方也不能仅提交资源 ID 就获得访问权限。具体用户身份、服务身份和授权范围随真实接口设计确定。
 
-### 初始化示意
+跨服务通过公开接口使用能力，不直接查询对方数据库或导入对方业务实现。API 内部模块协作不绕回 core-client 调用自身。
 
-以下示意约定了客户端组合方式，不是已存在的接口实现：
+## TypeScript Core Client
 
 ```ts
 import { createCoreClient } from "@ai-interview/core-client";
 
 const core = createCoreClient({
-  baseUrl: config.coreApiUrl,
-  fetch: authenticatedFetch,
+  baseUrl: "http://localhost:8787",
 });
+
+const response = await core.health.$get();
+if (response.status === 200) {
+  const health = await response.json();
+}
 ```
 
-`authenticatedFetch` 表示由调用方配置的请求传输，可承载认证和请求关联信息。若选择 Hono RPC，可在工厂内部使用 `hc<AppType>`，保留其路由和状态码类型推断；无需为每个端点再写一层重复包装。
+- 地址和可选 `fetch` 由调用方提供。客户端不读取部署密钥，不固定服务地址，不自动重试请求。
+- 使用 `hc<AppType>` 保留路由、响应和状态码推断；当前由 `@ai-interview/api/types` 提供稳定的类型出口，不使用应用源码深路径导入。
+- API 类型通过 `import type` 引入，不将路由实现打包进客户端。测试才从 `@ai-interview/api` 导入真实 app。
+- 当前是仓库内直接消费 TypeScript 源码的私有包，由消费方编译，无单独发布的 JS / 声明产物。以后独立发布 SDK 时再增加声明构建与版本发布流程。
+- `fetch` 注入点可承载认证、请求关联信息，也可适配 Cloudflare Service Binding 的 HTTP 调用；具体适配随调用方接入实现。
+- 服务端凭据仅用于服务端，不交给浏览器。浏览器直连范围与认证方式尚未确定。
+- 类型推断不是运行时校验；将来有外部输入时，在入口验证一次。独立发布时仍需保持 API 向后兼容。
 
-### 独立部署约定
+## Python 与跨语言契约
 
-- 本地、容器和云端通过配置切换 API 地址，调用业务代码保持一致。
-- 客户端类型正确不代表线上服务版本一致；接口变化需兼容尚未更新的调用方。
-- 超时、错误映射、服务身份与用户身份的传递方式仍需确认。写请求是否重试取决于具体业务的幂等约定，客户端不默认重试全部请求。
-- 长时间评分、转录通过提交任务并查询状态完成，不把远程客户端调用等同于可靠后台执行。
+Python 不能导入 TypeScript 的 core-client，也不能消费 Hono 的 TypeScript 类型推断。两边共享 HTTP/JSON 协议，不共享语言实现。
 
-## 数据和基础设施候选
+实际跨语言接口出现后，以 OpenAPI 等语言无关契约描述公开接口，由 API 的输入输出定义维护，避免手工维护多份互不关联的契约。TypeScript 保留 Hono RPC，Python 使用同一组 HTTP 接口。
 
-- PostgreSQL 作为统一数据库候选，避免默认部署与自托管使用不同数据库方言。
-- API 与 Worker 的数据访问和迁移归属仍待确认，不因进程拆分而强制拆数据库。未来形成独立业务服务时，再明确各自的数据所有权和访问边界。
-- 对象存储以 S3 兼容能力为候选，云端可用 R2。
-- 队列产品尚未选择。云端与自托管适配需要明确确认、重试、并发及死信语义，不能假定任意产品完全等价。
-- 业务状态与消息可靠衔接、消费者幂等性等机制随实际异步流程设计，尚未决定具体实现。
+初期只在 `apps/voice-agent/src/core_client.py` 集中实现已使用的接口；出现第二个 Python 消费者后再提取共享包。接口规模增长后考虑生成 Python 客户端。本次不增加空客户端、OpenAPI 工具链或代码生成流程。
 
-## 部署与伸缩候选
+## API 反向使用 Agent 能力
 
-- Cloudflare 优先不必然等于全部功能运行于 Workers；是否允许混合 Node 计算尚待确认。
-- Hono HTTP 层可提供 Cloudflare、Node、Vercel 入口，但数据库驱动、原生依赖、队列消费者和实时服务需单独验证运行环境。
-- Node 自托管可提供完整部署组合；是否要求不依赖 Cloudflare 账号或其他托管服务，尚待确认。
-- Web/API 按在线请求压力伸缩，消费者按积压、耗时及模型配额调整并发，实时服务按会话容量规划。
-- 每个部署单元拥有构建产物和配置；迁移按服务归属独立执行，发布需考虑 API、消费者与契约的兼容。
-- Turborepo 负责仓库任务编排，运行时部署和扩容由部署平台负责。
+反向调用可能发生，但运行中的 Agent 是有生命周期的会话执行实例，不默认作为固定地址、始终在线的 HTTP 服务。
 
-## 待逐项确认的决策
+| 需求类别         | 设计方向                                            |
+| ---------------- | --------------------------------------------------- |
+| 启动语音会话     | API 通过 LiveKit 调度 Agent                         |
+| 控制运行中的会话 | 通过会话消息或 RPC 发送指令；具体协议待实际需求确定 |
+| 查询已保存的结果 | 从业务 API 查询持久化数据                           |
+| 执行独立 AI 任务 | 按需增加任务接口或队列消费者                        |
 
-1. 默认 Cloudflare 部署是否允许独立 Node 后台计算和实时服务。
-2. 自托管的支持范围：迁移 Web，还是完整功能无需 Cloudflare 账号。
-3. 第一版业务范围与实际负载目标，包括实时语音、后台任务量和可接受等待时间。
-4. 初始服务边界、数据归属与必须独立伸缩的单元。
-5. Hono、同步调用契约、身份认证和授权边界。
-6. 数据库、文件存储、消息系统及模型服务的部署选项。
-7. 独立发布、迁移、可观测性和部署验收方式。
+因此暂不为 voice-agent 增加 HTTP 服务，也不创建 voice-client。
 
-## 访谈记录
+如果多个入口都需要某项 AI 能力，根据它的数据与业务归属选择实现位置：无状态能力可以直接使用同一模型提供商；需要统一规则和持久化的能力放在 API 或后台任务；依赖当前语音上下文的能力由当前 Agent 执行。不能仅因某段代码先写在 Agent 中，就让所有服务依赖 Agent 执行。
 
-### D01：合并 API 部署单元
+## 后台执行与未来共享包
 
-- 用户决定：Core API 和 Processing API 合并。
-- 原因：两者均提供 API，第一版无需分别部署。
-- 影响：使用 `apps/api` 和统一 API 客户端；内部保留业务模块，取消两者之间预设的 RPC 调用。后台执行是否独立及其部署方式仍待确认。
+耗时任务的提交和查询仍属于统一 API。实际出现异步任务后，再决定是否新增 `apps/worker` 及其运行平台。
 
-### D02：保留统一 Core Client
+API 与消费者需要复用业务实现时，按实际能力提取包；不提前创建庞大的 core、processing 或通用 services 包。服务独立发布前，再确定数据所有权、接口兼容和消息语义。
 
-- 用户决定：将此前讨论的 `core-client` 设计纳入文档。
-- 影响：使用 `packages/core-client` 调用合并后的 `apps/api`，替换草案中的 `api-client` 名称；不恢复独立 Core API，也不新增客户端实现。
-- 待定：Hono RPC 的最终选型、类型导出方式、认证传递和浏览器直连范围。
+队列、任务可靠提交、重复执行处理、并发控制及结果持久化均待真实任务设计，不能把普通远程调用当作可靠后台执行。
 
-当前待回答：默认 Cloudflare 部署是否允许独立 Node 后台计算和实时服务。每轮只讨论一个问题，达到共同理解后再形成正式方案和实施范围。
+## 环境与部署方向
 
-## 参考资料
+建议区分 development、staging、production，同一套代码通过配置连接独立资源：
 
-- [TanStack Start 部署](https://tanstack.com/start/latest/docs/framework/react/guide/hosting)
-- [Hono Node.js](https://hono.dev/docs/getting-started/nodejs)
-- [Hono Cloudflare Workers](https://hono.dev/docs/getting-started/cloudflare-workers)
-- [Hono Vercel](https://hono.dev/docs/getting-started/vercel)
+- Cloudflare 环境分别部署 Worker，绑定各自的数据与存储资源，分别配置 secrets。
+- LiveKit 按 Project 隔离，Web/API 和 Agent 使用同一环境的项目凭据；`agent.py dev` 只改变运行模式，不隔离项目。
+- 配置、数据、Webhook 回调和认证均应属于同一环境。
+- 当前没有创建 staging 资源或实现完整环境部署流程。
+
+API starter 使用 Wrangler 本地开发与 dry-run 构建，尚未部署。Cloudflare 内部调用可通过客户端注入 Service Binding 的 fetch；跨平台保留 HTTP 接口。未来 Node/Vercel 入口及数据库、队列替代实现需分别验证，不承诺仅切换启动命令即可迁移全部基础设施。
+
+Voice Agent 独立部署到 LiveKit Cloud Agents 或支持 Python 长驻进程的平台。API 和 Agent 可以独立伸缩；Turborepo 只负责仓库内任务编排。
+
+## 尚未决定
+
+- 产品第一批功能及对应领域模型。
+- 认证是否从 Web 迁移到 API，以及服务调用授权方式。
+- 业务数据存储；D1 当前只用于认证，不能据此视为所有业务数据库的既定选择。
+- OpenAPI 工具链、Python 客户端、Agent 控制协议和异步任务实现。
+- 自托管范围、实际环境资源与发布流程。
+
+## 参考
+
 - [Hono RPC](https://hono.dev/docs/guides/rpc)
+- [Hono Cloudflare Workers](https://hono.dev/docs/getting-started/cloudflare-workers)
+- [Cloudflare 环境](https://developers.cloudflare.com/workers/wrangler/environments/)
+- [LiveKit 自托管与环境隔离](https://docs.livekit.io/deploy/custom/deployments/)

@@ -1,0 +1,24 @@
+{
+  "name": "@ai-interview/core-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@ai-interview/api": "workspace:*",
+    "hono": "4.13.16"
+  },
+  "devDependencies": {
+    "@ai-interview/typescript-config": "workspace:*",
+    "@vitest/coverage-v8": "5.0.5",
+    "vitest": "5.0.5"
+  }
+}

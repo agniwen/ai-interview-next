@@ -6,6 +6,7 @@ Bun + Turborepo monorepo，应用放在 `apps/`，共享包放在 `packages/`。
 
 ```text
 apps/
+  api/                       # Hono API starter（Cloudflare Workers）
   voice-agent/               # Python / LiveKit Agents，独立语音服务（uv）
   web/                       # TanStack Start / React 应用，部署到 Cloudflare Workers
     src/
@@ -14,6 +15,7 @@ apps/
     vite.config.ts
     wrangler.jsonc
 packages/
+  core-client/               # TypeScript Hono RPC 客户端
   typescript-config/         # 共享 TypeScript 配置
     base.json
 package.json                 # Bun workspaces 和统一命令
@@ -30,7 +32,7 @@ bun install
 bun run dev
 ```
 
-Web 应用运行在 `http://localhost:3000`。
+Web 应用运行在 `http://localhost:3000`，API 运行在 `http://localhost:8787`。`make dev` 同时启动二者；语音服务仍单独启动。
 
 也可以使用根目录的 Makefile：首次执行 `make install` 安装依赖，之后运行 `make dev` 启动。执行 `make` 或 `make help` 查看所有快捷命令。Makefile 直接调用现有 Bun 脚本，保留 Turbo 的编译依赖和缓存流程。
 
@@ -52,6 +54,14 @@ Web 应用运行在 `http://localhost:3000`。
 bun run build --filter=@ai-interview/web
 bun run dev --filter=@ai-interview/web
 ```
+
+## API 与 Core Client
+
+`apps/api` 仅提供 `GET /health`，暂不包含业务、数据库或认证。输入校验采用 Zod 4 + `@hono/standard-validator`；健康检查不接受查询参数，额外参数返回 400。执行 `make api-dev` 单独启动，`make api-build` 验证 Cloudflare 构建（不部署）。现有 `make deploy` 仍只部署 Web。
+
+TypeScript 调用方使用 `@ai-interview/core-client` 的 `createCoreClient({ baseUrl, fetch })`；`fetch` 可省略。包使用 Hono RPC，通过 API 的公开类型出口推断响应，不包含服务端实现。当前通过源码导出供仓库内消费，无单独发布产物。
+
+跨语言边界、后续 Python 客户端和反向会话控制设计见 [架构文档](docs/architecture/discussion.md)。
 
 ## Python 语音服务
 
