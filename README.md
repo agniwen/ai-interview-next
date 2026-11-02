@@ -102,6 +102,8 @@ Web 部署目标为 Worker `sainoa-web`，自定义域名为 `sanioa.akumanoko.c
 
 在 `apps/web/wrangler.jsonc` 中配置 Worker 名称和资源绑定。首次部署前，在应用目录执行 `bunx --no-install wrangler login`；然后从根目录运行 `bun run deploy`。CI 可提供 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`。
 
+API 构建及两个应用的部署脚本设置 `WRANGLER_NO_SKILLS_UPDATE_PROMPTS=true`，关闭 Wrangler 在命令完成后询问是否更新 Cloudflare skills 的交互提示，避免发布成功后仍等待输入、阻塞后续 Web 部署。此设置只影响 skills 更新提示，认证和资源配置确认保持原有行为。
+
 参考：[Turborepo 工作区结构](https://turborepo.dev/docs/crafting-your-repository/structuring-a-repository)、[TanStack Start](https://tanstack.com/start)。
 
 ## 全局路由国际化
