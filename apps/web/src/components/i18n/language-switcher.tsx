@@ -20,10 +20,7 @@ export function LanguageSwitcher() {
   const href = hydrated ? location.href : location.href.split("#")[0];
   return (
     <Menu>
-      <MenuTrigger
-        aria-label={m.language_switcher_label()}
-        render={<Button variant="ghost" className="rounded-full px-4" />}
-      >
+      <MenuTrigger aria-label={m.language_switcher_label()} render={<Button variant="ghost" />}>
         <Languages aria-hidden="true" className="size-4" />
         <span>{languageNames[getLocale()]}</span>
         <ChevronDown aria-hidden="true" className="size-3.5 text-muted-foreground" />

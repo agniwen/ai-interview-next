@@ -13,6 +13,8 @@ import { RoleTabs } from "./role-tabs";
 import { SectionDivider } from "./section";
 import { TrustBoundaries } from "./trust-boundaries";
 import * as m from "@/paraglide/messages";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 
 export function HomePage() {
   return (
@@ -26,7 +28,12 @@ export function HomePage() {
             <BrandMark />
             Sainoa
           </a>
-          <LanguageSwitcher />
+          <div className="flex items-center gap-1 sm:gap-3">
+            <Button variant="ghost" render={<Link to="/login" />}>
+              {m.login_title()}
+            </Button>
+            <LanguageSwitcher />
+          </div>
         </header>
         <main id="main-content" className="pt-20">
           <div className="relative isolate">

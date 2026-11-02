@@ -95,6 +95,6 @@ Web 测试使用独立的 `apps/web/vitest.config.ts`，默认 Node 环境，支
 - `src/server.ts` 使用 Paraglide middleware 隔离请求语言，Wrangler 的 `main` 必须指向该入口。`/api` 请求不经过文档语言策略；API 调用使用原始 API URL，不使用页面本地化链接函数。
 - `src/paraglide/` 是生成输出，已排除版本控制、lint 和覆盖率统计。通过根目录 Turbo 命令执行开发、构建、测试和类型检查时会先编译文案。单独编译：`bun run --filter @ai-interview/web i18n:compile`。
 
-首页布局与交互演示迁自旧项目 `ai-interview`，保留暖白背景色调、Tabler 图标和整个首页的 ScrollArea。演示包括招聘台、候选人详情、AI 面试、人工面试及评估流程，数据均为本地示例，不调用业务后端。筛选简历、工作台和登录入口暂时禁用，标注“即将上线”。
+首页布局与交互演示迁自旧项目 `ai-interview`，保留暖白背景色调、Tabler 图标和整个首页的 ScrollArea。演示包括招聘台、候选人详情、AI 面试、人工面试及评估流程，数据均为本地示例，不调用业务后端。筛选简历和工作台入口暂时禁用，标注“即将上线”；登录入口已接入 Better Auth + Google，认证数据使用 Cloudflare D1，配置见 [Google 登录](docs/auth/google-login.md)。
 
 首页组件位于 `apps/web/src/components/home`；`screens` 包含交互演示及自动播放，`support` 包含迁移所需的展示组件与示例配置。通用控件复用本项目 `components/ui`，语言入口继续使用全局路由方案。

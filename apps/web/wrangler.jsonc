@@ -6,4 +6,12 @@
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./src/server.ts",
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "sainoa-auth",
+      "database_id": "f8dc4135-b75c-46a9-9e32-91acbedaadde",
+      "migrations_dir": "migrations",
+    },
+  ],
 }

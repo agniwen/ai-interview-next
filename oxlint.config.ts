@@ -7,6 +7,7 @@ export default defineConfig({
   extends: [core, react],
   // `routeTree.gen.ts` does not match Ultracite's `**/*.gen.*` ignore.
   ignorePatterns: [
+    "apps/web/worker-configuration.d.ts",
     "apps/web/src/paraglide/**",
     "apps/web/src/routeTree.gen.ts",
     // Upstream coss ui source. Keep it aligned with the registry instead of local lint rewrites.
