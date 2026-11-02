@@ -1,8 +1,8 @@
 {
   "extends": "@ai-interview/typescript-config/base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2023", "DOM"],
     "types": []
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "examples/**/*.ts", "tests/**/*.ts", "vitest.config.ts"]
 }

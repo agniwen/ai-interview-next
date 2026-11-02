@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: api-dev api-build voice-install voice-download voice-console voice-dev voice-start help install dev build preview test test-watch coverage typecheck check fix deploy db-migrate db-migrate-remote
+.PHONY: api-dev api-build voice-install voice-download voice-console voice-dev voice-start help install dev build preview test test-watch coverage typecheck check fix deploy db-generate db-migrate db-migrate-remote
 
 help:
 	@printf '%s\n' \
@@ -18,6 +18,7 @@ help:
 	  'make check       检查代码格式和 lint' \
 	  'make fix         自动修复代码格式和 lint' \
 	  'make deploy      构建并部署到 Cloudflare' \
+	  'make db-generate  生成共享 Drizzle schema 的增量迁移' \
 	  'make db-migrate  应用本地 D1 迁移' \
 	  'make db-migrate-remote  应用远端 D1 迁移'
 
@@ -54,11 +55,14 @@ fix:
 deploy:
 	bun run deploy
 
+db-generate:
+	bun run --filter @ai-interview/db db:generate
+
 db-migrate:
-	bun run --filter @ai-interview/web db:migrate
+	bun run --filter @ai-interview/api db:migrate
 
 db-migrate-remote:
-	bun run --filter @ai-interview/web db:migrate:remote
+	bun run --filter @ai-interview/api db:migrate:remote
 
 voice-install:
 	bun run --filter @ai-interview/voice-agent setup

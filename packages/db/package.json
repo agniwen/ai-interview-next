@@ -1,0 +1,23 @@
+{
+  "name": "@ai-interview/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.4"
+  },
+  "devDependencies": {
+    "@ai-interview/typescript-config": "workspace:*",
+    "@cloudflare/workers-types": "^5.20261102.1",
+    "@types/node": "^26.6.6",
+    "drizzle-kit": "0.31.11"
+  }
+}

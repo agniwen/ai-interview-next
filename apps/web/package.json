@@ -6,7 +6,7 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "CLOUDFLARE_DEV_REGISTRY_PATH=../../.wrangler/registry vite dev --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
@@ -16,10 +16,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "i18n:compile": "bun scripts/compile-i18n.ts",
-    "cf:types": "wrangler types worker-configuration.d.ts --include-runtime=false",
-    "db:generate-auth": "bun scripts/generate-auth-migration.ts",
-    "db:migrate": "wrangler d1 migrations apply AUTH_DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply AUTH_DB --remote"
+    "cf:types": "wrangler types worker-configuration.d.ts --include-runtime=false"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getAuth } from "@/lib/auth/auth.server";
+import { env } from "cloudflare:workers";
 
 export const Route = createFileRoute("/api/auth/$")({
   server: {
     handlers: {
-      GET: ({ request }) => getAuth().handler(request),
-      POST: ({ request }) => getAuth().handler(request),
+      GET: ({ request }) => env.API.fetch(request),
+      POST: ({ request }) => env.API.fetch(request),
     },
   },
 });

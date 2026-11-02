@@ -1,42 +1,51 @@
 import { randomBytes } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { session as sessionTable, user as userTable } from "@ai-interview/db/schema";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { makeSignature } from "better-auth/crypto";
-import { betterAuth } from "better-auth";
-import { authOptions } from "@/lib/auth/options";
+import { createTestDatabase } from "./database";
+import { app } from "../src/app";
+import { getAuth } from "../src/modules/auth/auth";
+import type { ApiBindings } from "../src/env";
 
 const origin = "https://sainoa.example";
 const secret = randomBytes(32).toString("hex");
-let database: DatabaseSync;
-let auth: ReturnType<typeof createTestAuth>;
+const config = {
+  BETTER_AUTH_SECRET: secret,
+  BETTER_AUTH_URL: origin,
+  GOOGLE_CLIENT_ID: "test.apps.googleusercontent.com",
+  GOOGLE_CLIENT_SECRET: "test-google-secret",
+};
+let platform: Awaited<ReturnType<typeof createTestDatabase>>;
+let env: ApiBindings & typeof config;
+let database: Awaited<ReturnType<typeof createTestDatabase>>["database"];
+let auth: ReturnType<typeof getAuth>;
 
-function createTestAuth(testDatabase: DatabaseSync) {
-  return betterAuth({
-    ...authOptions({
-      baseURL: origin,
-      googleClientId: "test.apps.googleusercontent.com",
-      googleClientSecret: "test-google-secret",
-      secret,
-    }),
-    // Better Auth disables origin checks in test mode; exercise production behavior.
-    advanced: { disableCSRFCheck: false, disableOriginCheck: false },
-    database: testDatabase,
-  });
+beforeAll(async () => {
+  platform = await createTestDatabase();
+  env = {
+    ...platform.env,
+    ...config,
+  };
+  ({ database } = platform);
+});
+
+beforeEach(async () => {
+  await database.delete(userTable);
+  await env.AUTH_DB.prepare('DELETE FROM "verification"').run();
+  await env.AUTH_DB.prepare('DELETE FROM "rateLimit"').run();
+  auth = getAuth(env);
+});
+
+afterAll(async () => {
+  await platform.dispose();
+});
+
+function request(input: Request) {
+  return app.request(input, undefined, env);
 }
 
-beforeEach(() => {
-  database = new DatabaseSync(":memory:");
-  database.exec(readFileSync(new URL("../migrations/0001_auth.sql", import.meta.url), "utf-8"));
-  auth = createTestAuth(database);
-});
-
-afterEach(() => {
-  database.close();
-});
-
 function signIn(callbackURL: string, requestOrigin = origin) {
-  return auth.handler(
+  return request(
     new Request(`${origin}/api/auth/sign-in/social`, {
       body: JSON.stringify({
         callbackURL,
@@ -81,7 +90,7 @@ describe("Google authentication", () => {
   });
 
   it("returns no session for an anonymous request", async () => {
-    const response = await auth.handler(new Request(`${origin}/api/auth/get-session`));
+    const response = await request(new Request(`${origin}/api/auth/get-session`));
     expect(response.status).toBe(200);
     expect(await response.json()).toBeNull();
   });
@@ -99,32 +108,57 @@ describe("Google authentication", () => {
     const session = await context.internalAdapter.createSession(user.id, false);
     const signedToken = `${session.token}.${await makeSignature(session.token, secret)}`;
     const cookie = `${context.authCookies.sessionToken.name}=${encodeURIComponent(signedToken)}`;
-    const response = await auth.handler(
+    const response = await request(
       new Request(`${origin}/api/auth/get-session`, { headers: { cookie } }),
     );
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.user.id).toBe(user.id);
+    const storedUsers = await database.select().from(userTable);
+    expect(storedUsers[0]?.emailVerified).toBe(true);
+    expect(storedUsers[0]?.createdAt).toBeInstanceOf(Date);
 
-    const logout = await auth.handler(
+    const logout = await request(
       new Request(`${origin}/api/auth/sign-out`, { headers: { cookie, origin }, method: "POST" }),
     );
     expect(logout.status).toBe(200);
     expect(logout.headers.get("set-cookie")).toContain("Max-Age=0");
-    const afterLogout = await auth.handler(
+    const afterLogout = await request(
       new Request(`${origin}/api/auth/get-session`, { headers: { cookie } }),
     );
     expect(await afterLogout.json()).toBeNull();
   });
 
+  it("reads ISO dates and sessions written before the Drizzle migration", async () => {
+    const now = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    await env.AUTH_DB.batch([
+      env.AUTH_DB.prepare(
+        'INSERT INTO "user" (id, name, email, emailVerified, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+      ).bind("legacy-user", "Legacy User", "legacy@example.com", 1, now, now),
+      env.AUTH_DB.prepare(
+        'INSERT INTO "session" (id, token, userId, expiresAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+      ).bind("legacy-session", "legacy-token", "legacy-user", expiresAt, now, now),
+    ]);
+    const context = await auth.$context;
+    const signature = await makeSignature("legacy-token", secret);
+    const cookie = `${context.authCookies.sessionToken.name}=${encodeURIComponent(`legacy-token.${signature}`)}`;
+    const response = await request(
+      new Request(`${origin}/api/auth/get-session`, { headers: { cookie } }),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      session: { expiresAt, id: "legacy-session" },
+      user: { createdAt: now, emailVerified: true, id: "legacy-user" },
+    });
+  });
+
   it("does not create a session for a forged OAuth callback", async () => {
-    const response = await auth.handler(
+    const response = await request(
       new Request(`${origin}/api/auth/callback/google?code=invalid&state=forged`),
     );
     expect(response.status).toBe(302);
     expect(response.headers.get("location")).toContain("error=");
-    expect(database.prepare('select count(*) as count from "session"').get()).toMatchObject({
-      count: 0,
-    });
+    expect(await database.select().from(sessionTable)).toHaveLength(0);
   });
 });

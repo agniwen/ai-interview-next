@@ -10,17 +10,31 @@
     }
   },
   "scripts": {
-    "dev": "wrangler dev --port 8787",
-    "build": "wrangler deploy --dry-run --outdir dist",
-    "typecheck": "tsc --noEmit"
+    "dev": "CLOUDFLARE_DEV_REGISTRY_PATH=../../.wrangler/registry wrangler dev --config wrangler.jsonc --port 8787",
+    "build": "wrangler deploy --config wrangler.jsonc --dry-run --outdir dist",
+    "deploy": "wrangler deploy --config wrangler.jsonc --env-file .env.production --secrets-file .env.production",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "cf:types": "wrangler types worker-configuration.d.ts --config wrangler.jsonc --env-interface ApiEnv --include-runtime=false",
+    "db:migrate": "wrangler d1 migrations apply AUTH_DB --config wrangler.jsonc --local",
+    "db:migrate:remote": "wrangler d1 migrations apply AUTH_DB --config wrangler.jsonc --env-file .env.production --remote"
   },
   "dependencies": {
+    "@ai-interview/db": "workspace:*",
     "@hono/standard-validator": "0.4.1",
+    "better-auth": "1.7.15",
+    "drizzle-orm": "0.45.4",
     "hono": "4.13.16",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@ai-interview/typescript-config": "workspace:*",
+    "@cloudflare/workers-types": "^5.20261102.1",
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "5.0.5",
+    "vitest": "5.0.5",
     "wrangler": "^4.156.0"
   }
 }

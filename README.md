@@ -6,7 +6,7 @@ Bun + Turborepo monorepo，应用放在 `apps/`，共享包放在 `packages/`。
 
 ```text
 apps/
-  api/                       # Hono API starter（Cloudflare Workers）
+  api/                       # Hono API、Better Auth（Cloudflare Workers）
   voice-agent/               # Python / LiveKit Agents，独立语音服务（uv）
   web/                       # TanStack Start / React 应用，部署到 Cloudflare Workers
     src/
@@ -15,6 +15,7 @@ apps/
     vite.config.ts
     wrangler.jsonc
 packages/
+  db/                        # 共享 Drizzle schema、D1 数据库工厂和迁移
   core-client/               # TypeScript Hono RPC 客户端
   typescript-config/         # 共享 TypeScript 配置
     base.json
@@ -36,17 +37,17 @@ Web 应用运行在 `http://localhost:3000`，API 运行在 `http://localhost:87
 
 也可以使用根目录的 Makefile：首次执行 `make install` 安装依赖，之后运行 `make dev` 启动。执行 `make` 或 `make help` 查看所有快捷命令。Makefile 直接调用现有 Bun 脚本，保留 Turbo 的编译依赖和缓存流程。
 
-| 命令                      | 用途                                      |
-| ------------------------- | ----------------------------------------- |
-| `bun run dev`             | 启动应用开发服务                          |
-| `bun run build`           | 按依赖顺序构建，缓存构建产物              |
-| `bun run typecheck`       | 生成路由并执行 TypeScript 检查            |
-| `bun run check`           | 对整个仓库执行 Ultracite 格式和 lint 检查 |
-| `bun run fix`             | 对整个仓库执行 Ultracite 自动修复         |
-| `bun run generate-routes` | 重新生成应用路由                          |
-| `bun run preview`         | 构建并本地预览应用                        |
-| `bun run deploy`          | 构建并部署 Web 应用到 Cloudflare Workers  |
-| `bun run hooks`           | 安装 Lefthook Git hooks                   |
+| 命令                      | 用途                                               |
+| ------------------------- | -------------------------------------------------- |
+| `bun run dev`             | 启动应用开发服务                                   |
+| `bun run build`           | 按依赖顺序构建，缓存构建产物                       |
+| `bun run typecheck`       | 生成路由并执行 TypeScript 检查                     |
+| `bun run check`           | 对整个仓库执行 Ultracite 格式和 lint 检查          |
+| `bun run fix`             | 对整个仓库执行 Ultracite 自动修复                  |
+| `bun run generate-routes` | 重新生成应用路由                                   |
+| `bun run preview`         | 构建并本地预览应用                                 |
+| `bun run deploy`          | 先部署 API，再构建并部署 Web 到 Cloudflare Workers |
+| `bun run hooks`           | 安装 Lefthook Git hooks                            |
 
 仅运行指定 workspace 的任务：
 
@@ -57,7 +58,9 @@ bun run dev --filter=@ai-interview/web
 
 ## API 与 Core Client
 
-`apps/api` 仅提供 `GET /health`，暂不包含业务、数据库或认证。输入校验采用 Zod 4 + `@hono/standard-validator`；健康检查不接受查询参数，额外参数返回 400。执行 `make api-dev` 单独启动，`make api-build` 验证 Cloudflare 构建（不部署）。现有 `make deploy` 仍只部署 Web。
+`apps/api` 提供 `GET /health` 和 Better Auth 的 `/api/auth/*`，使用 Drizzle ORM 访问 Cloudflare D1。输入校验采用 Zod 4 + `@hono/standard-validator`；健康检查不接受查询参数，额外参数返回 400，也不依赖数据库或认证配置。执行 `make api-dev` 单独启动，`make api-build` 验证 Cloudflare 构建（不部署）。`make deploy` 先部署 API，再构建并部署 Web；本地与生产变量分别位于 API 的 `.env` 和 `.env.production`，配置步骤见 [Google 登录](docs/auth/google-login.md)。
+
+`packages/db` 是系统数据库定义的唯一来源，通过 `@ai-interview/db/schema` 导出表，通过 `@ai-interview/db` 导出 `createDatabase(binding)` 和 `Database` 类型。API 和后续后台 worker 使用同一套 schema，各自在请求或任务内用自己的 D1 binding 创建数据库实例。数据库包不依赖 API、Web 或 Better Auth。新增业务表放在 `packages/db/src/schema/` 并从 `index.ts` 导出，再执行 `bun run --filter @ai-interview/db db:generate` 生成增量迁移；`make db-migrate` 和 `make db-migrate-remote` 由 API 的 Wrangler 配置应用这些迁移。
 
 TypeScript 调用方使用 `@ai-interview/core-client` 的 `createCoreClient({ baseUrl, fetch })`；`fetch` 可省略。包使用 Hono RPC，通过 API 的公开类型出口推断响应，不包含服务端实现。当前通过源码导出供仓库内消费，无单独发布产物。
 
@@ -79,7 +82,7 @@ Web 应用的源码、Vite、路由、shadcn 和 Cloudflare 配置都在 `apps/w
 bun add <dependency> --filter @ai-interview/web
 ```
 
-Ultracite 和 Lefthook 配置保留在根目录。`build` 缓存 `dist/` 和 Cloudflare 的 `.wrangler/deploy/` 元数据；`dev`、路由生成和部署不缓存。环境文件放在 `apps/web/`，其变更会影响构建缓存；新增通过进程注入的构建环境变量时，在 `turbo.json` 的任务 `env` 中声明。
+Ultracite 和 Lefthook 配置保留在根目录。`build` 缓存 `dist/` 和 Cloudflare 的 `.wrangler/deploy/` 元数据；`dev`、路由生成和部署不缓存。环境文件按应用归属存放；API 使用 `.env` 做本地开发、`.env.production` 做生产发布，真实值不提交，只提交 `.example` 模板。环境文件变更会影响构建缓存；新增通过进程注入的构建环境变量时，在 `turbo.json` 的任务 `env` 中声明。
 
 ## 测试
 
@@ -93,7 +96,7 @@ Web 测试使用独立的 `apps/web/vitest.config.ts`，默认 Node 环境，支
 
 ## Cloudflare 部署
 
-当前部署目标为 Worker `sainoa-web`，自定义域名为 `sanioa.akumanoko.com`（按指定域名拼写）。`apps/web/wrangler.jsonc` 中的 Custom Domain 配置由 Wrangler 在部署时创建对应 DNS 和 HTTPS 绑定。
+Web 部署目标为 Worker `sainoa-web`，自定义域名为 `sanioa.akumanoko.com`（按指定域名拼写），通过 Service Binding `API` 调用 `sainoa-api` 的认证入口。`apps/web/wrangler.jsonc` 中的 Custom Domain 配置由 Wrangler 在部署时创建对应 DNS 和 HTTPS 绑定。
 
 在 `apps/web/wrangler.jsonc` 中配置 Worker 名称和资源绑定。首次部署前，在应用目录执行 `bunx --no-install wrangler login`；然后从根目录运行 `bun run deploy`。CI 可提供 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`。
 

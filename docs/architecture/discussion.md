@@ -17,22 +17,26 @@
 
 ```text
 apps/
-  web/                         TanStack Start；现有认证使用 Better Auth + D1
+  web/                         TanStack Start 页面与 SSR；同源认证请求转发到 API
   api/
     src/
-      app.ts                   Hono 路由组装，目前仅 GET /health
+      app.ts                   Hono 路由组装与 GET /health
       index.ts                 Cloudflare Worker 入口
       types.ts                 公开 AppType 类型
+      modules/auth/            Better Auth 配置、实例创建与认证路由
     wrangler.jsonc
   voice-agent/                 Python LiveKit starter，uv 管理依赖
 packages/
+  db/                          共享 Drizzle schema、D1 连接工厂与迁移
   core-client/
     src/index.ts               createCoreClient，基于 Hono RPC
     tests/client.test.ts       客户端与真实 Hono app 的请求链路测试
   typescript-config/
 ```
 
-API starter 没有业务模块、数据库、认证、队列或 LiveKit 集成。现有 Better Auth 保留在 Web，没有在本次迁移。Python Agent 尚未接入业务 API，Web 也尚未接入 core-client。
+API 已接入 Better Auth + Drizzle ORM + D1，尚无业务模块、队列或 LiveKit 集成。Web 通过 Service Binding 转发同源认证请求，不再创建 Better Auth 实例或直接访问 D1。Python Agent 尚未接入业务 API，Web 也尚未接入 core-client。
+
+API 内部组织方式见 [API README](../../apps/api/README.md)，修改规则见 [API AGENTS.md](../../apps/api/AGENTS.md)。
 
 API 采用 Zod 4 定义输入 schema，通过 `@hono/standard-validator` 接入 Standard Schema。输入在 HTTP 入口校验一次，后续处理通过 `c.req.valid()` 使用已校验的数据；客户端继续从 Hono 路由推断输入和响应类型。暂不接入 OpenAPI 生成。
 
@@ -40,7 +44,7 @@ API 采用 Zod 4 定义输入 schema，通过 `@hono/standard-validator` 接入 
 
 API 的 `/health` 返回 `200 {"status":"ok"}`，只表示入口可以响应，不检查尚未接入的外部依赖。未知路径使用 Hono 默认 404。
 
-`app.ts` 不读取平台环境变量，也不初始化数据库。平台资源在引入时从入口注入，业务代码不直接依赖 Hono Context 或 Cloudflare bindings。
+认证路由从 Hono 的 `c.env` 取得配置，在请求内创建数据库和 Better Auth 实例；`/health` 不访问这些配置。`packages/db` 提供共享 schema 和 `createDatabase(binding)`，供 API 与后续后台 worker 复用，不依赖应用层。业务代码不直接依赖 Hono Context。
 
 ## 共享代码与服务调用
 
@@ -123,14 +127,14 @@ API 与消费者需要复用业务实现时，按实际能力提取包；不提�
 - 配置、数据、Webhook 回调和认证均应属于同一环境。
 - 当前没有创建 staging 资源或实现完整环境部署流程。
 
-API starter 使用 Wrangler 本地开发与 dry-run 构建，尚未部署。Cloudflare 内部调用可通过客户端注入 Service Binding 的 fetch；跨平台保留 HTTP 接口。未来 Node/Vercel 入口及数据库、队列替代实现需分别验证，不承诺仅切换启动命令即可迁移全部基础设施。
+API 使用 Wrangler 本地开发与 dry-run 构建。Web 的认证请求已通过 Service Binding 调用 API；上线时需先部署 API，再部署 Web。其他 Cloudflare 内部调用可通过客户端注入 Service Binding 的 fetch；跨平台保留 HTTP 接口。未来 Node/Vercel 入口及数据库、队列替代实现需分别验证，不承诺仅切换启动命令即可迁移全部基础设施。
 
 Voice Agent 独立部署到 LiveKit Cloud Agents 或支持 Python 长驻进程的平台。API 和 Agent 可以独立伸缩；Turborepo 只负责仓库内任务编排。
 
 ## 尚未决定
 
 - 产品第一批功能及对应领域模型。
-- 认证是否从 Web 迁移到 API，以及服务调用授权方式。
+- 服务调用的身份及授权方式；浏览器认证已迁移到 API。
 - 业务数据存储；D1 当前只用于认证，不能据此视为所有业务数据库的既定选择。
 - OpenAPI 工具链、Python 客户端、Agent 控制协议和异步任务实现。
 - 自托管范围、实际环境资源与发布流程。
