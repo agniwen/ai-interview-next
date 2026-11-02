@@ -1,191 +1,79 @@
-Welcome to your new TanStack Start app!
+# AI Interview
 
-# Getting Started
+Bun + Turborepo monorepo，应用放在 `apps/`，共享包放在 `packages/`。
 
-To run this application:
+```text
+apps/
+  web/                       # TanStack Start / React 应用，部署到 Cloudflare Workers
+    src/
+    components.json
+    tsconfig.json
+    vite.config.ts
+    wrangler.jsonc
+packages/
+  typescript-config/         # 共享 TypeScript 配置
+    base.json
+package.json                 # Bun workspaces 和统一命令
+bun.lock                     # 整个仓库共用的依赖锁文件
+turbo.json                   # 任务依赖和构建缓存
+```
+
+## 开发
+
+使用 `package.json` 中指定的 Bun 1.4.2，在仓库根目录执行：
 
 ```bash
 bun install
-bun --bun run dev
+bun run dev
 ```
 
-# Building For Production
+Web 应用运行在 `http://localhost:3000`。
 
-To build this application for production:
+| 命令                      | 用途                                      |
+| ------------------------- | ----------------------------------------- |
+| `bun run dev`             | 启动应用开发服务                          |
+| `bun run build`           | 按依赖顺序构建，缓存构建产物              |
+| `bun run typecheck`       | 生成路由并执行 TypeScript 检查            |
+| `bun run check`           | 对整个仓库执行 Ultracite 格式和 lint 检查 |
+| `bun run fix`             | 对整个仓库执行 Ultracite 自动修复         |
+| `bun run generate-routes` | 重新生成应用路由                          |
+| `bun run preview`         | 构建并本地预览应用                        |
+| `bun run deploy`          | 构建并部署 Web 应用到 Cloudflare Workers  |
+| `bun run hooks`           | 安装 Lefthook Git hooks                   |
+
+仅运行指定 workspace 的任务：
 
 ```bash
-bun --bun run build
+bun run build --filter=@ai-interview/web
+bun run dev --filter=@ai-interview/web
 ```
 
-## Styling
+## 应用与共享包
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+Web 应用的源码、Vite、路由、shadcn 和 Cloudflare 配置都在 `apps/web/`；应用内的 `@/*` 和 `#/*` 指向其 `src/`。路由文件位于 `apps/web/src/routes/`，`routeTree.gen.ts` 由工具生成，请勿手动编辑。
 
-### Removing Tailwind CSS
+新增应用放在 `apps/<name>/`，共享包放在 `packages/<name>/`，每个目录提供独立的 `package.json`，包名统一使用 `@ai-interview/<name>`。根包名为 `@ai-interview/workspace`，当前应用为 `@ai-interview/web`，共享配置包为 `@ai-interview/typescript-config`。使用 `workspace:*` 声明内部依赖，Turborepo 会据此建立任务依赖关系。TypeScript 项目可以继承 `@ai-interview/typescript-config/base.json`。
 
-If you prefer not to use Tailwind CSS:
+在根目录统一安装依赖；为某个应用添加依赖时，使用 Bun 的 workspace 过滤：
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
-
-## Deploy to Cloudflare Workers
-
-This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) and `wrangler.jsonc`:
-
-1. Install Wrangler: `npm install -g wrangler`
-2. Authenticate: `wrangler login`
-3. Deploy: `npx wrangler deploy`
-
-For production env vars, run `wrangler secret put MY_VAR` for each secret listed in `.env.example`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
-
-KV, D1, R2, and Durable Object bindings are configured in `wrangler.jsonc` — see https://developers.cloudflare.com/workers/wrangler/configuration/.
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
+```bash
+bun add <dependency> --filter @ai-interview/web
 ```
 
-Then anywhere in your JSX you can use it like so:
+Ultracite 和 Lefthook 配置保留在根目录。`build` 缓存 `dist/` 和 Cloudflare 的 `.wrangler/deploy/` 元数据；`dev`、路由生成和部署不缓存。环境文件放在 `apps/web/`，其变更会影响构建缓存；新增通过进程注入的构建环境变量时，在 `turbo.json` 的任务 `env` 中声明。
 
-```tsx
-<Link to="/about">About</Link>
-```
+## 测试
 
-This will create a link that will navigate to the `/about` route.
+在根目录运行 `bun run test` 执行所有 workspace 的 Vitest 测试，`bun run test:watch` 开启监听，`bun run test:coverage` 生成覆盖率报告。使用 `bun run test --filter=@ai-interview/web` 只测试 Web 应用。请使用 `bun run test`；`bun test` 会启动 Bun 自带的测试运行器。
 
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+Web 测试使用独立的 `apps/web/vitest.config.ts`，默认 Node 环境，支持 `@/*` 和 `#/*` 别名，不加载 Cloudflare 开发插件。测试放在 `src/` 或 `tests/` 下，文件以 `.test.ts(x)` 或 `.spec.ts(x)` 结尾。覆盖率 HTML 报告在 `apps/web/coverage/index.html`。当前配置用于单元测试；涉及 DOM 的组件测试需要另外配置浏览器或 DOM 环境。
 
-### Using A Layout
+新增 workspace 时，在该包内声明 Vitest 依赖和同名测试脚本，根目录的 Turbo 命令会自动发现它。
 
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
+配置参考：[Vitest 官方文档](https://vitest.dev/config/)。
 
-Here is an example layout that includes a header:
+## Cloudflare 部署
 
-```tsx
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
+在 `apps/web/wrangler.jsonc` 中配置 Worker 名称和资源绑定。首次部署前，在应用目录执行 `bunx --no-install wrangler login`；然后从根目录运行 `bun run deploy`。CI 可提供 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`。
 
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "My App" },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-});
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from "@tanstack/react-start";
-
-const getServerTime = createServerFn({
-  method: "GET",
-}).handler(async () => {
-  return new Date().toISOString();
-});
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState("");
-
-  useEffect(() => {
-    getServerTime().then(setTime);
-  }, []);
-
-  return <div>Server time: {time}</div>;
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from "@tanstack/react-router";
-import { json } from "@tanstack/react-start";
-
-export const Route = createFileRoute("/api/hello")({
-  server: {
-    handlers: {
-      GET: () => json({ message: "Hello, World!" }),
-    },
-  },
-});
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from "@tanstack/react-router";
-
-export const Route = createFileRoute("/people")({
-  loader: async () => {
-    const response = await fetch("https://swapi.dev/api/people");
-    return response.json();
-  },
-  component: PeopleComponent,
-});
-
-function PeopleComponent() {
-  const data = Route.useLoaderData();
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  );
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+参考：[Turborepo 工作区结构](https://turborepo.dev/docs/crafting-your-repository/structuring-a-repository)、[TanStack Start](https://tanstack.com/start)。

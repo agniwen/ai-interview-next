@@ -7,16 +7,16 @@ export default defineConfig({
   extends: [core, react],
   // `routeTree.gen.ts` does not match Ultracite's `**/*.gen.*` ignore.
   ignorePatterns: [
-    "src/routeTree.gen.ts",
+    "apps/web/src/routeTree.gen.ts",
     // Upstream coss ui source. Keep it aligned with the registry instead of local lint rewrites.
-    "src/components/ui/**",
-    "src/hooks/use-composer-editor.ts",
-    "src/hooks/use-media-query.ts",
-    "src/lib/composer-*.ts",
+    "apps/web/src/components/ui/**",
+    "apps/web/src/hooks/use-composer-editor.ts",
+    "apps/web/src/hooks/use-media-query.ts",
+    "apps/web/src/lib/composer-*.ts",
   ],
   overrides: [
     {
-      files: ["src/routes/**/*.{ts,tsx}"],
+      files: ["apps/web/src/routes/**/*.{ts,tsx}"],
       rules: {
         // TanStack Router's option order is part of its type-inference chain.
         // Route objects must not be alphabetized by Ultracite's sort-keys rule.

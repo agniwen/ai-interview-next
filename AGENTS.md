@@ -39,7 +39,7 @@ Comment a non-obvious constraint or a counterintuitive step. Leave obvious code 
 
 ## Generated files
 
-Generated files are output. Change the source and regenerate them. `src/routeTree.gen.ts` is one of these; hand-editing it does not stick.
+Generated files are output. Change the source and regenerate them. `apps/web/src/routeTree.gen.ts` is one of these; hand-editing it does not stick.
 
 ## Tests
 

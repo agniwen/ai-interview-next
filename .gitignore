@@ -26,3 +26,7 @@ todos.json
 .github/personal-instructions.md
 .worktrees/
 .eval/
+
+# Turborepo task cache
+.turbo
+coverage
