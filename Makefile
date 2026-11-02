@@ -1,9 +1,11 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install dev build preview test test-watch coverage typecheck check fix deploy db-migrate db-migrate-remote
+.PHONY: voice-install voice-download voice-console voice-dev voice-start help install dev build preview test test-watch coverage typecheck check fix deploy db-migrate db-migrate-remote
 
 help:
 	@printf '%s\n' \
+	  'make voice-install / voice-download  安装语音依赖 / 下载模型' \
+	  'make voice-console / voice-dev / voice-start  语音终端 / 开发 / 生产' \
 	  'make install     安装依赖' \
 	  'make dev         启动开发服务（http://localhost:3000）' \
 	  'make build       构建生产产物' \
@@ -56,3 +58,18 @@ db-migrate:
 
 db-migrate-remote:
 	bun run --filter @ai-interview/web db:migrate:remote
+
+voice-install:
+	bun run --filter @ai-interview/voice-agent setup
+
+voice-download:
+	bun run --filter @ai-interview/voice-agent download-files
+
+voice-console:
+	bun run --filter @ai-interview/voice-agent console
+
+voice-dev:
+	bun run --filter @ai-interview/voice-agent dev:voice
+
+voice-start:
+	bun run --filter @ai-interview/voice-agent start

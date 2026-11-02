@@ -1,0 +1,11 @@
+{
+  "name": "@ai-interview/voice-agent",
+  "private": true,
+  "scripts": {
+    "setup": "uv sync --locked",
+    "download-files": "uv run --locked --module livekit.agents download-files",
+    "dev:voice": "uv run --locked src/agent.py dev",
+    "console": "uv run --locked src/agent.py console",
+    "start": "uv run --locked src/agent.py start"
+  }
+}

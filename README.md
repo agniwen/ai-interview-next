@@ -6,6 +6,7 @@ Bun + Turborepo monorepo，应用放在 `apps/`，共享包放在 `packages/`。
 
 ```text
 apps/
+  voice-agent/               # Python / LiveKit Agents，独立语音服务（uv）
   web/                       # TanStack Start / React 应用，部署到 Cloudflare Workers
     src/
     components.json
@@ -16,7 +17,7 @@ packages/
   typescript-config/         # 共享 TypeScript 配置
     base.json
 package.json                 # Bun workspaces 和统一命令
-bun.lock                     # 整个仓库共用的依赖锁文件
+bun.lock                     # JavaScript workspace 依赖锁文件
 turbo.json                   # 任务依赖和构建缓存
 ```
 
@@ -51,6 +52,10 @@ Web 应用运行在 `http://localhost:3000`。
 bun run build --filter=@ai-interview/web
 bun run dev --filter=@ai-interview/web
 ```
+
+## Python 语音服务
+
+`apps/voice-agent` 使用 Python 3.14 + LiveKit Agents，依赖独立锁定在 `uv.lock`。首次执行 `make voice-install`，配置 LiveKit 凭据后执行 `make voice-download` 和 `make voice-console`；房间开发模式使用 `make voice-dev`。详见 [Voice Agent 使用与部署](apps/voice-agent/README.md)。Web 开发和 Cloudflare 部署命令保持独立。
 
 ## 应用与共享包
 

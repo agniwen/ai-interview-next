@@ -37,6 +37,9 @@ Extract a function only when the logic is reused, when it hides real complexity,
 
 Comment a non-obvious constraint or a counterintuitive step. Leave obvious code uncommented.
 
+When writing or updating comments, provide both Chinese and English versions together, keeping their meaning consistent and updating both in the same change.
+编写或更新注释时，必须同步提供中英文版本，保持含义一致，并在同一次修改中同步更新。
+
 ## Generated files
 
 Generated files are output. Change the source and regenerate them. `apps/web/src/routeTree.gen.ts` is one of these; hand-editing it does not stick.
