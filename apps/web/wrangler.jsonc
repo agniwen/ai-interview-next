@@ -1,7 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "name": "sainoa-web",
+  "account_id": "b8f52910e25273ecc2fc719d582dece7",
+  "routes": [{ "pattern": "sanioa.akumanoko.com", "custom_domain": true }],
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry",
+  "main": "./src/server.ts",
 }

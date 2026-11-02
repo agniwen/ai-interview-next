@@ -1,4 +1,6 @@
-# AI Interview
+# Sainoa
+
+Sainoa，取意于日语「才能」（sainō），寓意“看见每个人的才能”。命名来源、读音与品牌表达见 [品牌命名说明](docs/brand/naming.md)。
 
 Bun + Turborepo monorepo，应用放在 `apps/`，共享包放在 `packages/`。
 
@@ -28,6 +30,8 @@ bun run dev
 ```
 
 Web 应用运行在 `http://localhost:3000`。
+
+也可以使用根目录的 Makefile：首次执行 `make install` 安装依赖，之后运行 `make dev` 启动。执行 `make` 或 `make help` 查看所有快捷命令。Makefile 直接调用现有 Bun 脚本，保留 Turbo 的编译依赖和缓存流程。
 
 | 命令                      | 用途                                      |
 | ------------------------- | ----------------------------------------- |
@@ -74,6 +78,23 @@ Web 测试使用独立的 `apps/web/vitest.config.ts`，默认 Node 环境，支
 
 ## Cloudflare 部署
 
+当前部署目标为 Worker `sainoa-web`，自定义域名为 `sanioa.akumanoko.com`（按指定域名拼写）。`apps/web/wrangler.jsonc` 中的 Custom Domain 配置由 Wrangler 在部署时创建对应 DNS 和 HTTPS 绑定。
+
 在 `apps/web/wrangler.jsonc` 中配置 Worker 名称和资源绑定。首次部署前，在应用目录执行 `bunx --no-install wrangler login`；然后从根目录运行 `bun run deploy`。CI 可提供 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`。
 
 参考：[Turborepo 工作区结构](https://turborepo.dev/docs/crafting-your-repository/structuring-a-repository)、[TanStack Start](https://tanstack.com/start)。
+
+## 全局路由国际化
+
+使用 Paraglide 编译文案，语言由 URL 唯一决定：英文首页为 `/`，中文为 `/zh-CN`，日文为 `/ja`，韩文为 `/ko`。嵌套页面同样应用前缀，例如 `/interviews/123` 与 `/ja/interviews/123`。不使用 Cookie 或浏览器偏好选择语言。
+
+- 翻译源文件：`apps/web/messages/{locale}.json`。首页相关文案参考旧项目 `ai-interview`，按实际使用范围迁入。
+- 语言列表与默认语言：`apps/web/project.inlang/settings.json`；URL 策略：`apps/web/paraglide.config.ts`。
+- 路由文件继续使用无语言前缀的路径。Router 的 `rewrite` 统一处理前缀，普通站内导航使用 TanStack `Link`，不要在组件中手动拼接语言前缀。
+- 组件使用 `@/paraglide/messages` 的消息函数；全局语言切换组件位于 `components/i18n/language-switcher.tsx`，切换语言时保留路径、查询参数及锚点，通过页面导航重新执行对应语言的 SSR。
+- `src/server.ts` 使用 Paraglide middleware 隔离请求语言，Wrangler 的 `main` 必须指向该入口。`/api` 请求不经过文档语言策略；API 调用使用原始 API URL，不使用页面本地化链接函数。
+- `src/paraglide/` 是生成输出，已排除版本控制、lint 和覆盖率统计。通过根目录 Turbo 命令执行开发、构建、测试和类型检查时会先编译文案。单独编译：`bun run --filter @ai-interview/web i18n:compile`。
+
+首页布局与交互演示迁自旧项目 `ai-interview`，保留暖白背景色调、Tabler 图标和整个首页的 ScrollArea。演示包括招聘台、候选人详情、AI 面试、人工面试及评估流程，数据均为本地示例，不调用业务后端。筛选简历、工作台和登录入口暂时禁用，标注“即将上线”。
+
+首页组件位于 `apps/web/src/components/home`；`screens` 包含交互演示及自动播放，`support` 包含迁移所需的展示组件与示例配置。通用控件复用本项目 `components/ui`，语言入口继续使用全局路由方案。

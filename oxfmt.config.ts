@@ -4,6 +4,7 @@ import ultracite from "ultracite/oxfmt";
 export default defineConfig({
   extends: [ultracite],
   ignorePatterns: [
+    "apps/web/src/paraglide/**",
     "apps/web/src/routeTree.gen.ts",
     "apps/web/src/components/ui/**",
     "apps/web/src/hooks/use-composer-editor.ts",

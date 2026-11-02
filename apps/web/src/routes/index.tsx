@@ -1,17 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { Button } from "@/components/ui/button";
+import { HomePage } from "@/components/home/home-page";
+import * as m from "@/paraglide/messages";
+import { localizeHref, locales } from "@/paraglide/runtime";
 
-function Home() {
-  return (
-    <div className="flex flex-col gap-4 p-8">
-      <h1 className="font-heading text-4xl font-bold">Welcome to TanStack Start</h1>
-      <p className="text-lg text-muted-foreground">
-        Edit <code>src/routes/index.tsx</code> to get started.
-      </p>
-      <Button className="self-start">Get started</Button>
-    </div>
-  );
-}
-
-export const Route = createFileRoute("/")({ component: Home });
+export const Route = createFileRoute("/")({
+  head: () => ({
+    links: locales.map((locale) => ({
+      href: localizeHref("/", { locale }),
+      hrefLang: locale,
+      rel: "alternate",
+    })),
+    meta: [
+      { title: `Sainoa — ${m.home_hero_tagline()}` },
+      { content: m.home_document_description(), name: "description" },
+    ],
+  }),
+  component: HomePage,
+});

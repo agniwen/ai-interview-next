@@ -2,19 +2,20 @@
   "$schema": "https://turborepo.dev/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "i18n:compile"],
       "inputs": ["$TURBO_DEFAULT$", ".env*", ".dev.vars*"],
       "outputs": ["dist/**", ".wrangler/deploy/**"]
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "dependsOn": ["i18n:compile"]
     },
     "generate-routes": {
       "cache": false
     },
     "typecheck": {
-      "dependsOn": ["^typecheck", "generate-routes"]
+      "dependsOn": ["^typecheck", "generate-routes", "i18n:compile"]
     },
     "preview": {
       "dependsOn": ["build"],
@@ -27,15 +28,19 @@
       "passThroughEnv": ["CLOUDFLARE_*"]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "i18n:compile"]
     },
     "test:watch": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "dependsOn": ["i18n:compile"]
     },
     "test:coverage": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "i18n:compile"],
       "outputs": ["coverage/**"]
+    },
+    "i18n:compile": {
+      "outputs": ["src/paraglide/**"]
     }
   }
 }

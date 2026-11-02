@@ -1,10 +1,13 @@
 import { HeadContent, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
+import { NotFoundPage } from "@/components/home/not-found";
+import { getLocale } from "@/paraglide/runtime";
 
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 
 import appCss from "../styles.css?url";
+import homeCss from "../components/home/home.css?url";
 
 import type { QueryClient } from "@tanstack/react-query";
 
@@ -14,7 +17,7 @@ interface MyRouterContext {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang={getLocale()}>
       <head>
         <HeadContent />
       </head>
@@ -51,15 +54,29 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "TanStack Start Starter",
+        title: "Sainoa",
       },
     ],
     links: [
       {
+        rel: "icon",
+        href: "/favicon.ico",
+        type: "image/x-icon",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        rel: "icon",
+        href: "/favicon-dark.ico",
+        type: "image/x-icon",
+        media: "(prefers-color-scheme: dark)",
+      },
+      {
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "stylesheet", href: homeCss },
     ],
   }),
+  notFoundComponent: NotFoundPage,
   shellComponent: RootDocument,
 });

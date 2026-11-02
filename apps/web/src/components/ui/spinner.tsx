@@ -1,4 +1,4 @@
-import { Loader2Icon } from "lucide-react";
+import { IconLoader2 as Loader2Icon } from "@tabler/icons-react";
 import type React from "react";
 import { cn } from "@/lib/utils";
 

@@ -30,3 +30,5 @@ todos.json
 # Turborepo task cache
 .turbo
 coverage
+apps/web/src/paraglide/
+apps/web/project.inlang/.cache/

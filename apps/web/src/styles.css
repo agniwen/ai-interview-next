@@ -21,6 +21,23 @@ body {
 }
 
 @theme inline {
+  --color-control: var(--background);
+  --shadow-large: 0 12px 32px rgb(0 0 0 / 8%);
+  --shadow-extra-large: 0 24px 64px rgb(0 0 0 / 10%);
+  --shadow-default: 0 1px 3px rgb(0 0 0 / 8%);
+  --color-green-ink: color-mix(in oklab, var(--color-emerald-600) 72%, var(--foreground));
+  --color-green-tint: color-mix(in oklab, var(--color-emerald-600) 14%, var(--background));
+  --color-green-line: color-mix(in oklab, var(--color-emerald-600) 32%, var(--background));
+  --color-sky-ink: color-mix(in oklab, var(--color-sky-600) 72%, var(--foreground));
+  --color-sky-tint: color-mix(in oklab, var(--color-sky-600) 14%, var(--background));
+  --color-sky-line: color-mix(in oklab, var(--color-sky-600) 32%, var(--background));
+  --color-amber-ink: color-mix(in oklab, var(--color-amber-600) 72%, var(--foreground));
+  --color-amber-tint: color-mix(in oklab, var(--color-amber-600) 14%, var(--background));
+  --color-amber-line: color-mix(in oklab, var(--color-amber-600) 32%, var(--background));
+
+  --color-home-canvas: var(--home-canvas);
+  --color-home-surface: var(--home-surface);
+  --color-home-card: var(--home-card);
   --animate-skeleton: skeleton 2s -1s infinite linear;
   --animate-caret-blink: 1s ease-out infinite caret-blink;
   --animate-toast-success-odd: toast-success-odd 0.32s cubic-bezier(0.5, 1, 0.89, 1);

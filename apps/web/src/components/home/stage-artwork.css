@@ -1,0 +1,253 @@
+@property --grain-top {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #c9d6df;
+}
+
+@property --grain-bottom {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0e2c3d;
+}
+
+@property --grain-1 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #d6e0e6;
+}
+
+@property --grain-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #6fb5a3;
+}
+
+@property --grain-3 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #2d6f86;
+}
+
+@property --grain-4 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0f2f40;
+}
+
+/* 紫粉到橙金。 Violet-pink to amber-gold. */
+.home-grain[data-palette="dusk"] {
+  --grain-top: #a3a0dc;
+  --grain-bottom: #e06a3c;
+  --grain-1: #7f9ce8;
+  --grain-2: #d48ccb;
+  --grain-3: #e4533f;
+  --grain-4: #f3aa3a;
+}
+
+/* 晨空蓝到天蓝，对齐首屏天空的浅部。 Morning sky to azure, the light end of the hero sky. */
+.home-grain[data-palette="sky"] {
+  --grain-top: #e3edff;
+  --grain-bottom: #2b5fc9;
+  --grain-1: #eef5ff;
+  --grain-2: #b9d6fc;
+  --grain-3: #5e9fff;
+  --grain-4: #2a5bd0;
+}
+
+/* 天蓝到湖蓝，sky 向 harbor 过渡的第一步。 Sky to cerulean, the first step from sky toward harbor. */
+.home-grain[data-palette="glacier"] {
+  --grain-top: #9fc0e4;
+  --grain-bottom: #1d4f8f;
+  --grain-1: #b4cfec;
+  --grain-2: #8ec0e8;
+  --grain-3: #4c95d4;
+  --grain-4: #1f5596;
+}
+
+/* 湖蓝到青蓝，sky 向 harbor 过渡的第二步。 Cerulean to teal blue, the second step toward harbor. */
+.home-grain[data-palette="lagoon"] {
+  --grain-top: #b6d0da;
+  --grain-bottom: #144259;
+  --grain-1: #c3d9e1;
+  --grain-2: #8fc6cc;
+  --grain-3: #3d88a8;
+  --grain-4: #174b66;
+}
+
+/* 雾紫到靛紫，首屏蓝向紫偏一格。 Misty lilac to indigo, one step from the hero blue toward violet. */
+.home-grain[data-palette="lilac"] {
+  --grain-top: #dfe1f7;
+  --grain-bottom: #2d2f78;
+  --grain-1: #eaebfb;
+  --grain-2: #b3baf2;
+  --grain-3: #7479d6;
+  --grain-4: #35378f;
+}
+
+/* 天蓝到深靛，首屏天空的暗部。 Azure to deep indigo, the darker end of the hero sky. */
+.home-grain[data-palette="azure"] {
+  --grain-top: #8fb2f8;
+  --grain-bottom: #0d1a52;
+  --grain-1: #b8d0f7;
+  --grain-2: #6f9bff;
+  --grain-3: #2a5bff;
+  --grain-4: #1b3a9c;
+}
+
+/* 灰蓝到深棕。 Grey-blue to deep brown. */
+.home-grain[data-palette="sand"] {
+  --grain-top: #7f98a8;
+  --grain-bottom: #3a1d12;
+  --grain-1: #8eaabb;
+  --grain-2: #f0cd8e;
+  --grain-3: #cf622b;
+  --grain-4: #4a2616;
+}
+
+/* 雾蓝到深海蓝。 Mist blue to deep sea. */
+.home-grain[data-palette="harbor"] {
+  --grain-top: #c9d6df;
+  --grain-bottom: #0e2c3d;
+  --grain-1: #d6e0e6;
+  --grain-2: #6fb5a3;
+  --grain-3: #2d6f86;
+  --grain-4: #0f2f40;
+}
+
+/* 雾蓝到墨绿。 Mist blue to ink green. */
+.home-grain[data-palette="moss"] {
+  --grain-top: #c3cfd6;
+  --grain-bottom: #142212;
+  --grain-1: #c8d3da;
+  --grain-2: #a8bd6a;
+  --grain-3: #5f7d43;
+  --grain-4: #1b2e17;
+}
+
+/* 薰衣草到深夜紫。 Lavender to midnight violet. */
+.home-grain[data-palette="night"] {
+  --grain-top: #b6a6e6;
+  --grain-bottom: #22093a;
+  --grain-1: #9f8fe0;
+  --grain-2: #e08ad6;
+  --grain-3: #7a3fa8;
+  --grain-4: #2a0f45;
+}
+
+/* 天灰到锈红。 Sky grey to rust. */
+.home-grain[data-palette="ember"] {
+  --grain-top: #c8d2dc;
+  --grain-bottom: #5a160d;
+  --grain-1: #d3dbe3;
+  --grain-2: #f2c39a;
+  --grain-3: #e0623e;
+  --grain-4: #8a2516;
+}
+
+.home-grain {
+  background: linear-gradient(180deg, var(--grain-top), var(--grain-bottom));
+  transition:
+    --grain-top 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    --grain-bottom 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    --grain-1 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    --grain-2 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    --grain-3 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    --grain-4 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 四团大色块分布在四角与边缘，径向渐隐到透明，各自 20–28 秒缓慢漂移、轻微缩放。
+   Four large blobs at the corners and edges fade radially and drift over 20–28s. */
+.home-grain-blob {
+  position: absolute;
+  border-radius: 9999px;
+  will-change: transform;
+}
+
+.home-grain-blob-1 {
+  top: -8%;
+  left: -6%;
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(closest-side, var(--grain-1), transparent);
+  animation: home-grain-drift-a 22s ease-in-out infinite alternate;
+}
+
+.home-grain-blob-2 {
+  top: -4%;
+  right: -10%;
+  width: 66%;
+  height: 72%;
+  background: radial-gradient(closest-side, var(--grain-2), transparent);
+  animation: home-grain-drift-b 26s ease-in-out infinite alternate;
+}
+
+.home-grain-blob-3 {
+  bottom: -14%;
+  left: -12%;
+  width: 72%;
+  height: 74%;
+  background: radial-gradient(closest-side, var(--grain-3), transparent);
+  animation: home-grain-drift-b 24s ease-in-out infinite alternate-reverse;
+}
+
+.home-grain-blob-4 {
+  right: -6%;
+  bottom: -18%;
+  width: 74%;
+  height: 76%;
+  background: radial-gradient(closest-side, var(--grain-4), transparent);
+  animation: home-grain-drift-a 28s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes home-grain-drift-a {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(8%, 6%) scale(1.12);
+  }
+}
+
+@keyframes home-grain-drift-b {
+  from {
+    transform: translate(0, 0) scale(1.06);
+  }
+  to {
+    transform: translate(-7%, 5%) scale(0.94);
+  }
+}
+
+/* 白色细线纹样，径向遮罩把中间留给前景 UI；切换纹样时淡入。
+   Thin white patterns masked away from the centre for the foreground UI; fade in on change. */
+.home-grain-pattern {
+  stroke: rgb(255 255 255 / 30%);
+  stroke-width: 0.8px;
+  mask-image: radial-gradient(ellipse 58% 56% at 50% 50%, transparent 28%, black 78%);
+  animation: home-grain-pattern-in 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.home-grain-pattern * {
+  vector-effect: non-scaling-stroke;
+}
+
+.home-grain-dot {
+  fill: rgb(255 255 255 / 60%);
+  stroke: none;
+}
+
+@keyframes home-grain-pattern-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-grain-blob,
+  .home-grain-pattern {
+    animation: none;
+  }
+
+  .home-grain {
+    transition: none;
+  }
+}
