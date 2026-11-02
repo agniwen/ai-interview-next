@@ -50,6 +50,8 @@ wrangler.jsonc
 - `GET /health` 返回 `{"status":"ok"}`；额外查询参数返回 400。此端点不访问数据库或认证配置。
 - `GET`、`POST /api/auth/*` 由 Better Auth 处理。Web 通过 Service Binding 转发原始请求，浏览器 Cookie 和 Google 回调使用 Web 来源。
 
+Web 的 `src/routes/api/$.ts` 统一转发 `/api/*`，支持所有 HTTP 方法，原样保留路径、查询参数、请求体、Cookie、状态码和响应。后续业务模块在 API 的 `app.ts` 挂载 `/api/<name>` 后，浏览器可直接请求同源的 `/api/<name>`，无需为每个接口增加 Web route。Web 不在此入口解析请求体或执行业务校验，输入校验和授权由 API 负责。`/health` 是 API 自身的入口，不属于这个 Web 转发前缀。
+
 ## Routes、services 与 middleware 如何协作
 
 代码按能力聚合在 `src/modules/<name>/`。每个模块的 HTTP 路由、业务操作、输入与专属中间件放在一起；跨模块复用的 HTTP 中间件放在 `src/middleware/`。模块前缀由 `app.ts` 显式挂载，资源由应用配置声明。

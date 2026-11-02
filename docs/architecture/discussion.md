@@ -34,7 +34,7 @@ packages/
   typescript-config/
 ```
 
-API 已接入 Better Auth + Drizzle ORM + D1，尚无业务模块、队列或 LiveKit 集成。Web 通过 Service Binding 转发同源认证请求，不再创建 Better Auth 实例或直接访问 D1。Python Agent 尚未接入业务 API，Web 也尚未接入 core-client。
+API 已接入 Better Auth + Drizzle ORM + D1，尚无业务模块、队列或 LiveKit 集成。Web 的 `/api/*` 通配路由通过 Service Binding 原样转发所有 HTTP 方法，不创建 Better Auth 实例或直接访问 D1。业务模块使用 `/api/<name>` 前缀，路径在 Web 和 API 间保持一致；`/health` 保留为 API 自身的入口。Python Agent 尚未接入业务 API，Web 也尚未接入 core-client。
 
 API 内部组织方式见 [API README](../../apps/api/README.md)，修改规则见 [API AGENTS.md](../../apps/api/AGENTS.md)。
 

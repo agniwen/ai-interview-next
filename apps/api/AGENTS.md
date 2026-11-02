@@ -10,7 +10,7 @@
 
 ## Routes 与输入
 
-- 模块导出链式创建的 Hono 路由，由 `app.ts` 通过 `.route()` 挂载前缀。保留推断类型，供 `AppType` 和 core-client 使用，不把路由对象注解成丢失具体 schema 的宽泛 Hono 类型。
+- 模块导出链式创建的 Hono 路由，由 `app.ts` 通过 `.route()` 挂载 `/api/<name>` 前缀；`/health` 保留为 API 自身的健康检查。Web 将 `/api/*` 原样转发到 API，模块不依赖 Web 重写路径。保留推断类型，供 `AppType` 和 core-client 使用，不把路由对象注解成丢失具体 schema 的宽泛 Hono 类型。
 - 路由只负责 HTTP 输入、依赖与身份的取得、service 调用、状态码和响应序列化。简单的一次性查询可以内联；业务规则、多步骤操作或复用逻辑放入 service。
 - 外部输入在对应入口用 Zod 和 Standard Validator 校验一次，路由从 `c.req.valid()` 取值。输入 schema 按操作选择客户端可提交的字段，service 使用校验后的类型；表的插入类型不自动成为公开请求契约。
 - 业务数据保留在 service 返回值中，由路由通过 `c.json(data, status)` 明确响应。service 已有可预期的失败结果由路由映射到 HTTP；不为示例预建统一响应包装或通用异常体系。

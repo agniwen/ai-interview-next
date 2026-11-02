@@ -62,6 +62,8 @@ bun run dev --filter=@ai-interview/web
 
 `packages/db` 是系统数据库定义的唯一来源，通过 `@ai-interview/db/schema` 导出表，通过 `@ai-interview/db` 导出 `createDatabase(binding)` 和 `Database` 类型。API 和后续后台 worker 使用同一套 schema，各自在请求或任务内用自己的 D1 binding 创建数据库实例。数据库包不依赖 API、Web 或 Better Auth。新增业务表放在 `packages/db/src/schema/` 并从 `index.ts` 导出，再执行 `bun run --filter @ai-interview/db db:generate` 生成增量迁移；`make db-migrate` 和 `make db-migrate-remote` 由 API 的 Wrangler 配置应用这些迁移。
 
+Web 通过 `src/routes/api/$.ts` 将所有 `/api/*` 请求原样转发到 API Service Binding，支持所有 HTTP 方法。新增业务接口统一在 API 的 `app.ts` 挂载 `/api/<name>`，浏览器使用同源路径调用；无需在 Web 为每个接口重复声明路由。Cookie、请求体和响应流直接传递，校验和授权仍由 API 执行。现有 `/api/auth/*` 保持不变，`/health` 继续用于直接检查 API。
+
 TypeScript 调用方使用 `@ai-interview/core-client` 的 `createCoreClient({ baseUrl, fetch })`；`fetch` 可省略。包使用 Hono RPC，通过 API 的公开类型出口推断响应，不包含服务端实现。当前通过源码导出供仓库内消费，无单独发布产物。
 
 跨语言边界、后续 Python 客户端和反向会话控制设计见 [架构文档](docs/architecture/discussion.md)。
@@ -96,7 +98,7 @@ Web 测试使用独立的 `apps/web/vitest.config.ts`，默认 Node 环境，支
 
 ## Cloudflare 部署
 
-Web 部署目标为 Worker `sainoa-web`，自定义域名为 `sanioa.akumanoko.com`（按指定域名拼写），通过 Service Binding `API` 调用 `sainoa-api` 的认证入口。`apps/web/wrangler.jsonc` 中的 Custom Domain 配置由 Wrangler 在部署时创建对应 DNS 和 HTTPS 绑定。
+Web 部署目标为 Worker `sainoa-web`，自定义域名为 `sanioa.akumanoko.com`（按指定域名拼写），通过 Service Binding `API` 将 `/api/*` 请求转发到 `sainoa-api`。`apps/web/wrangler.jsonc` 中的 Custom Domain 配置由 Wrangler 在部署时创建对应 DNS 和 HTTPS 绑定。
 
 在 `apps/web/wrangler.jsonc` 中配置 Worker 名称和资源绑定。首次部署前，在应用目录执行 `bunx --no-install wrangler login`；然后从根目录运行 `bun run deploy`。CI 可提供 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`。
 
