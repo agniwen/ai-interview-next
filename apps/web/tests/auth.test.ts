@@ -40,7 +40,7 @@ function signIn(callbackURL: string, requestOrigin = origin) {
     new Request(`${origin}/api/auth/sign-in/social`, {
       body: JSON.stringify({
         callbackURL,
-        errorCallbackURL: `${origin}/zh-CN/login`,
+        errorCallbackURL: `${origin}/zh-CN/sign-in`,
         provider: "google",
       }),
       headers: {
@@ -57,7 +57,7 @@ function signIn(callbackURL: string, requestOrigin = origin) {
 
 describe("Google authentication", () => {
   it("starts Google OAuth with a fixed API callback and localized return URL", async () => {
-    const response = await signIn(`${origin}/zh-CN/login`);
+    const response = await signIn(`${origin}/zh-CN/sign-in`);
     expect(response.status).toBe(200);
     const { url } = await response.json();
     const google = new URL(url);
@@ -76,7 +76,7 @@ describe("Google authentication", () => {
   });
 
   it("rejects cookie-bearing requests from untrusted origins", async () => {
-    const response = await signIn(`${origin}/login`, "https://untrusted.example");
+    const response = await signIn(`${origin}/sign-in`, "https://untrusted.example");
     expect(response.status).toBe(403);
   });
 

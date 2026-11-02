@@ -3,10 +3,21 @@
   --home-canvas: #eeece6;
   --home-surface: #fdfcfa;
   --home-card: #f5f3ef;
-  color: #191919;
+  color: var(--foreground);
   background: var(--home-surface);
   font-family: Arial, "MiSans", sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+.dark .home-page {
+  --home-canvas: #292723;
+  --home-surface: #1c1b19;
+  --home-card: #24221f;
+}
+.brand-background {
+  background: radial-gradient(ellipse at 65% 45%, #c9baa2 0%, #e9dfce 35%, #fdfcfa 75%);
+}
+.dark .brand-background {
+  background: radial-gradient(ellipse at 65% 45%, #514a3e 0%, #302c25 35%, #1c1b19 75%);
 }
 .home-page section[id] {
   scroll-margin-top: 90px;
@@ -17,7 +28,6 @@
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(ellipse at 75% 30%, #f0eae0, #fdfcfa 75%);
   mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
 }
 .home-hero-background::after {
@@ -25,6 +35,9 @@
   position: absolute;
   inset: 0;
   background: radial-gradient(ellipse at 50% 20%, #fdfcfa99, transparent 65%);
+}
+.dark .home-hero-background::after {
+  background: radial-gradient(ellipse at 50% 20%, #1c1b1999, transparent 65%);
 }
 .skip-link {
   position: fixed;
@@ -64,12 +77,12 @@
   justify-content: center;
   flex-direction: column;
   gap: 24px;
-  padding: 32px;
+  padding: 96px 0;
   text-align: center;
-  background: #fdfcfa;
-  color: #191919;
+  background: var(--background);
+  color: var(--foreground);
 }
 .not-found-page h1 {
-  font-size: clamp(32px, 5vw, 60px);
+  font-size: clamp(28px, 4vw, 40px);
   line-height: 1.1;
 }

@@ -1,4 +1,5 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { BrandMark } from "@/components/brand-mark";
 import { CapabilityGrid } from "./capability-grid";
@@ -23,15 +24,16 @@ export function HomePage() {
         <a className="skip-link" href="#main-content">
           {m.home_skip()}
         </a>
-        <header className="fixed inset-x-0 top-0 z-40 mx-auto flex w-full max-w-[105rem] items-center justify-between px-6 py-5 sm:px-8 lg:px-16">
+        <header className="fixed inset-x-0 top-0 z-40 mx-auto flex w-full max-w-[105rem] items-center justify-between px-4 py-5 sm:px-8 lg:px-16">
           <a href="#top" className="flex items-center gap-2.5 font-medium">
             <BrandMark />
             Sainoa
           </a>
           <div className="flex items-center gap-1 sm:gap-3">
-            <Button variant="ghost" render={<Link to="/login" />}>
+            <Button variant="ghost" render={<Link to="/sign-in" />}>
               {m.login_title()}
             </Button>
+            <ThemeSwitcher />
             <LanguageSwitcher />
           </div>
         </header>

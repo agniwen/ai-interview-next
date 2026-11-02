@@ -154,5 +154,9 @@
   "home_frame_nav_recruitment_config": "招聘配置",
   "home_faq_a4": "招聘团队登录工作台推进流程；候选人无需注册，通过专属链接即可进入 AI 面试。",
   "home_capability_followup_title": "看 AI 怎么追问",
-  "home_coming_soon": "即将上线"
+  "home_coming_soon": "即将上线",
+  "theme_label": "主题模式",
+  "theme_light": "亮色",
+  "theme_dark": "暗色",
+  "theme_system": "跟随系统"
 }

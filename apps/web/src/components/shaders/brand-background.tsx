@@ -16,10 +16,7 @@ export function BrandBackground({
   return (
     <div
       aria-hidden="true"
-      className={cn(
-        "pointer-events-none overflow-hidden bg-[radial-gradient(ellipse_at_65%_45%,#c9baa2_0%,#e9dfce_35%,#fdfcfa_75%)]",
-        className,
-      )}
+      className={cn("brand-background pointer-events-none overflow-hidden", className)}
     >
       {hydrated && (
         <Suspense fallback={null}>

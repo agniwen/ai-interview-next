@@ -154,5 +154,9 @@
   "home_frame_nav_recruitment_config": "채용 설정",
   "home_faq_a4": "채용 팀은 로그인해 워크스페이스에서 진행하고, 후보자는 가입 없이 전용 링크로 AI 면접에 참여합니다.",
   "home_capability_followup_title": "AI의 후속 질문 보기",
-  "home_coming_soon": "출시 예정"
+  "home_coming_soon": "출시 예정",
+  "theme_label": "테마",
+  "theme_light": "라이트",
+  "theme_dark": "다크",
+  "theme_system": "시스템"
 }

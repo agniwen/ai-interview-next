@@ -2,7 +2,7 @@
 
 首版使用 Better Auth + Cloudflare D1，仅开放 Google 登录。认证入口位于 Web 应用的 `/api/auth/*`，通过同源 Cookie 维护会话。D1 binding 为 `AUTH_DB`，数据库名为 `sainoa-auth`。这是首版认证存储的实际选择；此前架构文档中的 PostgreSQL 属于候选方案。
 
-登录页面为 `/login`、`/zh-CN/login`、`/ja/login`、`/ko/login`。首次 Google 登录自动创建账号，成功后返回当前语言的登录页，展示账号及退出入口；工作台仍在筹备中。首页的登录入口已开放。
+登录页面为 `/sign-in`、`/zh-CN/sign-in`、`/ja/sign-in`、`/ko/sign-in`。首次 Google 登录自动创建账号，成功后返回当前语言的登录页，展示账号及退出入口；工作台仍在筹备中。首页的登录入口已开放。
 
 ## 本地配置
 

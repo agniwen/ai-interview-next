@@ -154,5 +154,9 @@
   "home_frame_nav_recruitment_config": "Recruiting Setup",
   "home_faq_a4": "Your team signs in to run the workflow. Candidates join the AI interview through a private link, no sign-up needed.",
   "home_capability_followup_title": "Watch the AI follow up",
-  "home_coming_soon": "Coming soon"
+  "home_coming_soon": "Coming soon",
+  "theme_label": "Theme",
+  "theme_light": "Light",
+  "theme_dark": "Dark",
+  "theme_system": "System"
 }
