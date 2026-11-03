@@ -1,23 +1,23 @@
 .home-page {
   --chart-primary: #0090ff;
-  --home-canvas: #eeece6;
-  --home-surface: #fdfcfa;
-  --home-card: #f5f3ef;
+  --home-canvas: #eaf2fb;
+  --home-surface: #f7fbff;
+  --home-card: #f0f6fc;
   color: var(--foreground);
   background: var(--home-surface);
   font-family: Arial, "MiSans", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 .dark .home-page {
-  --home-canvas: #292723;
-  --home-surface: #1c1b19;
-  --home-card: #24221f;
+  --home-canvas: #102440;
+  --home-surface: #07142b;
+  --home-card: #0c1d35;
 }
 .brand-background {
-  background: radial-gradient(ellipse at 65% 45%, #c9baa2 0%, #e9dfce 35%, #fdfcfa 75%);
+  background: radial-gradient(ellipse at 65% 45%, #98caff 0%, #d7efff 35%, #f7fbff 75%);
 }
 .dark .brand-background {
-  background: radial-gradient(ellipse at 65% 45%, #514a3e 0%, #302c25 35%, #1c1b19 75%);
+  background: radial-gradient(ellipse at 65% 45%, #174889 0%, #102c50 35%, #07142b 75%);
 }
 .home-page section[id] {
   scroll-margin-top: 90px;
@@ -34,10 +34,10 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 20%, #fdfcfa99, transparent 65%);
+  background: radial-gradient(ellipse at 50% 20%, #f7fbff99, transparent 65%);
 }
 .dark .home-hero-background::after {
-  background: radial-gradient(ellipse at 50% 20%, #1c1b1999, transparent 65%);
+  background: radial-gradient(ellipse at 50% 20%, #07142b99, transparent 65%);
 }
 .skip-link {
   position: fixed;

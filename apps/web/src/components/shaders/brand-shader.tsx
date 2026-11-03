@@ -20,7 +20,7 @@ export default function BrandShader({ animated = false }: { animated?: boolean }
   const autoFlow = animated && !reducedMotion;
   return (
     <Shader className="absolute inset-0 size-full" disableTelemetry>
-      <SolidColor color={dark ? "#1c1b19" : "#fdfcfa"} />
+      <SolidColor color={dark ? "#07142b" : "#f7fbff"} />
       <Group id={BEAM_GROUP_ID}>
         <Beam
           endPosition={{ x: 0.73, y: 0.4 }}
@@ -37,8 +37,8 @@ export default function BrandShader({ animated = false }: { animated?: boolean }
                 }
               : 0.6
           }
-          insideColor={dark ? "#665b49" : "#b8a68a"}
-          outsideColor={dark ? "#514a3e" : "#c9baa2"}
+          insideColor={dark ? "#245fba" : "#68aaff"}
+          outsideColor={dark ? "#174889" : "#98caff"}
           startPosition={{ x: 0.22, y: 0.5 }}
           startSoftness={27.22}
           startThickness={
@@ -69,8 +69,8 @@ export default function BrandShader({ animated = false }: { animated?: boolean }
                 }
               : 0.7
           }
-          insideColor={dark ? "#80715a" : "#ded1ba"}
-          outsideColor={dark ? "#665d4f" : "#e9dfce"}
+          insideColor={dark ? "#308bd4" : "#b3e0ff"}
+          outsideColor={dark ? "#1d5e9e" : "#d7efff"}
           startPosition={{ x: 0.19, y: 0.69 }}
           startSoftness={27.67}
           startThickness={0.21}
@@ -79,7 +79,7 @@ export default function BrandShader({ animated = false }: { animated?: boolean }
       <Swirl
         blend={67}
         blendMode="normal-oklab"
-        colorA={dark ? "#1c1b19" : "#fdfcfa"}
+        colorA={dark ? "#07142b" : "#f7fbff"}
         colorB="#ffffff00"
         colorSpace="oklab"
         detail={1.5}
@@ -90,12 +90,12 @@ export default function BrandShader({ animated = false }: { animated?: boolean }
       <DiffuseBlur intensity={20} />
       <Liquify intensity={reducedMotion ? 0 : 5} radius={2} />
       <ChromaFlow
-        baseColor={dark ? "#71634d" : "#c4b397"}
-        downColor={dark ? "#24221e" : "#f5f1e9"}
+        baseColor={dark ? "#2874c7" : "#89bcff"}
+        downColor={dark ? "#0a1e3b" : "#edf7ff"}
         intensity={reducedMotion ? 0 : 0.28}
-        leftColor={dark ? "#80715a61" : "#ded1ba61"}
-        rightColor={dark ? "#665b4966" : "#b8a68a66"}
-        upColor={dark ? "#968468" : "#d3c3a7"}
+        leftColor={dark ? "#308bd461" : "#b3e0ff61"}
+        rightColor={dark ? "#245fba66" : "#68aaff66"}
+        upColor={dark ? "#56b4ed" : "#a4d8ff"}
       />
     </Shader>
   );
