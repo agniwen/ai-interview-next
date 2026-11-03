@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IconArrowLeft, IconAlertCircle } from "@tabler/icons-react";
 import { Link, createFileRoute, useHydrated } from "@tanstack/react-router";
-import { z } from "zod";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { BrandBackground } from "@/components/shaders/brand-background";
@@ -10,33 +9,41 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth/client";
+import { loginSearch } from "@/lib/workspaces/client";
 import * as m from "@/paraglide/messages";
 import { localizeHref } from "@/paraglide/runtime";
 
 export const Route = createFileRoute("/sign-in")({
-  validateSearch: z.object({ error: z.string().optional() }),
+  validateSearch: loginSearch,
   head: () => ({
     meta: [
       { title: `${m.login_title()} — Sainoa` },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  // Named component keeps React hook detection intact in the route definition.
+  // 命名组件确保路由定义中的 React Hook 能被识别。Named component preserves React hook detection in route definitions.
   // oxlint-disable-next-line func-name-matching
   component: function Login() {
     const hydrated = useHydrated();
-    const { error: callbackError } = Route.useSearch();
+    const { error: callbackError, next } = Route.useSearch();
     const { data: session, isPending } = authClient.useSession();
     const [pending, setPending] = useState(false);
     const [failed, setFailed] = useState(Boolean(callbackError));
+    useEffect(() => {
+      if (session) {
+        window.location.replace(localizeHref(next ?? "/workspaces"));
+      }
+    }, [session, next]);
 
     async function signIn() {
       setPending(true);
       setFailed(false);
       try {
+        const errorCallbackURL = new URL(localizeHref("/sign-in"), window.location.origin);
+        errorCallbackURL.searchParams.set("next", next ?? "/workspaces");
         const { error } = await authClient.signIn.social({
-          callbackURL: new URL(localizeHref("/sign-in"), window.location.origin).href,
-          errorCallbackURL: new URL(localizeHref("/sign-in"), window.location.origin).href,
+          callbackURL: new URL(localizeHref(next ?? "/workspaces"), window.location.origin).href,
+          errorCallbackURL: errorCallbackURL.href,
           provider: "google",
         });
         if (error) {

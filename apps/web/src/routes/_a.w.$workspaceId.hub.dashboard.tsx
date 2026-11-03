@@ -19,7 +19,7 @@ function DashboardPage() {
   );
 }
 
-export const Route = createFileRoute("/_workspace/hub/dashboard")({
+export const Route = createFileRoute("/_a/w/$workspaceId/hub/dashboard")({
   head: () => ({ meta: [{ title: `${m.workspace_dashboard()} — Sainoa` }] }),
   component: DashboardPage,
 });

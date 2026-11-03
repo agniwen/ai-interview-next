@@ -1,4 +1,4 @@
-import { IconChartBar, IconSparkle, IconStack2 } from "@tabler/icons-react";
+import { IconChartBar, IconSparkle, IconStack2, IconSettings, IconUser } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "@/components/brand-mark";
 import { UserMenu } from "@/components/auth/user-menu";
@@ -19,7 +19,13 @@ import {
 } from "@/components/ui/sidebar";
 import * as m from "@/paraglide/messages";
 
-export function AppSidebar({ section }: { section: "agent" | "hub" }) {
+export function AppSidebar({
+  section,
+  workspaceId,
+}: {
+  section: "agent" | "hub";
+  workspaceId: string;
+}) {
   const { setOpenMobile, state, isMobile } = useSidebar();
   const collapsed = !isMobile && state === "collapsed";
 
@@ -48,7 +54,8 @@ export function AppSidebar({ section }: { section: "agent" | "hub" }) {
           <SegmentedControlItem
             className="flex-1 transition-[gap,color,outline-color] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0"
             aria-label={m.workspace_agent()}
-            render={<Link to="/agent" />}
+            data-checked={section === "agent" ? "" : undefined}
+            render={<Link to="/w/$workspaceId/agent" params={{ workspaceId }} />}
             onClick={() => setOpenMobile(false)}
           >
             <IconSparkle className="size-4" aria-hidden="true" />
@@ -59,7 +66,8 @@ export function AppSidebar({ section }: { section: "agent" | "hub" }) {
           <SegmentedControlItem
             className="flex-1 transition-[gap,color,outline-color] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0"
             aria-label={m.workspace_hub()}
-            render={<Link to="/hub/dashboard" />}
+            data-checked={section === "hub" ? "" : undefined}
+            render={<Link to="/w/$workspaceId/hub/dashboard" params={{ workspaceId }} />}
             onClick={() => setOpenMobile(false)}
           >
             <IconStack2 className="size-4" aria-hidden="true" />
@@ -71,27 +79,71 @@ export function AppSidebar({ section }: { section: "agent" | "hub" }) {
       </SidebarHeader>
       <SidebarContent>
         {section === "hub" && (
-          <SidebarGroup>
-            <SidebarGroupLabel>{m.workspace_studio()}</SidebarGroupLabel>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive
-                  tooltip={m.workspace_dashboard()}
-                  aria-label={m.workspace_dashboard()}
-                  render={<Link to="/hub/dashboard" />}
-                  onClick={() => setOpenMobile(false)}
-                >
-                  <IconChartBar className="size-4" aria-hidden="true" />
-                  <span>{m.workspace_dashboard()}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
+          <>
+            <SidebarGroup>
+              <SidebarGroupLabel>{m.workspace_studio()}</SidebarGroupLabel>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip={m.workspace_dashboard()}
+                    aria-label={m.workspace_dashboard()}
+                    render={
+                      <Link
+                        to="/w/$workspaceId/hub/dashboard"
+                        params={{ workspaceId }}
+                        activeProps={{ "data-active": true }}
+                      />
+                    }
+                    onClick={() => setOpenMobile(false)}
+                  >
+                    <IconChartBar className="size-4" aria-hidden="true" />
+                    <span>{m.workspace_dashboard()}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel>{m.ws_settings_group()}</SidebarGroupLabel>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip={m.ws_settings()}
+                    render={
+                      <Link
+                        to="/w/$workspaceId/settings"
+                        params={{ workspaceId }}
+                        activeProps={{ "data-active": true }}
+                      />
+                    }
+                    onClick={() => setOpenMobile(false)}
+                  >
+                    <IconSettings aria-hidden="true" />
+                    <span>{m.ws_settings()}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip={m.account_title()}
+                    render={
+                      <Link
+                        to="/w/$workspaceId/account"
+                        params={{ workspaceId }}
+                        activeProps={{ "data-active": true }}
+                      />
+                    }
+                    onClick={() => setOpenMobile(false)}
+                  >
+                    <IconUser aria-hidden="true" />
+                    <span>{m.account_title()}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroup>
+          </>
         )}
       </SidebarContent>
       <SidebarFooter className="px-1 pt-2 pb-1">
-        <UserMenu variant="sidebar" collapsed={collapsed} />
+        <UserMenu variant="sidebar" collapsed={collapsed} workspaceId={workspaceId} />
       </SidebarFooter>
       <SidebarRail aria-label={m.workspace_toggle_sidebar()} title={m.workspace_toggle_sidebar()} />
     </Sidebar>

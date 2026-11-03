@@ -13,17 +13,24 @@ import { getLocale, localizeHref, locales } from "@/paraglide/runtime";
 
 const languageNames = { en: "English", ja: "日本語", ko: "한국어", "zh-CN": "简体中文" };
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ iconOnly = false }: { iconOnly?: boolean }) {
   const location = useLocation();
   const hydrated = useHydrated();
   // Fragments are not sent to the server; add them after hydration.
   const href = hydrated ? location.href : location.href.split("#")[0];
   return (
     <Menu>
-      <MenuTrigger aria-label={m.language_switcher_label()} render={<Button variant="ghost" />}>
-        <Languages aria-hidden="true" className="size-4" />
-        <span>{languageNames[getLocale()]}</span>
-        <ChevronDown aria-hidden="true" className="size-3.5 text-muted-foreground" />
+      <MenuTrigger
+        aria-label={m.language_switcher_label()}
+        render={<Button variant="ghost" size={iconOnly ? "icon" : "default"} />}
+      >
+        <Languages aria-hidden="true" />
+        {!iconOnly && (
+          <>
+            <span>{languageNames[getLocale()]}</span>
+            <ChevronDown aria-hidden="true" className="size-3.5 text-muted-foreground" />
+          </>
+        )}
       </MenuTrigger>
       <MenuPopup align="end" className="w-44" aria-label={m.language_switcher_label()}>
         {locales.map((locale) => (

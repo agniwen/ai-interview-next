@@ -3,6 +3,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { ThemeProvider } from "next-themes";
 import { NotFoundPage } from "@/components/home/not-found";
+import { ToastProvider } from "@/components/ui/toast";
 import { getLocale } from "@/paraglide/runtime";
 
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
@@ -31,7 +32,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           storageKey="sainoa-theme"
         >
           <div className="isolate relative flex min-h-svh flex-col">
-            {children}
+            <ToastProvider position="top-center">{children}</ToastProvider>
             <TanStackDevtools
               config={{
                 position: "bottom-right",

@@ -2,7 +2,7 @@
 
 认证使用 Better Auth + Drizzle ORM + Cloudflare D1，仅开放 Google 登录。Better Auth handler、认证配置和 D1 binding 均位于 `apps/api`；Web 的 `/api/auth/*` 只通过 Service Binding `API` 将原始请求转发给 `sainoa-api`，并直接返回响应。浏览器继续通过 Web 同源 Cookie 维护会话，Google 回调和登录页面地址不变。D1 binding 为 `AUTH_DB`，数据库名为 `sainoa-auth`；此前架构文档中的 PostgreSQL 属于候选方案。
 
-登录页面为 `/sign-in`、`/zh-CN/sign-in`、`/ja/sign-in`、`/ko/sign-in`。首次 Google 登录自动创建账号，成功后返回当前语言的登录页，展示账号及退出入口；工作台仍在筹备中。首页的登录入口已开放。
+登录页面为 `/sign-in`、`/zh-CN/sign-in`、`/ja/sign-in`、`/ko/sign-in`。首次 Google 登录自动创建账号、初始工作区和 owner 成员关系。成功后返回指定的工作区或邀请页面；未指定目标时，通过 `/workspaces` 进入最后激活的工作区。工作区与退出入口位于正式页面，详见 [工作区设计](../architecture/workspaces.md)。
 
 ## 本地配置
 
@@ -41,6 +41,8 @@ D1 只绑定到 API Worker，Web 通过 Service Binding 转发认证，不需要
 ## 数据结构与验证
 
 `packages/db/src/schema/auth.ts` 定义 Better Auth 的 user、session、account、verification 和 rateLimit 表，通过 Drizzle adapter 接入认证。日期列保留原有 D1 的 ISO 字符串存储，Drizzle 查询时转换为 `Date`；布尔列转换为 `boolean`。生产限流状态继续存入 D1，使用 Better Auth 默认限额。
+
+Organization 插件的 organization、member 和 invitation 表定义在 `packages/db/src/schema/organization.ts`，日期列使用毫秒时间戳。用户最后激活的工作区记录在 `user.lastWorkspaceId`，由已登录且属于该工作区的用户激活时更新；普通登录的目标不依赖 session 中的当前组织字段。
 
 `packages/db/migrations/0001_auth.sql` 从 Web 原样迁入；`migrations/meta/` 为 Drizzle 的基线快照。`packages/db/scripts/baseline.ts` 仅用于这次接入时生成基线，不应在后续 schema 修改后重跑。以后修改共享 schema，再执行 `bun run --filter @ai-interview/db db:generate` 生成带时间戳的增量迁移。审阅 SQL 后执行 `make db-migrate` 或 `make db-migrate-remote`；不要重写已应用的历史迁移。
 

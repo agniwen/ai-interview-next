@@ -10,19 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as WorkspaceRouteImport } from './routes/_workspace'
+import { Route as ARouteImport } from './routes/_a'
 import { Route as SignInRouteImport } from './routes/sign-in'
-import { Route as WorkspaceAgentRouteImport } from './routes/_workspace.agent'
+import { Route as AAccountRouteImport } from './routes/_a.account'
+import { Route as AWorkspacesRouteImport } from './routes/_a.workspaces'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
-import { Route as WorkspaceHubDashboardRouteImport } from './routes/_workspace.hub.dashboard'
+import { Route as AInviteInvitationIdRouteImport } from './routes/_a.invite.$invitationId'
+import { Route as AWWorkspaceIdRouteImport } from './routes/_a.w.$workspaceId'
+import { Route as AWWorkspaceIdIndexRouteImport } from './routes/_a.w.$workspaceId.index'
+import { Route as AWWorkspaceIdAccountRouteImport } from './routes/_a.w.$workspaceId.account'
+import { Route as AWWorkspaceIdAgentRouteImport } from './routes/_a.w.$workspaceId.agent'
+import { Route as AWWorkspaceIdSettingsRouteImport } from './routes/_a.w.$workspaceId.settings'
+import { Route as AWWorkspaceIdHubDashboardRouteImport } from './routes/_a.w.$workspaceId.hub.dashboard'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspaceRoute = WorkspaceRouteImport.update({
-  id: '/_workspace',
+const ARoute = ARouteImport.update({
+  id: '/_a',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -30,63 +37,149 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspaceAgentRoute = WorkspaceAgentRouteImport.update({
-  id: '/agent',
-  path: '/agent',
-  getParentRoute: () => WorkspaceRoute,
+const AAccountRoute = AAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => ARoute,
+} as any)
+const AWorkspacesRoute = AWorkspacesRouteImport.update({
+  id: '/workspaces',
+  path: '/workspaces',
+  getParentRoute: () => ARoute,
 } as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
   path: '/api/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspaceHubDashboardRoute = WorkspaceHubDashboardRouteImport.update({
-  id: '/hub/dashboard',
-  path: '/hub/dashboard',
-  getParentRoute: () => WorkspaceRoute,
+const AInviteInvitationIdRoute = AInviteInvitationIdRouteImport.update({
+  id: '/invite/$invitationId',
+  path: '/invite/$invitationId',
+  getParentRoute: () => ARoute,
 } as any)
+const AWWorkspaceIdRoute = AWWorkspaceIdRouteImport.update({
+  id: '/w/$workspaceId',
+  path: '/w/$workspaceId',
+  getParentRoute: () => ARoute,
+} as any)
+const AWWorkspaceIdIndexRoute = AWWorkspaceIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AWWorkspaceIdRoute,
+} as any)
+const AWWorkspaceIdAccountRoute = AWWorkspaceIdAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AWWorkspaceIdRoute,
+} as any)
+const AWWorkspaceIdAgentRoute = AWWorkspaceIdAgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => AWWorkspaceIdRoute,
+} as any)
+const AWWorkspaceIdSettingsRoute = AWWorkspaceIdSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AWWorkspaceIdRoute,
+} as any)
+const AWWorkspaceIdHubDashboardRoute =
+  AWWorkspaceIdHubDashboardRouteImport.update({
+    id: '/hub/dashboard',
+    path: '/hub/dashboard',
+    getParentRoute: () => AWWorkspaceIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
-  '/agent': typeof WorkspaceAgentRoute
+  '/account': typeof AAccountRoute
+  '/workspaces': typeof AWorkspacesRoute
   '/api/$': typeof ApiSplatRoute
-  '/hub/dashboard': typeof WorkspaceHubDashboardRoute
+  '/invite/$invitationId': typeof AInviteInvitationIdRoute
+  '/w/$workspaceId': typeof AWWorkspaceIdRouteWithChildren
+  '/w/$workspaceId/account': typeof AWWorkspaceIdAccountRoute
+  '/w/$workspaceId/agent': typeof AWWorkspaceIdAgentRoute
+  '/w/$workspaceId/settings': typeof AWWorkspaceIdSettingsRoute
+  '/w/$workspaceId/': typeof AWWorkspaceIdIndexRoute
+  '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
-  '/agent': typeof WorkspaceAgentRoute
+  '/account': typeof AAccountRoute
+  '/workspaces': typeof AWorkspacesRoute
   '/api/$': typeof ApiSplatRoute
-  '/hub/dashboard': typeof WorkspaceHubDashboardRoute
+  '/invite/$invitationId': typeof AInviteInvitationIdRoute
+  '/w/$workspaceId/account': typeof AWWorkspaceIdAccountRoute
+  '/w/$workspaceId/agent': typeof AWWorkspaceIdAgentRoute
+  '/w/$workspaceId/settings': typeof AWWorkspaceIdSettingsRoute
+  '/w/$workspaceId': typeof AWWorkspaceIdIndexRoute
+  '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_workspace': typeof WorkspaceRouteWithChildren
+  '/_a': typeof ARouteWithChildren
   '/sign-in': typeof SignInRoute
-  '/_workspace/agent': typeof WorkspaceAgentRoute
+  '/_a/account': typeof AAccountRoute
+  '/_a/workspaces': typeof AWorkspacesRoute
   '/api/$': typeof ApiSplatRoute
-  '/_workspace/hub/dashboard': typeof WorkspaceHubDashboardRoute
+  '/_a/invite/$invitationId': typeof AInviteInvitationIdRoute
+  '/_a/w/$workspaceId': typeof AWWorkspaceIdRouteWithChildren
+  '/_a/w/$workspaceId/account': typeof AWWorkspaceIdAccountRoute
+  '/_a/w/$workspaceId/agent': typeof AWWorkspaceIdAgentRoute
+  '/_a/w/$workspaceId/settings': typeof AWWorkspaceIdSettingsRoute
+  '/_a/w/$workspaceId/': typeof AWWorkspaceIdIndexRoute
+  '/_a/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in' | '/agent' | '/api/$' | '/hub/dashboard'
+  fullPaths:
+    | '/'
+    | '/sign-in'
+    | '/account'
+    | '/workspaces'
+    | '/api/$'
+    | '/invite/$invitationId'
+    | '/w/$workspaceId'
+    | '/w/$workspaceId/account'
+    | '/w/$workspaceId/agent'
+    | '/w/$workspaceId/settings'
+    | '/w/$workspaceId/'
+    | '/w/$workspaceId/hub/dashboard'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in' | '/agent' | '/api/$' | '/hub/dashboard'
+  to:
+    | '/'
+    | '/sign-in'
+    | '/account'
+    | '/workspaces'
+    | '/api/$'
+    | '/invite/$invitationId'
+    | '/w/$workspaceId/account'
+    | '/w/$workspaceId/agent'
+    | '/w/$workspaceId/settings'
+    | '/w/$workspaceId'
+    | '/w/$workspaceId/hub/dashboard'
   id:
     | '__root__'
     | '/'
-    | '/_workspace'
+    | '/_a'
     | '/sign-in'
-    | '/_workspace/agent'
+    | '/_a/account'
+    | '/_a/workspaces'
     | '/api/$'
-    | '/_workspace/hub/dashboard'
+    | '/_a/invite/$invitationId'
+    | '/_a/w/$workspaceId'
+    | '/_a/w/$workspaceId/account'
+    | '/_a/w/$workspaceId/agent'
+    | '/_a/w/$workspaceId/settings'
+    | '/_a/w/$workspaceId/'
+    | '/_a/w/$workspaceId/hub/dashboard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  WorkspaceRoute: typeof WorkspaceRouteWithChildren
+  ARoute: typeof ARouteWithChildren
   SignInRoute: typeof SignInRoute
   ApiSplatRoute: typeof ApiSplatRoute
 }
@@ -100,11 +193,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_workspace': {
-      id: '/_workspace'
+    '/_a': {
+      id: '/_a'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof WorkspaceRouteImport
+      preLoaderRoute: typeof ARouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-in': {
@@ -114,12 +207,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_workspace/agent': {
-      id: '/_workspace/agent'
-      path: '/agent'
-      fullPath: '/agent'
-      preLoaderRoute: typeof WorkspaceAgentRouteImport
-      parentRoute: typeof WorkspaceRoute
+    '/_a/account': {
+      id: '/_a/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AAccountRouteImport
+      parentRoute: typeof ARoute
+    }
+    '/_a/workspaces': {
+      id: '/_a/workspaces'
+      path: '/workspaces'
+      fullPath: '/workspaces'
+      preLoaderRoute: typeof AWorkspacesRouteImport
+      parentRoute: typeof ARoute
     }
     '/api/$': {
       id: '/api/$'
@@ -128,33 +228,97 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_workspace/hub/dashboard': {
-      id: '/_workspace/hub/dashboard'
+    '/_a/invite/$invitationId': {
+      id: '/_a/invite/$invitationId'
+      path: '/invite/$invitationId'
+      fullPath: '/invite/$invitationId'
+      preLoaderRoute: typeof AInviteInvitationIdRouteImport
+      parentRoute: typeof ARoute
+    }
+    '/_a/w/$workspaceId': {
+      id: '/_a/w/$workspaceId'
+      path: '/w/$workspaceId'
+      fullPath: '/w/$workspaceId'
+      preLoaderRoute: typeof AWWorkspaceIdRouteImport
+      parentRoute: typeof ARoute
+    }
+    '/_a/w/$workspaceId/': {
+      id: '/_a/w/$workspaceId/'
+      path: '/'
+      fullPath: '/w/$workspaceId/'
+      preLoaderRoute: typeof AWWorkspaceIdIndexRouteImport
+      parentRoute: typeof AWWorkspaceIdRoute
+    }
+    '/_a/w/$workspaceId/account': {
+      id: '/_a/w/$workspaceId/account'
+      path: '/account'
+      fullPath: '/w/$workspaceId/account'
+      preLoaderRoute: typeof AWWorkspaceIdAccountRouteImport
+      parentRoute: typeof AWWorkspaceIdRoute
+    }
+    '/_a/w/$workspaceId/agent': {
+      id: '/_a/w/$workspaceId/agent'
+      path: '/agent'
+      fullPath: '/w/$workspaceId/agent'
+      preLoaderRoute: typeof AWWorkspaceIdAgentRouteImport
+      parentRoute: typeof AWWorkspaceIdRoute
+    }
+    '/_a/w/$workspaceId/settings': {
+      id: '/_a/w/$workspaceId/settings'
+      path: '/settings'
+      fullPath: '/w/$workspaceId/settings'
+      preLoaderRoute: typeof AWWorkspaceIdSettingsRouteImport
+      parentRoute: typeof AWWorkspaceIdRoute
+    }
+    '/_a/w/$workspaceId/hub/dashboard': {
+      id: '/_a/w/$workspaceId/hub/dashboard'
       path: '/hub/dashboard'
-      fullPath: '/hub/dashboard'
-      preLoaderRoute: typeof WorkspaceHubDashboardRouteImport
-      parentRoute: typeof WorkspaceRoute
+      fullPath: '/w/$workspaceId/hub/dashboard'
+      preLoaderRoute: typeof AWWorkspaceIdHubDashboardRouteImport
+      parentRoute: typeof AWWorkspaceIdRoute
     }
   }
 }
 
-interface WorkspaceRouteChildren {
-  WorkspaceAgentRoute: typeof WorkspaceAgentRoute
-  WorkspaceHubDashboardRoute: typeof WorkspaceHubDashboardRoute
+interface AWWorkspaceIdRouteChildren {
+  AWWorkspaceIdAccountRoute: typeof AWWorkspaceIdAccountRoute
+  AWWorkspaceIdAgentRoute: typeof AWWorkspaceIdAgentRoute
+  AWWorkspaceIdSettingsRoute: typeof AWWorkspaceIdSettingsRoute
+  AWWorkspaceIdIndexRoute: typeof AWWorkspaceIdIndexRoute
+  AWWorkspaceIdHubDashboardRoute: typeof AWWorkspaceIdHubDashboardRoute
 }
 
-const WorkspaceRouteChildren: WorkspaceRouteChildren = {
-  WorkspaceAgentRoute: WorkspaceAgentRoute,
-  WorkspaceHubDashboardRoute: WorkspaceHubDashboardRoute,
+const AWWorkspaceIdRouteChildren: AWWorkspaceIdRouteChildren = {
+  AWWorkspaceIdAccountRoute: AWWorkspaceIdAccountRoute,
+  AWWorkspaceIdAgentRoute: AWWorkspaceIdAgentRoute,
+  AWWorkspaceIdSettingsRoute: AWWorkspaceIdSettingsRoute,
+  AWWorkspaceIdIndexRoute: AWWorkspaceIdIndexRoute,
+  AWWorkspaceIdHubDashboardRoute: AWWorkspaceIdHubDashboardRoute,
 }
 
-const WorkspaceRouteWithChildren = WorkspaceRoute._addFileChildren(
-  WorkspaceRouteChildren,
+const AWWorkspaceIdRouteWithChildren = AWWorkspaceIdRoute._addFileChildren(
+  AWWorkspaceIdRouteChildren,
 )
+
+interface ARouteChildren {
+  AAccountRoute: typeof AAccountRoute
+  AWorkspacesRoute: typeof AWorkspacesRoute
+  AInviteInvitationIdRoute: typeof AInviteInvitationIdRoute
+  AWWorkspaceIdRoute: typeof AWWorkspaceIdRouteWithChildren
+}
+
+const ARouteChildren: ARouteChildren = {
+  AAccountRoute: AAccountRoute,
+  AWorkspacesRoute: AWorkspacesRoute,
+  AInviteInvitationIdRoute: AInviteInvitationIdRoute,
+  AWWorkspaceIdRoute: AWWorkspaceIdRouteWithChildren,
+}
+
+const ARouteWithChildren = ARoute._addFileChildren(ARouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  WorkspaceRoute: WorkspaceRouteWithChildren,
+  ARoute: ARouteWithChildren,
   SignInRoute: SignInRoute,
   ApiSplatRoute: ApiSplatRoute,
 }

@@ -19,7 +19,7 @@ function AgentPage() {
   );
 }
 
-export const Route = createFileRoute("/_workspace/agent")({
+export const Route = createFileRoute("/_a/w/$workspaceId/agent")({
   head: () => ({ meta: [{ title: `${m.workspace_agent()} — Sainoa` }] }),
   component: AgentPage,
 });
