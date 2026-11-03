@@ -8,7 +8,7 @@
 
 ```bash
 make voice-install
-cp apps/voice-agent/.env.example apps/voice-agent/.env.local
+cp apps/voice-agent/.env.example apps/voice-agent/.env
 # 填入 LiveKit Cloud 项目的 URL、API key 和 API secret
 make voice-download
 make voice-console
@@ -16,7 +16,7 @@ make voice-console
 
 `voice-console` 使用本机麦克风和扬声器。连接浏览器或其他客户端时运行 `make voice-dev`，随后通过 LiveKit Playground 或服务端 dispatch API 将名为 `sainoa-voice-agent` 的 Agent 调度到房间。命名 Agent 使用显式调度，不会自动加入所有房间。
 
-凭据也可以通过进程环境变量注入，优先于 `.env.local`。环境文件不提交，也不会进入 Docker 镜像。
+凭据也可以通过进程环境变量注入，优先于 `.env`。环境文件不提交，也不会进入 Docker 镜像。多人联调时，在各自 `.env` 中设置 `LIVEKIT_AGENT_NAME=sainoa-voice-agent-你的名字`，并让客户端调度对应名称。未设置时使用默认名称 `sainoa-voice-agent`。
 
 | 命令                  | 用途                               |
 | --------------------- | ---------------------------------- |
@@ -51,7 +51,7 @@ Web 继续使用 `make dev`，两个服务可分别运行。Python 依赖由 uv 
 
 ```bash
 docker build -t sainoa-voice-agent apps/voice-agent
-docker run --rm --env-file apps/voice-agent/.env.local -p 8081:8081 sainoa-voice-agent
+docker run --rm --env-file apps/voice-agent/.env -p 8081:8081 sainoa-voice-agent
 ```
 
 镜像使用锁文件安装生产依赖，在构建阶段下载模型，以非 root 用户运行。生产启动使用 `start`，由 LiveKit SDK 处理任务生命周期和关闭；平台应给进程留出 SDK 的排空时间，不要立即强制结束进行中的会话。8081 为 AgentServer 的健康检查端口。

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -13,7 +14,7 @@ from livekit.agents import (
 )
 from livekit.plugins import ai_coustics
 
-load_dotenv(Path(__file__).resolve().parents[1] / ".env.local")
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 
 class Assistant(Agent):
@@ -33,7 +34,7 @@ class Assistant(Agent):
 server = AgentServer()
 
 
-@server.rtc_session(agent_name="sainoa-voice-agent")
+@server.rtc_session(agent_name=os.getenv("LIVEKIT_AGENT_NAME", "sainoa-voice-agent"))
 async def voice_agent(ctx: JobContext) -> None:
     ctx.log_context_fields = {"room": ctx.room.name}
 
