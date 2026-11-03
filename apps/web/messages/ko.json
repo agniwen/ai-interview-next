@@ -1,4 +1,8 @@
 {
+  "workspace_navigation": "워크스페이스 탐색",
+  "workspace_toggle_sidebar": "사이드바 열기/닫기",
+  "workspace_agent_placeholder": "에이전트 콘텐츠가 여기에 표시됩니다.",
+  "workspace_dashboard_placeholder": "대시보드 콘텐츠가 여기에 표시됩니다.",
   "auth_loading": "계정 불러오는 중",
   "auth_sign_out_error": "로그아웃하지 못했습니다. 다시 시도해 주세요.",
   "login_title": "로그인",
@@ -160,5 +164,11 @@
   "theme_label": "테마",
   "theme_light": "라이트",
   "theme_dark": "다크",
-  "theme_system": "시스템"
+  "theme_system": "시스템",
+  "workspace_agent": "에이전트",
+  "workspace_hub": "허브",
+  "workspace_dashboard": "대시보드",
+  "workspace_studio": "스튜디오",
+  "workspace_sidebar": "사이드바",
+  "workspace_sidebar_description": "워크스페이스 탐색 메뉴입니다."
 }

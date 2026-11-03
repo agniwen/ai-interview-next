@@ -1,4 +1,8 @@
 {
+  "workspace_navigation": "工作区导航",
+  "workspace_toggle_sidebar": "展开或收起侧栏",
+  "workspace_agent_placeholder": "智能体内容将在这里呈现。",
+  "workspace_dashboard_placeholder": "概览内容将在这里呈现。",
   "auth_loading": "正在加载账户",
   "auth_sign_out_error": "退出登录失败，请重试。",
   "login_title": "登录",
@@ -160,5 +164,11 @@
   "theme_label": "主题模式",
   "theme_light": "亮色",
   "theme_dark": "暗色",
-  "theme_system": "跟随系统"
+  "theme_system": "跟随系统",
+  "workspace_agent": "智能体",
+  "workspace_hub": "工作中心",
+  "workspace_dashboard": "概览",
+  "workspace_studio": "工作室",
+  "workspace_sidebar": "侧栏",
+  "workspace_sidebar_description": "工作区导航菜单。"
 }

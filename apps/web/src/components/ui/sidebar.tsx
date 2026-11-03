@@ -7,6 +7,7 @@ import { IconLayoutSidebarLeftCollapse as PanelLeftIcon } from "@tabler/icons-re
 import * as React from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
+import * as m from "@/paraglide/messages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -215,8 +216,8 @@ export function Sidebar({
           }
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            <SheetTitle>{m.workspace_sidebar()}</SheetTitle>
+            <SheetDescription>{m.workspace_sidebar_description()}</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetPopup>
@@ -253,7 +254,7 @@ export function Sidebar({
             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
           // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"
-            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
+            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
           className,
         )}
@@ -293,7 +294,7 @@ export function SidebarTrigger({
       {...props}
     >
       <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{m.workspace_toggle_sidebar()}</span>
     </Button>
   );
 }
@@ -306,9 +307,10 @@ export function SidebarRail({
 
   return (
     <button
-      aria-label="Toggle Sidebar"
+      aria-label={m.workspace_toggle_sidebar()}
       className={cn(
-        "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",
+        "absolute inset-y-6 z-20 hidden w-4 -translate-x-1/2 after:pointer-events-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:bg-sidebar-border after:opacity-0 after:transition-opacity after:duration-200 after:mask-[linear-gradient(to_bottom,transparent,black_3rem,black_calc(100%-3rem),transparent)] hover:after:opacity-100 focus-visible:after:opacity-100 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",
+        "group-data-[variant=inset]:group-data-[side=left]:after:-translate-x-full",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0 hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:after:left-full",
@@ -320,7 +322,7 @@ export function SidebarRail({
       data-slot="sidebar-rail"
       onClick={toggleSidebar}
       tabIndex={-1}
-      title="Toggle Sidebar"
+      title={m.workspace_toggle_sidebar()}
       type="button"
       {...props}
     />
@@ -335,7 +337,7 @@ export function SidebarInset({
     <main
       className={cn(
         "relative flex w-full flex-1 flex-col bg-background",
-        "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ms-2 md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm/5",
+        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ms-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm/5",
         className,
       )}
       data-slot="sidebar-inset"

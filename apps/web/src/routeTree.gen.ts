@@ -10,12 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkspaceRouteImport } from './routes/_workspace'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as WorkspaceAgentRouteImport } from './routes/_workspace.agent'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
+import { Route as WorkspaceHubDashboardRouteImport } from './routes/_workspace.hub.dashboard'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/_workspace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -23,38 +30,63 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceAgentRoute = WorkspaceAgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
   path: '/api/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceHubDashboardRoute = WorkspaceHubDashboardRouteImport.update({
+  id: '/hub/dashboard',
+  path: '/hub/dashboard',
+  getParentRoute: () => WorkspaceRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
+  '/agent': typeof WorkspaceAgentRoute
   '/api/$': typeof ApiSplatRoute
+  '/hub/dashboard': typeof WorkspaceHubDashboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
+  '/agent': typeof WorkspaceAgentRoute
   '/api/$': typeof ApiSplatRoute
+  '/hub/dashboard': typeof WorkspaceHubDashboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_workspace': typeof WorkspaceRouteWithChildren
   '/sign-in': typeof SignInRoute
+  '/_workspace/agent': typeof WorkspaceAgentRoute
   '/api/$': typeof ApiSplatRoute
+  '/_workspace/hub/dashboard': typeof WorkspaceHubDashboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in' | '/api/$'
+  fullPaths: '/' | '/sign-in' | '/agent' | '/api/$' | '/hub/dashboard'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in' | '/api/$'
-  id: '__root__' | '/' | '/sign-in' | '/api/$'
+  to: '/' | '/sign-in' | '/agent' | '/api/$' | '/hub/dashboard'
+  id:
+    | '__root__'
+    | '/'
+    | '/_workspace'
+    | '/sign-in'
+    | '/_workspace/agent'
+    | '/api/$'
+    | '/_workspace/hub/dashboard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  WorkspaceRoute: typeof WorkspaceRouteWithChildren
   SignInRoute: typeof SignInRoute
   ApiSplatRoute: typeof ApiSplatRoute
 }
@@ -68,12 +100,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_workspace': {
+      id: '/_workspace'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-in': {
       id: '/sign-in'
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_workspace/agent': {
+      id: '/_workspace/agent'
+      path: '/agent'
+      fullPath: '/agent'
+      preLoaderRoute: typeof WorkspaceAgentRouteImport
+      parentRoute: typeof WorkspaceRoute
     }
     '/api/$': {
       id: '/api/$'
@@ -82,11 +128,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_workspace/hub/dashboard': {
+      id: '/_workspace/hub/dashboard'
+      path: '/hub/dashboard'
+      fullPath: '/hub/dashboard'
+      preLoaderRoute: typeof WorkspaceHubDashboardRouteImport
+      parentRoute: typeof WorkspaceRoute
+    }
   }
 }
 
+interface WorkspaceRouteChildren {
+  WorkspaceAgentRoute: typeof WorkspaceAgentRoute
+  WorkspaceHubDashboardRoute: typeof WorkspaceHubDashboardRoute
+}
+
+const WorkspaceRouteChildren: WorkspaceRouteChildren = {
+  WorkspaceAgentRoute: WorkspaceAgentRoute,
+  WorkspaceHubDashboardRoute: WorkspaceHubDashboardRoute,
+}
+
+const WorkspaceRouteWithChildren = WorkspaceRoute._addFileChildren(
+  WorkspaceRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  WorkspaceRoute: WorkspaceRouteWithChildren,
   SignInRoute: SignInRoute,
   ApiSplatRoute: ApiSplatRoute,
 }

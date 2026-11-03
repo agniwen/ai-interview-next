@@ -146,7 +146,10 @@ function measureItem(item: HTMLElement, root: HTMLElement): ActiveItemRect {
 
 function SegmentedControlIndicator(): React.ReactElement {
   const ref = React.useRef<HTMLSpanElement>(null);
-  const [rect, setRect] = React.useState<ActiveItemRect | null>(null);
+  const [{ rect, animate }, setIndicator] = React.useState<{
+    rect: ActiveItemRect | null;
+    animate: boolean;
+  }>({ rect: null, animate: false });
 
   React.useLayoutEffect(() => {
     const root = ref.current?.parentElement;
@@ -154,25 +157,32 @@ function SegmentedControlIndicator(): React.ReactElement {
       return;
     }
 
-    const update = (): void => {
+    const update = (animateSelection = false): void => {
       const item = root.querySelector<HTMLElement>(activeItemSelector);
       const next = item ? measureItem(item, root) : null;
-      setRect((previous) => (isSameRect(previous, next) ? previous : next));
+      setIndicator((previous) =>
+        isSameRect(previous.rect, next) ? previous : { rect: next, animate: animateSelection },
+      );
     };
 
     update();
 
-    const resizeObserver = new ResizeObserver(update);
+    // 布局缩放直接跟随尺寸；只对选项切换做动画，避免叠加侧栏动画造成滞后。
+    // Track layout resizing directly; animate selection changes only to avoid lagging behind the sidebar.
+    const resizeObserver = new ResizeObserver(() => update());
     const mutationObserver = new MutationObserver((records) => {
       if (records.some((record) => record.type === "childList")) {
         observeItems();
       }
-      update();
+      update(true);
     });
     const observeItems = (): void => {
       resizeObserver.disconnect();
       resizeObserver.observe(root);
       for (const child of root.children) {
+        if (child === ref.current) {
+          continue;
+        }
         resizeObserver.observe(child);
         mutationObserver.observe(child, {
           attributeFilter: observedAttributes,
@@ -193,7 +203,8 @@ function SegmentedControlIndicator(): React.ReactElement {
     <span
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute top-0 left-0 -z-1 h-(--active-item-height) w-(--active-item-width) translate-x-(--active-item-left) translate-y-(--active-item-top) transition-[width,height,translate] duration-200 ease-in-out motion-reduce:transition-none",
+        "pointer-events-none absolute top-0 left-0 -z-1 h-(--active-item-height) w-(--active-item-width) translate-x-(--active-item-left) translate-y-(--active-item-top) duration-200 ease-in-out motion-reduce:transition-none",
+        animate ? "transition-[width,height,translate]" : "transition-none",
         segmentedControlIndicatorSurfaceClassName,
       )}
       data-slot="segmented-control-indicator"

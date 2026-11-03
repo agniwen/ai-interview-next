@@ -1,4 +1,8 @@
 {
+  "workspace_navigation": "Workspace sections",
+  "workspace_toggle_sidebar": "Toggle sidebar",
+  "workspace_agent_placeholder": "Agent content will appear here.",
+  "workspace_dashboard_placeholder": "Dashboard content will appear here.",
   "auth_loading": "Loading account",
   "auth_sign_out_error": "Could not sign out. Please try again.",
   "login_title": "Sign in",
@@ -160,5 +164,11 @@
   "theme_label": "Theme",
   "theme_light": "Light",
   "theme_dark": "Dark",
-  "theme_system": "System"
+  "theme_system": "System",
+  "workspace_agent": "Agent",
+  "workspace_hub": "Hub",
+  "workspace_dashboard": "Dashboard",
+  "workspace_studio": "Studio",
+  "workspace_sidebar": "Sidebar",
+  "workspace_sidebar_description": "Workspace navigation menu."
 }
