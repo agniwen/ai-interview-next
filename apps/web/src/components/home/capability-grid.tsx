@@ -17,6 +17,7 @@ import { FadeContent } from "@/components/home/support/fade-content";
 import { RecruitmentCopilotMark } from "@/components/home/support/brand";
 import { Avatar, AvatarFallback } from "@/components/home/support/demo-avatar";
 import { Bubble, BubbleContent } from "@/components/home/support/bubble";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Message, MessageContent, MessageHeader } from "@/components/home/support/message";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -370,12 +371,10 @@ export function CapabilityGrid() {
         action={
           <Button
             className="group h-10 gap-1.5 rounded-full border-border bg-card px-5 font-medium shadow-none"
-            disabled
-            title={messages.home_coming_soon()}
-            type="button"
+            render={<Link to="/sign-in" />}
             variant="outline"
           >
-            {messages.home_hero_resume_cta()} · {messages.home_coming_soon()}
+            {messages.home_hero_resume_cta()}
             <IconArrowUpRight
               aria-hidden="true"
               className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"

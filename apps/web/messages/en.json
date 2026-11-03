@@ -1,4 +1,6 @@
 {
+  "auth_loading": "Loading account",
+  "auth_sign_out_error": "Could not sign out. Please try again.",
   "login_title": "Sign in",
   "login_heading": "Welcome to Sainoa",
   "login_tagline": "See the talent. Meet the person.",

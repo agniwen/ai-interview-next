@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { IconArrowLeft, IconAlertCircle } from "@tabler/icons-react";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useHydrated } from "@tanstack/react-router";
 import { z } from "zod";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/sign-in")({
   // Named component keeps React hook detection intact in the route definition.
   // oxlint-disable-next-line func-name-matching
   component: function Login() {
+    const hydrated = useHydrated();
     const { error: callbackError } = Route.useSearch();
     const { data: session, isPending } = authClient.useSession();
     const [pending, setPending] = useState(false);
@@ -89,7 +90,9 @@ export const Route = createFileRoute("/sign-in")({
                   </p>
                 </div>
 
-                {failed && (
+                {/* 静态 HTML 不包含回调参数，水合后再显示登录错误。
+                    Static HTML has no callback parameters; show sign-in errors after hydration. */}
+                {hydrated && failed && (
                   <Alert variant="error">
                     <IconAlertCircle aria-hidden="true" />
                     <AlertTitle>{m.login_error_title()}</AlertTitle>

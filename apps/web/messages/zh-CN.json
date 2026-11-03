@@ -1,4 +1,6 @@
 {
+  "auth_loading": "正在加载账户",
+  "auth_sign_out_error": "退出登录失败，请重试。",
   "login_title": "登录",
   "login_heading": "欢迎来到 Sainoa",
   "login_tagline": "看见才能，也看见人。",

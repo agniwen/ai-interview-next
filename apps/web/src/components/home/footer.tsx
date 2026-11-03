@@ -1,5 +1,6 @@
 // 用途：页脚。左侧品牌字标，右侧产品锚点与入口链接。
 // Purpose: footer — brand wordmark with product anchors and entry links.
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import * as m from "@/paraglide/messages";
@@ -34,14 +35,26 @@ export function HomeFooter() {
           </nav>
           <nav aria-label={m.home_footer_start()} className="flex flex-col gap-3">
             <p className="font-medium text-foreground">{m.home_footer_start()}</p>
-            <Button variant="ghost" className="h-auto justify-start p-0" disabled>
-              {m.home_hero_resume_cta()}· {m.home_coming_soon()}
+            <Button
+              variant="ghost"
+              className="h-auto justify-start p-0"
+              render={<Link to="/sign-in" />}
+            >
+              {m.home_hero_resume_cta()}
             </Button>
-            <Button variant="ghost" className="h-auto justify-start p-0" disabled>
-              {m.home_hero_workbench_cta()}· {m.home_coming_soon()}
+            <Button
+              variant="ghost"
+              className="h-auto justify-start p-0"
+              render={<Link to="/sign-in" />}
+            >
+              {m.home_hero_workbench_cta()}
             </Button>
-            <Button variant="ghost" className="h-auto justify-start p-0" disabled>
-              {m.home_footer_login()}· {m.home_coming_soon()}
+            <Button
+              variant="ghost"
+              className="h-auto justify-start p-0"
+              render={<Link to="/sign-in" />}
+            >
+              {m.home_footer_login()}
             </Button>
           </nav>
         </div>

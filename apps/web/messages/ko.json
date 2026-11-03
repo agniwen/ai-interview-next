@@ -1,4 +1,6 @@
 {
+  "auth_loading": "계정 불러오는 중",
+  "auth_sign_out_error": "로그아웃하지 못했습니다. 다시 시도해 주세요.",
   "login_title": "로그인",
   "login_heading": "Sainoa에 오신 것을 환영해요",
   "login_tagline": "재능을 발견하고, 사람을 이해하세요.",

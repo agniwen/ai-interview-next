@@ -14,8 +14,7 @@ import { RoleTabs } from "./role-tabs";
 import { SectionDivider } from "./section";
 import { TrustBoundaries } from "./trust-boundaries";
 import * as m from "@/paraglide/messages";
-import { Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/auth/user-menu";
 
 export function HomePage() {
   return (
@@ -24,20 +23,18 @@ export function HomePage() {
         <a className="skip-link" href="#main-content">
           {m.home_skip()}
         </a>
-        <header className="fixed inset-x-0 top-0 z-40 mx-auto flex w-full max-w-[105rem] items-center justify-between px-4 py-5 sm:px-8 lg:px-16">
+        <header className="fixed inset-x-0 top-0 z-40 mx-auto flex w-full max-w-[105rem] flex-wrap items-center justify-between gap-2 px-4 py-5 sm:px-8 lg:px-16">
           <a href="#top" className="flex items-center gap-2.5 font-medium">
             <BrandMark />
             Sainoa
           </a>
-          <div className="flex items-center gap-1 sm:gap-3">
-            <Button variant="ghost" render={<Link to="/sign-in" />}>
-              {m.login_title()}
-            </Button>
+          <div className="ml-auto flex max-w-full items-center gap-1 sm:gap-3">
+            <UserMenu />
             <ThemeSwitcher />
             <LanguageSwitcher />
           </div>
         </header>
-        <main id="main-content" className="pt-20">
+        <main id="main-content" className="pt-28 sm:pt-20">
           <div className="relative isolate">
             <HeroBackground />
             <div className="mx-auto w-full max-w-[105rem] px-6 pt-14 pb-8 sm:px-8 sm:pt-20 lg:px-16">

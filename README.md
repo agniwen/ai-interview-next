@@ -56,6 +56,14 @@ bun run build --filter=@ai-interview/web
 bun run dev --filter=@ai-interview/web
 ```
 
+## Web 页面渲染
+
+首页和登录页使用 TanStack Start 静态预渲染（SSG）。`bun run build --filter=@ai-interview/web` 会生成 8 个页面：`/`、`/sign-in`，以及带 `/zh-CN`、`/ja`、`/ko` 前缀的对应页面。路径取自 Paraglide 的首页语言映射，配置位于 `apps/web/vite.config.ts`；关闭自动路由发现和链接爬取，新增页面需明确加入预渲染列表。
+
+HTML 输出到 `apps/web/dist/client/`，由 Cloudflare Static Assets 优先提供，无需调用 Web Worker 渲染这些页面。其他页面仍按请求 SSR，`/api/*` 继续通过 Service Binding 转发到 API。登录状态、用户菜单和登录操作由客户端通过 Better Auth API 动态处理，不写入静态 HTML；登录回调的错误提示在水合后显示。
+
+`bun run dev` 仍使用开发服务器渲染。验证实际 SSG 行为请运行 `bun run preview --filter=@ai-interview/web`，它会先构建再启动 Cloudflare 本地预览。
+
 ## API 与 Core Client
 
 `apps/api` 提供 `GET /health` 和 Better Auth 的 `/api/auth/*`，使用 Drizzle ORM 访问 Cloudflare D1。输入校验采用 Zod 4 + `@hono/standard-validator`；健康检查不接受查询参数，额外参数返回 400，也不依赖数据库或认证配置。执行 `make api-dev` 单独启动，`make api-build` 验证 Cloudflare 构建（不部署）。`make deploy` 先部署 API，再构建并部署 Web；本地与生产变量分别位于 API 的 `.env` 和 `.env.production`，配置步骤见 [Google 登录](docs/auth/google-login.md)。

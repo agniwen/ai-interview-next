@@ -1,4 +1,6 @@
 {
+  "auth_loading": "アカウントを読み込み中",
+  "auth_sign_out_error": "ログアウトできませんでした。もう一度お試しください。",
   "login_title": "ログイン",
   "login_heading": "Sainoa へようこそ",
   "login_tagline": "才能を見つけ、人を知る。",
