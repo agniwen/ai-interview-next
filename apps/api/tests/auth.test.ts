@@ -153,6 +153,48 @@ describe("Google authentication", () => {
     });
   });
 
+  it("updates only the signed-in user's profile and returns the saved name in the session", async () => {
+    const body = JSON.stringify({ name: "Updated User" });
+    const anonymous = await request(
+      new Request(`${origin}/api/auth/update-user`, {
+        body,
+        headers: { "content-type": "application/json", origin },
+        method: "POST",
+      }),
+    );
+    expect(anonymous.status).toBe(401);
+
+    const context = await auth.$context;
+    const owner = await context.internalAdapter.createUser(
+      { email: "profile@example.com", emailVerified: true, name: "Profile User" },
+      { method: "oauth" },
+    );
+    const other = await context.internalAdapter.createUser(
+      { email: "other@example.com", emailVerified: true, name: "Other User" },
+      { method: "oauth" },
+    );
+    const session = await context.internalAdapter.createSession(owner.id, false);
+    const signedToken = `${session.token}.${await makeSignature(session.token, secret)}`;
+    const cookie = `${context.authCookies.sessionToken.name}=${encodeURIComponent(signedToken)}`;
+    const response = await request(
+      new Request(`${origin}/api/auth/update-user`, {
+        body,
+        headers: { "content-type": "application/json", cookie, origin },
+        method: "POST",
+      }),
+    );
+    expect(response.status).toBe(200);
+    const users = await database.select().from(userTable);
+    expect(users.find((user) => user.id === owner.id)?.name).toBe("Updated User");
+    expect(users.find((user) => user.id === other.id)?.name).toBe("Other User");
+    const current = await request(
+      new Request(`${origin}/api/auth/get-session`, { headers: { cookie } }),
+    );
+    expect(await current.json()).toMatchObject({
+      user: { email: owner.email, name: "Updated User" },
+    });
+  });
+
   it("does not create a session for a forged OAuth callback", async () => {
     const response = await request(
       new Request(`${origin}/api/auth/callback/google?code=invalid&state=forged`),

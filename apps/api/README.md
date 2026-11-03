@@ -16,9 +16,13 @@ src/
     auth/
       auth.ts
       routes.ts
+    workspaces/
+      routes.ts
+      service.ts
 tests/
   auth.test.ts
   examples.test.ts
+  workspaces.test.ts
   database.ts
 examples/
   app.example.ts
@@ -49,6 +53,11 @@ wrangler.jsonc
 
 - `GET /health` 返回 `{"status":"ok"}`；额外查询参数返回 400。此端点不访问数据库或认证配置。
 - `GET`、`POST /api/auth/*` 由 Better Auth 处理。Web 通过 Service Binding 转发原始请求，浏览器 Cookie 和 Google 回调使用 Web 来源。
+- `GET /api/workspaces` 列出当前用户所属的工作区和最后激活的工作区；`POST /api/workspaces/:workspaceId/activate` 在验证成员关系后持久记录最后激活的工作区。匿名请求返回 401，不可访问的激活目标返回 404。
+
+工作区、成员、邀请及固定角色使用 Better Auth Organization 插件；首次创建用户时自动创建初始工作区和 owner 成员关系。所有 Organization 操作都传入明确的组织标识，Web 页面不依赖共享 session 中的当前组织。设计和页面入口见 [工作区文档](../../docs/architecture/workspaces.md)。
+
+工作区使用服务端生成的 8 位小写字母数字 ID；注册时的初始工作区与 Organization 创建钩子共用生成与查重逻辑，重复时重新生成，slug 与 ID 一致。
 
 生产 API 域名为 `https://sainoa-api.akumanoko.com`，健康检查为 <https://sainoa-api.akumanoko.com/health>。域名由 `wrangler.jsonc` 的 Custom Domain 配置管理，发布 API 时由 Cloudflare 配置 DNS 与 HTTPS。Web 继续通过 Service Binding 调用 API；`BETTER_AUTH_URL` 和 Google 回调仍使用 Web 域名 `https://sanioa.akumanoko.com`。
 

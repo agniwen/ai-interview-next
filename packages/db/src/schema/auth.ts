@@ -17,6 +17,7 @@ export const user = sqliteTable("user", {
   emailVerified: integer("emailVerified", { mode: "boolean" }).notNull(),
   id: text("id").primaryKey(),
   image: text("image"),
+  lastWorkspaceId: text("lastWorkspaceId"),
   name: text("name").notNull(),
   updatedAt: date("updatedAt").notNull(),
 });
@@ -24,6 +25,7 @@ export const user = sqliteTable("user", {
 export const session = sqliteTable(
   "session",
   {
+    activeOrganizationId: text("activeOrganizationId"),
     createdAt: date("createdAt").notNull(),
     expiresAt: date("expiresAt").notNull(),
     id: text("id").primaryKey(),
