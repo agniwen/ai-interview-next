@@ -2,6 +2,12 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "sainoa-api",
   "account_id": "b8f52910e25273ecc2fc719d582dece7",
+  "routes": [
+    {
+      "pattern": "sainoa-api.akumanoko.com",
+      "custom_domain": true,
+    },
+  ],
   "main": "src/index.ts",
   "compatibility_date": "2026-10-30",
   "compatibility_flags": ["nodejs_compat"],
