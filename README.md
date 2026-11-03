@@ -78,7 +78,7 @@ TypeScript 调用方使用 `@ai-interview/core-client` 的 `createCoreClient({ b
 
 ## Python 语音服务
 
-`apps/voice-agent` 使用 Python 3.14 + LiveKit Agents，依赖独立锁定在 `uv.lock`。首次执行 `make voice-install`，配置 LiveKit 凭据后执行 `make voice-download` 和 `make voice-console`；房间开发模式使用 `make voice-dev`。详见 [Voice Agent 使用与部署](apps/voice-agent/README.md)。Web 开发和 Cloudflare 部署命令保持独立。
+`apps/voice-agent` 使用 Python 3.14 + LiveKit Agents，依赖独立锁定在 `uv.lock`，由 Makefile 直接调用 uv，不使用 `package.json` 或 Bun workspace。首次执行 `make voice-install`，配置 LiveKit 凭据后执行 `make voice-download` 和 `make voice-console`；房间开发模式使用 `make voice-dev`。`make voice-deploy` 发布到 LiveKit Cloud，`make voice-status` 查看状态，`make voice-logs` 查看日志。详见 [Voice Agent 使用与部署](apps/voice-agent/README.md)。Web 开发和 Cloudflare 部署命令保持独立。
 
 ## 应用与共享包
 

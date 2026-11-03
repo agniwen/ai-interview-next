@@ -34,9 +34,6 @@
         "wrangler": "^4.156.0",
       },
     },
-    "apps/voice-agent": {
-      "name": "@ai-interview/voice-agent",
-    },
     "apps/web": {
       "name": "@ai-interview/web",
       "dependencies": {
@@ -132,8 +129,6 @@
     "@ai-interview/db": ["@ai-interview/db@workspace:packages/db"],
 
     "@ai-interview/typescript-config": ["@ai-interview/typescript-config@workspace:packages/typescript-config"],
-
-    "@ai-interview/voice-agent": ["@ai-interview/voice-agent@workspace:apps/voice-agent"],
 
     "@ai-interview/web": ["@ai-interview/web@workspace:apps/web"],
 
