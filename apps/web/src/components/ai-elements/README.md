@@ -1,0 +1,56 @@
+# Agent UI
+
+基于 [shadcn AI Elements](https://ui.shadcn.com/docs/ai-elements) 的 Base UI 模式，复用项目的 coss 组件、颜色变量和 Tabler 图标。这里仅包含展示与输入组件，不依赖 AI SDK、pi 或服务端存储。
+
+## 组件
+
+| 位置                         | 用途                                      |
+| ---------------------------- | ----------------------------------------- |
+| `../ui/message.tsx`          | 消息、头像、标题和操作区布局              |
+| `../ui/message-scroller.tsx` | 流式滚动、消息定位和回到底部              |
+| `../ui/trace.tsx`            | 工具、步骤和子任务的可折叠执行轨迹        |
+| `../ui/code-block.tsx`       | 代码、工具输出、行号与复制                |
+| `message-response.tsx`       | Markdown、GFM 表格和代码展示              |
+| `reasoning.tsx`              | 推理过程折叠、运行状态和耗时              |
+| `tool.tsx`                   | 等待、执行、完成、失败四种工具状态        |
+| `prompt-input.tsx`           | 复用 coss Composer 的受控输入、发送和停止 |
+
+基础组件通过 shadcn CLI 从 `base-nova` registry 引入，保留本地 Button 和 Collapsible。新增依赖为 `@shadcn/react`（消息滚动）和 `shiki`（按语言懒加载的代码高亮）。不要用上游 CLI 覆盖本地 coss 基础组件。
+
+## 组合
+
+```tsx
+<MessageScrollerProvider>
+  <MessageScroller>
+    <MessageScrollerViewport aria-label={conversationLabel}>
+      <MessageScrollerContent>
+        {messages.map((message) => (
+          <MessageScrollerItem key={message.id} messageId={message.id}>
+            <Message align={message.role === "user" ? "end" : "start"}>
+              <MessageContent>
+                <MessageResponse>{message.text}</MessageResponse>
+              </MessageContent>
+            </Message>
+          </MessageScrollerItem>
+        ))}
+      </MessageScrollerContent>
+    </MessageScrollerViewport>
+    <MessageScrollerButton label={jumpToLatestLabel} />
+  </MessageScroller>
+</MessageScrollerProvider>
+```
+
+滚动区域的父容器需要确定高度并设置 `min-h-0`。`MessageScrollerProvider` 按会话 ID 设置 `key`，避免切换会话后复用原来的滚动状态。滚动区域只处理展示，加载历史与切换订阅由会话层完成。
+
+`PromptInput` 的 `value` 是项目现有 `ComposerValue`，使用 `getComposerText(value)` 取得纯文本。调用方在提交被接受后清空草稿；组件不会自行清空，也不会在请求失败时丢掉草稿。`running` 时保留发送按钮，方便后续接入 steer / follow-up；其策略由调用方决定。
+
+所有按钮标签、状态文案和占位文字由调用方传入 Paraglide 翻译。`CodeBlockCopyButton` 需要 `copyLabel`、`copiedLabel` 和 `onCopyError`；错误反馈使用现有 toast。`useHighlightedCode(value, language)` 的返回值可以逐行交给 `CodeBlockLine`，未知语言使用纯文本。
+
+## pi-durable 接入边界
+
+- 将 `watch()` 的历史 entries 和 `pi.live` 转为消息与 Tool props；完成后的消息沿用稳定 ID。
+- 将 `pi.inbox` 转为产品的排队输入视图，不在输入组件中再维护一份运行队列。
+- `onSubmit` 调用后端 `submit()`，`onStop` 明确调用 `abort()`；组件卸载不表示停止任务。
+- 工具审批、历史分支、会话列表与子任务订阅属于后续接入；本次没有模拟这些后端能力。
+
+当前 Agent 路由仍保留占位页；这些组件可用于后续真实页面组装。
