@@ -1,3 +1,4 @@
+import { SidebarPageTarget } from "./sidebar-page";
 import { IconChartBar, IconSparkle, IconStack2, IconSettings, IconUser } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "@/components/brand-mark";
@@ -77,7 +78,8 @@ export function AppSidebar({
           </SegmentedControlItem>
         </SegmentedControl>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="overflow-hidden">
+        {section === "agent" && <SidebarPageTarget className="flex min-h-0 flex-1 flex-col" />}
         {section === "hub" && (
           <>
             <SidebarGroup>

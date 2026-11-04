@@ -1,3 +1,4 @@
+import "./cloudflare";
 import "../worker-configuration";
 import type { D1Database as WorkerD1Database } from "@cloudflare/workers-types";
 
@@ -6,4 +7,4 @@ declare global {
   type D1Database = WorkerD1Database;
 }
 
-export type ApiBindings = ApiEnv;
+export type ApiBindings = ApiEnv & { AGENT_CHAT_KEY: string };

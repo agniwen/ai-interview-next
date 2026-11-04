@@ -287,3 +287,61 @@ describe("workspaces", () => {
     expect(await platform.database.select().from(organization)).toEqual([]);
   });
 });
+
+describe("private agent routes", () => {
+  it("requires authentication and workspace membership before accessing sessions", async () => {
+    const owner = await account("agent-owner@example.com");
+    const outsider = await account("agent-outsider@example.com");
+    const path = `agent/${owner.workspace.id}/sessions`;
+    const anonymous = await call(path);
+    const forbidden = await call(path, outsider.cookie);
+    expect(anonymous.status).toBe(401);
+    expect(forbidden.status).toBe(404);
+  });
+
+  it("scopes sessions to their creator even when another member is a workspace admin", async () => {
+    const owner = await account("agent-owner@example.com");
+    const admin = await account("agent-admin@example.com");
+    await platform.database.insert(member).values({
+      createdAt: new Date(),
+      id: crypto.randomUUID(),
+      organizationId: owner.workspace.id,
+      role: "admin",
+      userId: admin.user.id,
+    });
+    const chatId = crypto.randomUUID();
+    const ownerScope = JSON.stringify([owner.workspace.id, owner.user.id]);
+    const directory = {
+      getByName: (scope: string) => ({
+        hgetall: () =>
+          Promise.resolve(
+            scope === ownerScope
+              ? {
+                  [chatId]: JSON.stringify({
+                    id: chatId,
+                    lastSentAt: 1,
+                    title: "Private",
+                    trashed: false,
+                  }),
+                }
+              : {},
+          ),
+      }),
+    };
+    // getPlatformProxy 不执行 DO；只替换目录传输，鉴权及 D1 查询使用真实实现。
+    // getPlatformProxy cannot execute DOs; replace directory transport only, keeping real auth and D1 queries.
+    const original = env.REDIS;
+    env.REDIS = directory as unknown as ApiBindings["REDIS"];
+    try {
+      const path = `agent/${owner.workspace.id}/sessions`;
+      const own = await call(path, owner.cookie);
+      const other = await call(path, admin.cookie);
+      expect(await own.json()).toMatchObject({ sessions: [{ id: chatId }] });
+      expect(await other.json()).toEqual({ sessions: [] });
+      const hidden = await call(`${path}/${chatId}/state`, admin.cookie);
+      expect(hidden.status).toBe(404);
+    } finally {
+      env.REDIS = original;
+    }
+  });
+});

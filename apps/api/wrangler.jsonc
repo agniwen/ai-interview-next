@@ -11,6 +11,19 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-10-30",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "AGENT_CHAT_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "AGENT_CHAT_MODEL": "deepseek-v4.1-flash",
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "AGENT_SESSIONS", "class_name": "AgentSessionObject" },
+      { "name": "REDIS", "class_name": "RedisObject" },
+    ],
+  },
+  "migrations": [
+    { "tag": "agent-v1", "new_sqlite_classes": ["AgentSessionObject", "RedisObject"] },
+  ],
   "d1_databases": [
     {
       "binding": "AUTH_DB",

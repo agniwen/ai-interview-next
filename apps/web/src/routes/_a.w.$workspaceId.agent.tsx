@@ -1,25 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { IconSparkle } from "@tabler/icons-react";
-import { PageHeaderContent } from "@/components/layout/page-header";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { z } from "zod";
+import { AgentPage } from "@/components/agent/page";
 import * as m from "@/paraglide/messages";
 
-function AgentPage() {
-  return (
-    <>
-      <PageHeaderContent>
-        <IconSparkle className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        <h1 className="truncate text-sm font-medium">{m.workspace_agent()}</h1>
-      </PageHeaderContent>
-      <div className="flex flex-1 items-center justify-center">
-        <p className="text-center text-sm text-muted-foreground">
-          {m.workspace_agent_placeholder()}
-        </p>
-      </div>
-    </>
-  );
-}
+const routeApi = getRouteApi("/_a/w/$workspaceId/agent");
 
+function AgentRoute() {
+  const { workspaceId } = routeApi.useParams();
+  const { session } = routeApi.useSearch();
+  return <AgentPage workspaceId={workspaceId} sessionId={session} />;
+}
 export const Route = createFileRoute("/_a/w/$workspaceId/agent")({
+  validateSearch: z.object({
+    session: z.string().uuid().optional(),
+  }),
   head: () => ({ meta: [{ title: `${m.workspace_agent()} — Sainoa` }] }),
-  component: AgentPage,
+  component: AgentRoute,
 });

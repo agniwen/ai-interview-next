@@ -4,6 +4,10 @@
 @import "misans/lib/Normal/MiSans-Semibold.min.css";
 @import "@fontsource-variable/geist-mono";
 
+@source "../node_modules/streamdown/dist/*.js";
+@source "../node_modules/@streamdown/code/dist/*.js";
+@source "../node_modules/@streamdown/cjk/dist/*.js";
+
 @custom-variant dark (&:is(.dark *));
 
 * {

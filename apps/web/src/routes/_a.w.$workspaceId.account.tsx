@@ -1,15 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { AccountPageContent } from "@/components/settings/account-page";
 import { PageHeaderContent } from "@/components/layout/page-header";
 import * as m from "@/paraglide/messages";
 
+const routeApi = getRouteApi("/_a/w/$workspaceId/account");
+
 function AccountPage() {
+  const { workspaceId } = routeApi.useParams();
   return (
     <>
       <PageHeaderContent>
         <span className="truncate text-sm font-medium">{m.account_title()}</span>
       </PageHeaderContent>
-      <AccountPageContent />
+      <AccountPageContent workspaceId={workspaceId} />
     </>
   );
 }
