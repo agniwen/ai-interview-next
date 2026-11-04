@@ -1,16 +1,17 @@
+import { ChatTranscriptSkeleton } from "@/components/skeletons/components/chat-transcript-skeleton";
 import { useCallback, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { IconSparkles, IconPlayerPlay } from "@tabler/icons-react";
 import type { AgentCommand, ChatSnapshot, ChatSummary } from "@ai-interview/agent";
 import { agentClient } from "@/lib/agent/client";
+import { agentSessionsQueryOptions } from "@/lib/agent/queries";
 import { useChat } from "@/lib/agent/use-chat";
 import { AgentSidebar } from "./sidebar";
 import { Transcript } from "./transcript";
 import { ChatQueue } from "./queue";
 import { PageHeaderContent } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogPopup,
@@ -36,20 +37,7 @@ function ChatBody({
     return <Transcript snapshot={snapshot} />;
   }
   if (sessionId) {
-    return (
-      <output
-        aria-label={failed ? m.agent_reconnecting() : m.agent_loading()}
-        aria-busy="true"
-        className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 pt-20 md:px-6"
-      >
-        <Skeleton className="h-10 w-2/5 self-end rounded-2xl" />
-        <div className="space-y-3">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-      </output>
-    );
+    return <ChatTranscriptSkeleton reconnecting={failed} />;
   }
   return (
     <div className="flex shrink-0 flex-col items-center justify-center gap-4 px-6 pb-7">
@@ -176,7 +164,7 @@ function ChatContent({
       <div
         className={
           sessionId
-            ? "mx-auto w-full max-w-3xl shrink-0 px-4 pb-2 md:px-6 md:pb-3"
+            ? "mx-auto w-full max-w-3xl shrink-0 px-4 pb-[38px] md:px-6 md:pb-[42px]"
             : "mx-auto w-full max-w-xl shrink-0 px-4"
         }
       >
@@ -195,46 +183,51 @@ function ChatContent({
             </Button>
           </div>
         ) : (
-          <PromptInput
-            value={value}
-            onValueChange={setValue}
-            onSubmit={(next) => {
-              void submit(next);
-            }}
-            label={m.agent_message()}
-            placeholder={running ? m.agent_queue_placeholder() : m.agent_placeholder()}
-            sendLabel={m.agent_send()}
-            stopLabel={m.agent_stop()}
-            running={running || stopping}
-            onStop={() => act({ type: "stop" })}
-            disabled={busy || stopping || (!!sessionId && !connected)}
-            actions={
-              snapshot?.status === "paused" ? (
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="ghost"
-                  disabled={commandBusy || !connected}
-                  onClick={() => act({ type: "resume" })}
-                >
-                  <IconPlayerPlay />
-                  {m.agent_resume()}
-                </Button>
-              ) : null
-            }
-          >
-            {!!snapshot?.queue.length && (
-              <ChatQueue
-                items={snapshot.queue}
-                busy={commandBusy || stopping || !connected}
-                canSteer={running}
-                onReorder={(ids) => command({ ids, type: "reorder" })}
-                onEdit={(id, text) => command({ id, text, type: "edit" })}
-                onRemove={(id) => act({ id, type: "remove" })}
-                onSteer={(id) => act({ id, type: "steer" })}
-              />
-            )}
-          </PromptInput>
+          <div className="relative">
+            <PromptInput
+              value={value}
+              onValueChange={setValue}
+              onSubmit={(next) => {
+                void submit(next);
+              }}
+              label={m.agent_message()}
+              placeholder={running ? m.agent_queue_placeholder() : m.agent_placeholder()}
+              sendLabel={m.agent_send()}
+              stopLabel={m.agent_stop()}
+              running={running || stopping}
+              onStop={() => act({ type: "stop" })}
+              disabled={busy || stopping || (!!sessionId && !connected)}
+              actions={
+                snapshot?.status === "paused" ? (
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    disabled={commandBusy || !connected}
+                    onClick={() => act({ type: "resume" })}
+                  >
+                    <IconPlayerPlay />
+                    {m.agent_resume()}
+                  </Button>
+                ) : null
+              }
+            >
+              {!!snapshot?.queue.length && (
+                <ChatQueue
+                  items={snapshot.queue}
+                  busy={commandBusy || stopping || !connected}
+                  canSteer={running}
+                  onReorder={(ids) => command({ ids, type: "reorder" })}
+                  onEdit={(id, text) => command({ id, text, type: "edit" })}
+                  onRemove={(id) => act({ id, type: "remove" })}
+                  onSteer={(id) => act({ id, type: "steer" })}
+                />
+              )}
+            </PromptInput>
+            <p className="absolute inset-x-0 top-full mt-2 text-center text-xs leading-4 text-muted-foreground">
+              {m.agent_disclaimer()}
+            </p>
+          </div>
         )}
       </div>
     </div>
@@ -247,9 +240,7 @@ export function AgentPage({ workspaceId, sessionId }: { workspaceId: string; ses
   const api = agentClient(workspaceId);
   const listKey = ["agent-sessions", workspaceId];
   const list = useQuery({
-    gcTime: 0,
-    queryFn: () => api.list(),
-    queryKey: listKey,
+    ...agentSessionsQueryOptions(workspaceId),
     refetchInterval: 5000,
   });
   const [deleting, setDeleting] = useState<ChatSummary>();

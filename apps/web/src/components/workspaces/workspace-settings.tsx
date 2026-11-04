@@ -1,3 +1,4 @@
+import { WorkspaceSettingsPageSkeleton } from "@/components/skeletons/pages/workspace-settings-page-skeleton";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -131,7 +132,7 @@ export function WorkspaceSettings({
   const owner = role === "owner";
   const manage = owner || role === "admin";
   if (details.isPending) {
-    return <Spinner aria-label={m.auth_loading()} />;
+    return <WorkspaceSettingsPageSkeleton />;
   }
   if (details.error || !details.data) {
     return <WorkspaceFeedback error={details.error ?? new Error(m.ws_unavailable())} />;

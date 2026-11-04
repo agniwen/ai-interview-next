@@ -1,3 +1,4 @@
+import { AccountPageSkeleton } from "@/components/skeletons/pages/account-page-skeleton";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { AccountPageContent } from "@/components/settings/account-page";
@@ -36,6 +37,7 @@ function AccountPage() {
 }
 
 export const Route = createFileRoute("/_a/account")({
+  pendingComponent: AccountPageSkeleton,
   beforeLoad: ({ context }) => {
     const { workspaces, lastWorkspaceId } = context.workspaceSession;
     const workspace = workspaces.find((item) => item.id === lastWorkspaceId) ?? workspaces[0];

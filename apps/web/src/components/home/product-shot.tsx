@@ -2,7 +2,7 @@
 
 import { lazy, Suspense } from "react";
 import { useHydrated } from "@tanstack/react-router";
-import { DemoWindowSkeleton } from "./screens/demo-window-skeleton";
+import { DemoWindowSkeleton } from "@/components/skeletons/components/demo-window-skeleton";
 import { ScreenFrame } from "./screens/screen-frame";
 
 // 演示窗口依赖整套 Studio 组件，单独分包。客户端在模块加载时就开始拉取，和水合并行，水合后立即挂载。

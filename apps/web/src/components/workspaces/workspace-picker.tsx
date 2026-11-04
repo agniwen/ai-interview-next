@@ -1,3 +1,4 @@
+import { InvitationCardSkeleton } from "@/components/skeletons/components/invitation-card-skeleton";
 import { IconBuilding, IconBuildingOff } from "@tabler/icons-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -155,6 +156,7 @@ export function WorkspacePicker({
         aria-label={m.ws_invitation()}
       >
         <WorkspaceFeedback error={invitations.error} />
+        {invitations.isPending && <InvitationCardSkeleton />}
         {invitations.data?.map((invitation) => (
           <Card key={invitation.id}>
             <CardHeader>

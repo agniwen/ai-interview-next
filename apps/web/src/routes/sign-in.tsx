@@ -1,3 +1,4 @@
+import { SignInSessionSkeleton } from "@/components/skeletons/components/sign-in-session-skeleton";
 import { useEffect, useState } from "react";
 import { IconArrowLeft, IconAlertCircle } from "@tabler/icons-react";
 import { Link, createFileRoute, useHydrated } from "@tanstack/react-router";
@@ -107,6 +108,7 @@ export const Route = createFileRoute("/sign-in")({
                   </Alert>
                 )}
 
+                {isPending && !session && <SignInSessionSkeleton />}
                 {session ? (
                   <div className="flex flex-col gap-4">
                     <div className="flex min-w-0 flex-col gap-1 text-center">
@@ -121,27 +123,29 @@ export const Route = createFileRoute("/sign-in")({
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    variant="outline"
-                    size="xl"
-                    className="w-full"
-                    disabled={pending || isPending}
-                    onClick={signIn}
-                    aria-busy={pending}
-                  >
-                    {pending ? (
-                      <Spinner />
-                    ) : (
-                      <img
-                        src="/logos/google.svg"
-                        alt=""
-                        width={20}
-                        height={20}
-                        className="size-5"
-                      />
-                    )}
-                    {pending ? m.login_connecting() : m.login_google()}
-                  </Button>
+                  !isPending && (
+                    <Button
+                      variant="outline"
+                      size="xl"
+                      className="w-full"
+                      disabled={pending}
+                      onClick={signIn}
+                      aria-busy={pending}
+                    >
+                      {pending ? (
+                        <Spinner />
+                      ) : (
+                        <img
+                          src="/logos/google.svg"
+                          alt=""
+                          width={20}
+                          height={20}
+                          className="size-5"
+                        />
+                      )}
+                      {pending ? m.login_connecting() : m.login_google()}
+                    </Button>
+                  )
                 )}
               </div>
             </section>

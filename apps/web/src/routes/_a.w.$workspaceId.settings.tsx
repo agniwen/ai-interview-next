@@ -1,3 +1,4 @@
+import { WorkspaceSettingsPageSkeleton } from "@/components/skeletons/pages/workspace-settings-page-skeleton";
 import { getRouteApi, createFileRoute } from "@tanstack/react-router";
 import { WorkspaceSettings } from "@/components/workspaces/workspace-settings";
 import { PageHeaderContent } from "@/components/layout/page-header";
@@ -26,6 +27,7 @@ function Settings() {
 }
 
 export const Route = createFileRoute("/_a/w/$workspaceId/settings")({
+  pendingComponent: WorkspaceSettingsPageSkeleton,
   head: () => ({ meta: [{ title: `${m.ws_settings()} — Sainoa` }] }),
   component: Settings,
 });

@@ -1,3 +1,4 @@
+import { SessionListSkeleton } from "@/components/skeletons/components/session-list-skeleton";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { IconCheck, IconX, IconPlus, IconTrash, IconDots, IconPencil } from "@tabler/icons-react";
@@ -15,7 +16,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Menu, MenuTrigger, MenuPopup, MenuItem } from "@/components/ui/menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getLocale } from "@/paraglide/runtime";
 import { Button } from "@/components/ui/button";
 import * as m from "@/paraglide/messages";
@@ -232,15 +232,7 @@ export function AgentSidebar({
                   ))}
               </SidebarMenu>
               {loading ? (
-                <output
-                  aria-label={m.agent_loading()}
-                  aria-busy="true"
-                  className="flex flex-col gap-4 px-2 py-3"
-                >
-                  <Skeleton className="h-4 w-4/5" />
-                  <Skeleton className="h-4 w-3/5" />
-                  <Skeleton className="h-4 w-2/3" />
-                </output>
+                <SessionListSkeleton />
               ) : (
                 !sessions.some((session) => !session.trashed) && (
                   <p className="px-2 py-4 text-xs text-muted-foreground">{m.agent_no_chats()}</p>

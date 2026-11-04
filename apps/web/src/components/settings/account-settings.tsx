@@ -1,3 +1,4 @@
+import { AccountSettingsSkeleton } from "@/components/skeletons/components/account-settings-skeleton";
 import { useTheme } from "next-themes";
 import { useHydrated } from "@tanstack/react-router";
 import { IconUser } from "@tabler/icons-react";
@@ -11,7 +12,6 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
-import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth/client";
 import { authData } from "@/lib/workspaces/actions";
 import { SettingsGroup, SettingsRow } from "./settings-group";
@@ -56,7 +56,7 @@ function ThemeSelect() {
 export function AccountSettings() {
   const { data: session, isPending } = authClient.useSession();
   if (isPending) {
-    return <Spinner aria-label={m.auth_loading()} />;
+    return <AccountSettingsSkeleton />;
   }
   if (!session) {
     return null;

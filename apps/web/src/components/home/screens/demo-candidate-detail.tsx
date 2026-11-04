@@ -19,7 +19,7 @@ import { DataField } from "@/components/home/support/data-field";
 import { DataFields } from "@/components/home/support/data-fields";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsPanel, TabsList, TabsTab } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DemoPanelSkeleton } from "@/components/skeletons/components/demo-panel-skeleton";
 import * as m from "@/paraglide/messages";
 import { DemoResumeProfile } from "./_parts/demo-records";
 import { useDemo } from "./demo-context";
@@ -136,7 +136,7 @@ export function DemoCandidateDetail() {
                   {detail.aiEvaluationTab}
                 </h2>
                 <div className="grid grid-cols-[minmax(14rem,0.8fr)_minmax(0,1.2fr)] items-center gap-5">
-                  <Suspense fallback={<Skeleton className="h-52" />}>
+                  <Suspense fallback={<DemoPanelSkeleton className="h-52" />}>
                     <DemoInterviewPanels tab="overview" />
                   </Suspense>
                   <div className="flex flex-col gap-3">
@@ -184,7 +184,7 @@ export function DemoCandidateDetail() {
             ].map((value) => (
               <TabsPanel data-demo-reveal={value} key={value} value={value}>
                 {tab === value && (
-                  <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+                  <Suspense fallback={<DemoPanelSkeleton className="h-96 w-full" />}>
                     <DemoInterviewPanels tab={value} />
                   </Suspense>
                 )}

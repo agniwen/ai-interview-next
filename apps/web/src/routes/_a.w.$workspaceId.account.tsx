@@ -1,3 +1,4 @@
+import { AccountPageSkeleton } from "@/components/skeletons/pages/account-page-skeleton";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { AccountPageContent } from "@/components/settings/account-page";
 import { PageHeaderContent } from "@/components/layout/page-header";
@@ -18,6 +19,7 @@ function AccountPage() {
 }
 
 export const Route = createFileRoute("/_a/w/$workspaceId/account")({
+  pendingComponent: AccountPageSkeleton,
   head: () => ({ meta: [{ title: `${m.account_title()} — Sainoa` }] }),
   component: AccountPage,
 });

@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
 
+import { workspaceSessionQueryOptions } from "./session-query";
+
 type AuthResult<T> =
   | { data: T; error: null }
   | { data: null; error: { code?: string; message?: string } };
@@ -23,6 +25,7 @@ export function useWorkspaceAction() {
   return useMutation({
     mutationFn: (action: () => Promise<unknown>) => action(),
     onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: workspaceSessionQueryOptions.queryKey });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["workspace-details"] }),
         queryClient.invalidateQueries({ queryKey: ["workspace-invitations"] }),

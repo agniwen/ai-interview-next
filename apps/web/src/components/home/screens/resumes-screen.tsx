@@ -23,7 +23,7 @@ import {
 // Purpose: simplified Studio resume library mock, mirroring the real components 1:1.
 
 import { lazy, Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DemoPanelSkeleton } from "@/components/skeletons/components/demo-panel-skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { DemoPhase } from "./demo-context";
 import { DemoProvider, useDemo } from "./demo-context";
@@ -602,14 +602,14 @@ function ResumesContent() {
   const demo = useDemo();
   if (demo.phase === "human-live") {
     return (
-      <Suspense fallback={<Skeleton className="h-full w-full" />}>
+      <Suspense fallback={<DemoPanelSkeleton className="h-full w-full" />}>
         <DemoHumanRoom />
       </Suspense>
     );
   }
   if (demo.phase === "live") {
     return (
-      <Suspense fallback={<Skeleton className="h-full w-full" />}>
+      <Suspense fallback={<DemoPanelSkeleton className="h-full w-full" />}>
         <DemoLiveInterview />
       </Suspense>
     );

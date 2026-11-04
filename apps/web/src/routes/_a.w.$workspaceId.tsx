@@ -10,9 +10,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { WorkspaceSwitcher } from "@/components/workspaces/workspace-switcher";
 
 import { useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, createFileRoute, Outlet, useMatchRoute } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
+import { workspaceSessionQueryOptions } from "@/lib/workspaces/session-query";
 import { workspaceApi } from "@/lib/workspaces/client";
 import { WorkspaceFeedback } from "@/components/workspaces/workspace-feedback";
 import { WorkspacePicker } from "@/components/workspaces/workspace-picker";
@@ -22,6 +23,7 @@ const routeApi = getRouteApi("/_a/w/$workspaceId");
 function WorkspaceShell() {
   const { workspaceSession } = routeApi.useRouteContext();
   const { workspaceId } = routeApi.useParams();
+  const queryClient = useQueryClient();
   const matchRoute = useMatchRoute();
   const section =
     matchRoute({ to: "/w/$workspaceId/settings", params: { workspaceId } }) ||
@@ -42,6 +44,12 @@ function WorkspaceShell() {
       if (!response.ok) {
         throw new Error(m.ws_activation_error());
       }
+    },
+    onSuccess: (_, id) => {
+      queryClient.setQueryData(workspaceSessionQueryOptions.queryKey, () => ({
+        ...workspaceSession,
+        lastWorkspaceId: id,
+      }));
     },
   });
 

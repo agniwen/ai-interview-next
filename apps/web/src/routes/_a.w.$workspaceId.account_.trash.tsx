@@ -1,3 +1,4 @@
+import { AgentTrashPageSkeleton } from "@/components/skeletons/pages/agent-trash-page-skeleton";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { AgentTrashPage } from "@/components/agent/trash-page";
 import * as m from "@/paraglide/messages";
@@ -8,6 +9,7 @@ function TrashPage() {
   return <AgentTrashPage workspaceId={workspaceId} />;
 }
 export const Route = createFileRoute("/_a/w/$workspaceId/account_/trash")({
+  pendingComponent: AgentTrashPageSkeleton,
   component: TrashPage,
   head: () => ({ meta: [{ title: `${m.agent_trash()} — Sainoa` }] }),
 });

@@ -1,3 +1,4 @@
+import { UserMenuSkeleton } from "@/components/skeletons/components/user-menu-skeleton";
 import { useState } from "react";
 import { IconChevronDown, IconLogin, IconLogout, IconUser } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
@@ -96,18 +97,7 @@ export function UserMenu({
 
   if (isPending) {
     return (
-      <Button
-        className={triggerClassName}
-        variant="ghost"
-        size={buttonSize}
-        disabled
-        aria-busy="true"
-        aria-label={m.auth_loading()}
-      >
-        <span className={iconSlotClassName}>
-          <Spinner />
-        </span>
-      </Button>
+      <UserMenuSkeleton className={triggerClassName} iconOnly={iconOnly} collapsed={collapsed} />
     );
   }
 

@@ -1,3 +1,4 @@
+import { WorkspacesPageSkeleton } from "@/components/skeletons/pages/workspaces-page-skeleton";
 import { getRouteApi, createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import { WorkspacePicker } from "@/components/workspaces/workspace-picker";
@@ -11,6 +12,7 @@ function WorkspaceSelection() {
 }
 
 export const Route = createFileRoute("/_a/workspaces")({
+  pendingComponent: WorkspacesPageSkeleton,
   validateSearch: z.object({ choose: z.boolean().optional() }),
   beforeLoad: ({ context, search }) => {
     const { workspaces, lastWorkspaceId } = context.workspaceSession;

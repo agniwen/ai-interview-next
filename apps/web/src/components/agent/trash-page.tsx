@@ -1,3 +1,4 @@
+import { TrashListSkeleton } from "@/components/skeletons/components/trash-list-skeleton";
 import type { ChatSummary } from "@ai-interview/agent";
 import { IconArrowLeft, IconMessage, IconRestore, IconTrash } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { agentSessionsQueryOptions } from "@/lib/agent/queries";
 import { agentClient } from "@/lib/agent/client";
 import * as m from "@/paraglide/messages";
 
@@ -20,7 +22,7 @@ export function AgentTrashPage({ workspaceId }: { workspaceId: string }) {
   const api = agentClient(workspaceId);
   const queryClient = useQueryClient();
   const queryKey = ["agent-sessions", workspaceId];
-  const list = useQuery({ gcTime: 0, queryFn: () => api.list(), queryKey });
+  const list = useQuery(agentSessionsQueryOptions(workspaceId));
   const [deleting, setDeleting] = useState<ChatSummary>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -42,28 +44,17 @@ export function AgentTrashPage({ workspaceId }: { workspaceId: string }) {
   return (
     <>
       <PageHeaderContent>
-        <Link
-          to="/w/$workspaceId/account"
-          params={{ workspaceId }}
-          className="text-sm text-muted-foreground hover:text-foreground"
+        <Button
+          variant="ghost"
+          size="sm"
+          render={<Link to="/w/$workspaceId/account" params={{ workspaceId }} />}
         >
-          {m.account_title()}
-        </Link>
-        <span className="text-muted-foreground">/</span>
-        <span className="text-sm font-medium">{m.agent_trash()}</span>
+          <IconArrowLeft aria-hidden="true" />
+          {m.agent_back_account()}
+        </Button>
       </PageHeaderContent>
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 py-2 md:py-4">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={m.account_back()}
-            render={<Link to="/w/$workspaceId/account" params={{ workspaceId }} />}
-          >
-            <IconArrowLeft />
-          </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">{m.agent_trash()}</h1>
-        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">{m.agent_trash()}</h1>
         {(error || list.isError) && (
           <p role="alert" className="text-sm text-destructive-foreground">
             {m.agent_error()}
@@ -97,10 +88,9 @@ export function AgentTrashPage({ workspaceId }: { workspaceId: string }) {
                 </Button>
               </div>
             ))}
-            {sessions.length === 0 && (
-              <p className="p-10 text-center text-sm text-muted-foreground">
-                {list.isPending ? m.agent_loading() : m.agent_no_trash()}
-              </p>
+            {list.isPending && <TrashListSkeleton />}
+            {!list.isPending && sessions.length === 0 && (
+              <p className="p-10 text-center text-sm text-muted-foreground">{m.agent_no_trash()}</p>
             )}
           </div>
         </ScrollArea>

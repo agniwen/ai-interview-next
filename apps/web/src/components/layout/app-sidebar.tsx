@@ -33,7 +33,7 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader className="gap-4">
-        <div className="relative h-8">
+        <div className="group/sidebar-brand relative h-8">
           <SidebarMenuButton
             render={<Link to="/" tabIndex={collapsed ? -1 : undefined} />}
             aria-label={m.login_back()}
@@ -43,20 +43,28 @@ export function AppSidebar({
             <BrandMark />
             <span>Sainoa</span>
           </SidebarMenuButton>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 right-0 flex size-8 items-center justify-center opacity-0 transition-opacity duration-150 motion-reduce:transition-none group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:group-hover/sidebar-brand:opacity-0 group-data-[collapsible=icon]:group-has-[:focus-visible]/sidebar-brand:opacity-0"
+          >
+            <BrandMark />
+          </span>
           <SidebarTrigger
-            className="absolute top-0 right-0 size-8"
+            className="absolute top-0 right-0 size-8 transition-opacity duration-150 motion-reduce:transition-none group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:group-hover/sidebar-brand:opacity-100 group-data-[collapsible=icon]:focus-visible:opacity-100"
             aria-label={m.workspace_toggle_sidebar()}
           />
         </div>
+        {/* 用可插值的位置和尺寸切换横纵布局，避免 flex-direction 瞬间跳变。
+            Interpolate positions and sizes between layouts instead of switching flex-direction abruptly. */}
         <SegmentedControl
           render={<nav aria-label={m.workspace_navigation()} />}
-          className="w-full group-data-[collapsible=icon]:-mx-0.5 group-data-[collapsible=icon]:w-9 group-data-[collapsible=icon]:flex-col"
+          className="block h-9.5 w-full transition-[width,height,margin] duration-200 ease-linear motion-reduce:transition-none sm:h-8.5 group-data-[collapsible=icon]:-mx-0.5 group-data-[collapsible=icon]:h-[4.375rem] group-data-[collapsible=icon]:w-9"
         >
           <SegmentedControlItem
-            className="flex-1 transition-[gap,color,outline-color] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0"
+            className="absolute top-0.5 w-[calc((100%-0.375rem)/2)] transition-[width,height,top,left,gap,padding,color,outline-color] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:h-8! group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0 left-0.5"
             aria-label={m.workspace_agent()}
             data-checked={section === "agent" ? "" : undefined}
-            render={<Link to="/w/$workspaceId/agent" params={{ workspaceId }} />}
+            render={<Link to="/w/$workspaceId/agent" params={{ workspaceId }} preload="render" />}
             onClick={() => setOpenMobile(false)}
           >
             <IconSparkle className="size-4" aria-hidden="true" />
@@ -65,10 +73,12 @@ export function AppSidebar({
             </span>
           </SegmentedControlItem>
           <SegmentedControlItem
-            className="flex-1 transition-[gap,color,outline-color] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0"
+            className="absolute top-0.5 w-[calc((100%-0.375rem)/2)] transition-[width,height,top,left,gap,padding,color,outline-color] duration-200 ease-linear motion-reduce:transition-none group-data-[collapsible=icon]:h-8! group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0 left-[calc(50%+0.0625rem)] group-data-[collapsible=icon]:top-9 group-data-[collapsible=icon]:left-0.5"
             aria-label={m.workspace_hub()}
             data-checked={section === "hub" ? "" : undefined}
-            render={<Link to="/w/$workspaceId/hub/dashboard" params={{ workspaceId }} />}
+            render={
+              <Link to="/w/$workspaceId/hub/dashboard" params={{ workspaceId }} preload="render" />
+            }
             onClick={() => setOpenMobile(false)}
           >
             <IconStack2 className="size-4" aria-hidden="true" />

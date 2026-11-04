@@ -1,3 +1,4 @@
+import { AgentPageSkeleton } from "@/components/skeletons/pages/agent-page-skeleton";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { z } from "zod";
 import { AgentPage } from "@/components/agent/page";
@@ -11,6 +12,7 @@ function AgentRoute() {
   return <AgentPage workspaceId={workspaceId} sessionId={session} />;
 }
 export const Route = createFileRoute("/_a/w/$workspaceId/agent")({
+  pendingComponent: AgentPageSkeleton,
   validateSearch: z.object({
     session: z.string().uuid().optional(),
   }),

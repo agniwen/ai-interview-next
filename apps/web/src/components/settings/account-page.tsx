@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { IconTrash, IconChevronRight } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+import { ListActions, ListContent, ListDescription, ListItem } from "@/components/ui/list";
+import { SettingsGroup } from "./settings-group";
 import { AccountSettings } from "./account-settings";
 import * as m from "@/paraglide/messages";
 
@@ -15,15 +17,23 @@ export function AccountPageContent({ workspaceId }: { workspaceId?: string }) {
       </div>
       <AccountSettings />
       {workspaceId && (
-        <Link
-          to="/w/$workspaceId/account/trash"
-          params={{ workspaceId }}
-          className="flex items-center gap-3 rounded-xl border p-4 text-sm transition-colors hover:bg-muted/50"
-        >
-          <IconTrash className="size-4 text-muted-foreground" />
-          <span className="flex-1 font-medium">{m.agent_trash()}</span>
-          <IconChevronRight className="size-4 text-muted-foreground" />
-        </Link>
+        <SettingsGroup title={m.agent_trash()}>
+          <ListItem className="flex-row items-center gap-4">
+            <ListContent>
+              <ListDescription className="break-normal">
+                {m.agent_trash_description()}
+              </ListDescription>
+            </ListContent>
+            <ListActions>
+              <Button
+                variant="outline"
+                render={<Link to="/w/$workspaceId/account/trash" params={{ workspaceId }} />}
+              >
+                {m.agent_trash_view()}
+              </Button>
+            </ListActions>
+          </ListItem>
+        </SettingsGroup>
       )}
     </main>
   );

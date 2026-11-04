@@ -1,3 +1,5 @@
+import { InvitationPageSkeleton } from "@/components/skeletons/pages/invitation-page-skeleton";
+import { InvitationCardSkeleton } from "@/components/skeletons/components/invitation-card-skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { getRouteApi, createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth/client";
@@ -6,7 +8,6 @@ import { workspaceApi } from "@/lib/workspaces/client";
 import { WorkspaceFeedback } from "@/components/workspaces/workspace-feedback";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { UserMenu } from "@/components/auth/user-menu";
 import * as m from "@/paraglide/messages";
 
@@ -30,7 +31,7 @@ function Invitation() {
         <UserMenu />
       </div>
       <WorkspaceFeedback error={invitation.error ?? action.error} />
-      {invitation.isPending && <Spinner aria-label={m.auth_loading()} />}
+      {invitation.isPending && <InvitationCardSkeleton />}
       {invitation.data && (
         <Card>
           <CardHeader>
@@ -88,6 +89,7 @@ function Invitation() {
 }
 
 export const Route = createFileRoute("/_a/invite/$invitationId")({
+  pendingComponent: InvitationPageSkeleton,
   head: () => ({ meta: [{ title: `${m.ws_invitation()} — Sainoa` }] }),
   component: Invitation,
 });
