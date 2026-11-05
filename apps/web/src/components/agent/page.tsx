@@ -50,23 +50,19 @@ function ChatBody({
 }
 
 function ChatFeedback({
-  sessionId,
-  connected,
   failed,
   error,
   generationError,
 }: {
-  sessionId?: string;
-  connected: boolean;
   failed: boolean;
   error: string;
   generationError?: string | null;
 }) {
   return (
     <>
-      {sessionId && !connected && (
+      {failed && (
         <output className="mb-2 block text-xs text-muted-foreground">
-          {failed ? m.agent_reconnecting() : m.agent_connecting()}
+          {m.agent_reconnecting()}
         </output>
       )}
       {(error || generationError) && (
@@ -168,13 +164,7 @@ function ChatContent({
             : "mx-auto w-full max-w-xl shrink-0 px-4"
         }
       >
-        <ChatFeedback
-          sessionId={sessionId}
-          connected={connected}
-          failed={failed}
-          error={error}
-          generationError={snapshot?.error}
-        />
+        <ChatFeedback failed={failed} error={error} generationError={snapshot?.error} />
         {snapshot?.summary.trashed ? (
           <div className="flex items-center justify-between rounded-xl border p-3 text-sm">
             <span>{m.agent_trashed()}</span>

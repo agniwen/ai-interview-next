@@ -36,6 +36,8 @@ interface ChatState {
   active: SubmissionId | null;
   error: string | null;
 }
+// pi 将队列和调度状态保存在会话库的 documents 表中，已进入对话的消息则从 entries 表读取。
+// pi stores the queue and scheduling state in this conversation's documents table and reads message history from entries.
 export const ChatDoc = defineDoc<{ [K in keyof ChatState]: ChatState[K] }>({
   checkpointWhen: () => true,
   fork: "initial",
@@ -96,16 +98,30 @@ function messageView(id: string, message: Message): ChatMessage[] {
 /** 平台无关的运行层：产品队列存在 pi 文档内，只有派发时才进入 pi 的 inbox。
  * Platform-neutral runtime: product inputs live in a pi document and enter its inbox only on dispatch. */
 export class AgentRuntime {
+  // SSE 订阅者收到变更通知后会重新读取快照；连接关闭时移除对应回调。
+  // SSE subscribers read a fresh snapshot on notification and detach their callback when the connection closes.
   private listeners = new Set<() => void>();
+  // 仅在内存中记录本实例正在等待的提交 ID；重启后从 ChatDoc.active 重建监听。
+  // Tracks submissions this instance is already waiting on. Recovery reattaches using the ID in ChatDoc.active.
   private monitoring = new Set<SubmissionId>();
+  // 标题由单独的模型请求生成。停止聊天时用 controller 取消请求，再等待 titleWork 完成。
+  // Title generation uses a separate model request. Stopping the chat aborts it and waits for titleWork to settle.
   private titleController: AbortController | null = null;
   private titleWork: Promise<void> | null = null;
+  // 并发的停止请求共享这个 Promise，只执行一次取消和队列恢复。
+  // Concurrent stop requests share this promise so cancellation and queue recovery run once.
   private stopWork: Promise<void> | null = null;
+  // harness 负责调度和恢复任务，conversation 是本聊天提交输入和读写历史的入口。
+  // The harness schedules and resumes work. The conversation provides access to submissions and history for this chat.
   readonly harness: Harness;
   readonly conversation: Conversation;
   private models: Models;
   private modelId: string;
+  // 将摘要写入宿主的会话目录，供侧栏跨会话查询。
+  // Writes the summary to the host's session directory for sidebar queries across chats.
   private changed: (summary: ChatSummary) => Promise<void>;
+  // 由宿主跟踪后台 Promise，提交监控和标题生成可以在 HTTP 响应返回后继续。
+  // The host tracks these promises so submission monitoring and title generation can outlive the HTTP response.
   private runInBackground: (work: Promise<unknown>) => void;
   private constructor(
     harness: Harness,
@@ -157,6 +173,8 @@ export class AgentRuntime {
       options.changed,
       options.background,
     );
+    // 生成回答和编辑待发队列都要刷新页面快照，前者监听对话，后者监听 ChatDoc。
+    // Both generation and queue edits refresh the page snapshot, via the conversation and ChatDoc watchers respectively.
     const watch = await conversation.watch(context);
     watch.start(() => {
       runtime.notify();
@@ -217,6 +235,8 @@ export class AgentRuntime {
     if (state.active === null) {
       await this.dispatch();
     } else {
+      // active 保存了派发时取得的提交 ID，重启后用它继续等待同一次提交。
+      // The persisted submission ID lets a reopened runtime keep waiting for the original submission.
       this.monitor(state.active);
     }
   }
@@ -293,6 +313,8 @@ export class AgentRuntime {
       }
       switch (command.type) {
         case "send": {
+          // 即使消息已经出队，也要识别客户端因响应丢失而重试的同一次发送。
+          // Keep accepted IDs after dispatch so a client retry after a lost response cannot enqueue the message twice.
           if (state.accepted.includes(command.id)) {
             return;
           }
@@ -393,6 +415,8 @@ export class AgentRuntime {
     const work = (async () => {
       const submission = await this.harness.submission(id, context);
       const result = await (submission as Submission).wait(context);
+      // 提交有结果时会话仍可能在运行，等它空闲后才能派发下一条排队消息。
+      // A submission can have a result while the conversation is still busy. Wait for idle before dispatching the next input.
       await this.conversation.waitForIdle(context);
       await this.update((state) => {
         if (state.active !== id) {
