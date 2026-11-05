@@ -37,3 +37,7 @@ todos.json
 coverage
 apps/web/src/paraglide/
 apps/web/project.inlang/.cache/
+
+# Amp orb portal links generated per orb and thread
+# 每个 orb 和 thread 生成的 Amp portal 链接
+.amp/portals/*

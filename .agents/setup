@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Prepares a fresh Amp orb: pinned Bun, JS and Python dependencies, local env files, local D1.
+# 为新的 Amp orb 准备环境：固定版本的 Bun、JS 与 Python 依赖、本地 env 文件和本地 D1。
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+step() {
+  local started=$SECONDS
+  echo "==> $1"
+  shift
+  "$@"
+  echo "    done in $((SECONDS - started))s"
+}
+
+install_pinned_bun() {
+  local version
+  version="$(jq -r '.packageManager | sub("^bun@"; "")' package.json)"
+  if [[ "$(bun --version 2>/dev/null || true)" == "$version" ]]; then
+    echo "    bun $version already installed"
+    return
+  fi
+
+  local arch tmp
+  case "$(uname -m)" in
+    x86_64) arch=x64 ;;
+    aarch64 | arm64) arch=aarch64 ;;
+    *) echo "unsupported architecture: $(uname -m)" >&2; return 1 ;;
+  esac
+  tmp="$(mktemp -d)"
+  curl -fsSL -o "$tmp/bun.zip" \
+    "https://github.com/oven-sh/bun/releases/download/bun-v$version/bun-linux-$arch.zip"
+  unzip -q "$tmp/bun.zip" -d "$tmp"
+  # Replace the orb image's Bun so every shell and service uses the repository pin.
+  # 替换 orb 镜像自带的 Bun，使所有 shell 和服务都使用仓库固定的版本。
+  sudo install -m 0755 "$tmp/bun-linux-$arch/bun" /usr/local/bin/bun
+  sudo ln -sf /usr/local/bin/bun /usr/local/bin/bunx
+  rm -rf "$tmp"
+  bun --version
+}
+
+copy_env_templates() {
+  local template
+  for template in apps/api/.env.example apps/voice-agent/.env.example; do
+    [[ -f "${template%.example}" ]] || cp -- "$template" "${template%.example}"
+  done
+}
+
+step "Bun (package.json pin)" install_pinned_bun
+step "JavaScript dependencies" bun install --frozen-lockfile
+step "Voice agent Python dependencies" make voice-install
+step "Voice agent model files" make voice-download
+step "Local env files" copy_env_templates
+step "Local D1 migrations" make db-migrate
