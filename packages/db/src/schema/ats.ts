@@ -175,7 +175,7 @@ export const application = sqliteTable(
 export const resumeSubmission = sqliteTable(
   "resume_submission",
   {
-    /** 投递关联的应聘，待确认或直接入库时为空。 / Linked application. Null while identity is unresolved or for a talent pool import. */
+    /** 投递关联的应聘，候选人或岗位待确定时为空。 / Linked application. Null while the candidate or job is unresolved. */
     applicationId: text("applicationId"),
     /** 收到本次投递的时间。 / Time this submission was received. */
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
@@ -185,7 +185,7 @@ export const resumeSubmission = sqliteTable(
     identityStatus: text("identityStatus", { enum: ["pending", "pending_review", "resolved"] })
       .notNull()
       .default("pending"),
-    /** 本次投递的岗位，直接入人才库时为空。 / Target job. Null for a direct talent pool import. */
+    /** 本次投递的岗位，待定岗时为空。 / Target job. Null while the job is undetermined. */
     jobId: text("jobId"),
     /** 本次上传时提供的文件名。 / File name provided with this upload. */
     originalFilename: text("originalFilename").notNull(),
