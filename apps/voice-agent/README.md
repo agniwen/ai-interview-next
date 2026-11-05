@@ -31,6 +31,19 @@ make voice-console
 
 Web 继续使用 `make dev`，两个服务可分别运行。Python 依赖由 uv 和本目录 `uv.lock` 独立管理。
 
+## LiveKit Agent Skills
+
+项目在根目录 `.agents/skills/` 安装了 [LiveKit 官方 skills](https://github.com/livekit/agent-skills)，供 Codex 按任务加载，覆盖文档查询、开发、调试、测试、场景编写、模拟和运维。来源与内容哈希由根目录 `skills-lock.json` 记录。
+
+在仓库根目录重新安装或更新这套 skills：
+
+```bash
+bunx skills add livekit/agent-skills --agent codex --yes
+bunx --no-install skills list --agent codex
+```
+
+安装后，Codex 从下一轮对话开始发现这些 skills。当前安装方式仅管理 skills；LiveKit Docs MCP 需单独配置。项目继续使用上述命令维护这套 skills。通过 Homebrew 安装的 LiveKit CLI 可运行 `brew upgrade livekit-cli` 更新；工具命令以本机 `lk --help` 为准。
+
 ## 当前配置
 
 入口为 `src/agent.py`。沿用官方 starter 的 LiveKit Inference 语音流水线：AssemblyAI STT、Gemma LLM、Fish Audio TTS、LiveKit TurnDetector，以及 ai-coustics 音频增强。Inference 使用 LiveKit Cloud 凭据，模型调用按服务用量计费，无需单独配置模型提供商密钥。
