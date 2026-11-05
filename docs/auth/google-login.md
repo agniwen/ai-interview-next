@@ -2,7 +2,7 @@
 
 认证使用 Better Auth + Drizzle ORM + Cloudflare D1，仅开放 Google 登录。Better Auth handler、认证配置和 D1 binding 均位于 `apps/api`；Web 的 `/api/auth/*` 只通过 Service Binding `API` 将原始请求转发给 `sainoa-api`，并直接返回响应。浏览器继续通过 Web 同源 Cookie 维护会话，Google 回调和登录页面地址不变。D1 binding 为 `AUTH_DB`，数据库名为 `sainoa-auth`；此前架构文档中的 PostgreSQL 属于候选方案。
 
-登录页面为 `/sign-in`、`/zh-CN/sign-in`、`/ja/sign-in`、`/ko/sign-in`。首次 Google 登录自动创建账号、初始工作区和 owner 成员关系。成功后返回指定的工作区或邀请页面；未指定目标时，通过 `/workspaces` 进入最后激活的工作区。工作区与退出入口位于正式页面，详见 [工作区设计](../architecture/workspaces.md)。
+登录页面统一为 `/sign-in`，按语言 Cookie 显示对应语言。首次 Google 登录自动创建账号、初始工作区和 owner 成员关系。成功后返回指定的工作区或邀请页面；未指定目标时，通过 `/workspaces` 进入最后激活的工作区。工作区与退出入口位于正式页面，详见 [工作区设计](../architecture/workspaces.md)。
 
 ## 本地配置
 

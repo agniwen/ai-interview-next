@@ -172,9 +172,8 @@ export function AgentSidebar({
                             isActive={session.id === selected}
                             render={
                               <Link
-                                to="/w/$workspaceId/agent"
-                                params={{ workspaceId }}
-                                search={{ session: session.id }}
+                                to="/w/$workspaceId/agent/$sessionId"
+                                params={{ sessionId: session.id, workspaceId }}
                               />
                             }
                             onClick={() => setOpenMobile(false)}

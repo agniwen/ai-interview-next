@@ -22,6 +22,7 @@ import { Route as AWWorkspaceIdAccountRouteImport } from './routes/_a.w.$workspa
 import { Route as AWWorkspaceIdAgentRouteImport } from './routes/_a.w.$workspaceId.agent'
 import { Route as AWWorkspaceIdSettingsRouteImport } from './routes/_a.w.$workspaceId.settings'
 import { Route as AWWorkspaceIdAccountTrashRouteImport } from './routes/_a.w.$workspaceId.account_.trash'
+import { Route as AWWorkspaceIdAgentSessionIdRouteImport } from './routes/_a.w.$workspaceId.agent_.$sessionId'
 import { Route as AWWorkspaceIdHubDashboardRouteImport } from './routes/_a.w.$workspaceId.hub.dashboard'
 
 const IndexRoute = IndexRouteImport.update({
@@ -89,6 +90,12 @@ const AWWorkspaceIdAccountTrashRoute =
     path: '/account/trash',
     getParentRoute: () => AWWorkspaceIdRoute,
   } as any)
+const AWWorkspaceIdAgentSessionIdRoute =
+  AWWorkspaceIdAgentSessionIdRouteImport.update({
+    id: '/agent_/$sessionId',
+    path: '/agent/$sessionId',
+    getParentRoute: () => AWWorkspaceIdRoute,
+  } as any)
 const AWWorkspaceIdHubDashboardRoute =
   AWWorkspaceIdHubDashboardRouteImport.update({
     id: '/hub/dashboard',
@@ -109,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/w/$workspaceId/settings': typeof AWWorkspaceIdSettingsRoute
   '/w/$workspaceId/': typeof AWWorkspaceIdIndexRoute
   '/w/$workspaceId/account/trash': typeof AWWorkspaceIdAccountTrashRoute
+  '/w/$workspaceId/agent/$sessionId': typeof AWWorkspaceIdAgentSessionIdRoute
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
 }
 export interface FileRoutesByTo {
@@ -123,6 +131,7 @@ export interface FileRoutesByTo {
   '/w/$workspaceId/settings': typeof AWWorkspaceIdSettingsRoute
   '/w/$workspaceId': typeof AWWorkspaceIdIndexRoute
   '/w/$workspaceId/account/trash': typeof AWWorkspaceIdAccountTrashRoute
+  '/w/$workspaceId/agent/$sessionId': typeof AWWorkspaceIdAgentSessionIdRoute
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
 }
 export interface FileRoutesById {
@@ -140,6 +149,7 @@ export interface FileRoutesById {
   '/_a/w/$workspaceId/settings': typeof AWWorkspaceIdSettingsRoute
   '/_a/w/$workspaceId/': typeof AWWorkspaceIdIndexRoute
   '/_a/w/$workspaceId/account_/trash': typeof AWWorkspaceIdAccountTrashRoute
+  '/_a/w/$workspaceId/agent_/$sessionId': typeof AWWorkspaceIdAgentSessionIdRoute
   '/_a/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
 }
 export interface FileRouteTypes {
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/settings'
     | '/w/$workspaceId/'
     | '/w/$workspaceId/account/trash'
+    | '/w/$workspaceId/agent/$sessionId'
     | '/w/$workspaceId/hub/dashboard'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/settings'
     | '/w/$workspaceId'
     | '/w/$workspaceId/account/trash'
+    | '/w/$workspaceId/agent/$sessionId'
     | '/w/$workspaceId/hub/dashboard'
   id:
     | '__root__'
@@ -187,6 +199,7 @@ export interface FileRouteTypes {
     | '/_a/w/$workspaceId/settings'
     | '/_a/w/$workspaceId/'
     | '/_a/w/$workspaceId/account_/trash'
+    | '/_a/w/$workspaceId/agent_/$sessionId'
     | '/_a/w/$workspaceId/hub/dashboard'
   fileRoutesById: FileRoutesById
 }
@@ -290,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AWWorkspaceIdAccountTrashRouteImport
       parentRoute: typeof AWWorkspaceIdRoute
     }
+    '/_a/w/$workspaceId/agent_/$sessionId': {
+      id: '/_a/w/$workspaceId/agent_/$sessionId'
+      path: '/agent/$sessionId'
+      fullPath: '/w/$workspaceId/agent/$sessionId'
+      preLoaderRoute: typeof AWWorkspaceIdAgentSessionIdRouteImport
+      parentRoute: typeof AWWorkspaceIdRoute
+    }
     '/_a/w/$workspaceId/hub/dashboard': {
       id: '/_a/w/$workspaceId/hub/dashboard'
       path: '/hub/dashboard'
@@ -306,6 +326,7 @@ interface AWWorkspaceIdRouteChildren {
   AWWorkspaceIdSettingsRoute: typeof AWWorkspaceIdSettingsRoute
   AWWorkspaceIdIndexRoute: typeof AWWorkspaceIdIndexRoute
   AWWorkspaceIdAccountTrashRoute: typeof AWWorkspaceIdAccountTrashRoute
+  AWWorkspaceIdAgentSessionIdRoute: typeof AWWorkspaceIdAgentSessionIdRoute
   AWWorkspaceIdHubDashboardRoute: typeof AWWorkspaceIdHubDashboardRoute
 }
 
@@ -315,6 +336,7 @@ const AWWorkspaceIdRouteChildren: AWWorkspaceIdRouteChildren = {
   AWWorkspaceIdSettingsRoute: AWWorkspaceIdSettingsRoute,
   AWWorkspaceIdIndexRoute: AWWorkspaceIdIndexRoute,
   AWWorkspaceIdAccountTrashRoute: AWWorkspaceIdAccountTrashRoute,
+  AWWorkspaceIdAgentSessionIdRoute: AWWorkspaceIdAgentSessionIdRoute,
   AWWorkspaceIdHubDashboardRoute: AWWorkspaceIdHubDashboardRoute,
 }
 

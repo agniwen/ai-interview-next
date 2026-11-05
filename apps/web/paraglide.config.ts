@@ -7,25 +7,5 @@ export const paraglideCompilerOptions = {
   outputStructure: "message-modules",
   project: "./project.inlang",
   routeStrategies: [{ exclude: true, match: "/api/:path(.*)?" }],
-  strategy: ["url", "baseLocale"],
-  urlPatterns: [
-    {
-      localized: [
-        ["zh-CN", "/zh-CN"],
-        ["ja", "/ja"],
-        ["ko", "/ko"],
-        ["en", "/"],
-      ],
-      pattern: "/",
-    },
-    {
-      localized: [
-        ["zh-CN", "/zh-CN/:path(.*)?"],
-        ["ja", "/ja/:path(.*)?"],
-        ["ko", "/ko/:path(.*)?"],
-        ["en", "/:path(.*)?"],
-      ],
-      pattern: "/:path(.*)?",
-    },
-  ],
+  strategy: ["cookie", "baseLocale"],
 } satisfies CompilerOptions;

@@ -16,7 +16,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
-import { localizeHref } from "@/paraglide/runtime";
 
 function userMenuLayout(sidebar: boolean, collapsed: boolean, iconOnly: boolean) {
   const triggerClassName = cn(
@@ -87,7 +86,7 @@ export function UserMenu({
       const { error } = await authClient.signOut();
       setFailed(Boolean(error));
       if (!error) {
-        window.location.assign(localizeHref("/sign-in"));
+        window.location.assign("/sign-in");
       }
     } catch {
       setFailed(true);

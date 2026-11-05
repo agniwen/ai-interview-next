@@ -1,3 +1,4 @@
+import { IconUser } from "@tabler/icons-react";
 import { AccountPageSkeleton } from "@/components/skeletons/pages/account-page-skeleton";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { AccountPageContent } from "@/components/settings/account-page";
@@ -11,6 +12,7 @@ function AccountPage() {
   return (
     <>
       <PageHeaderContent>
+        <IconUser className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <span className="truncate text-sm font-medium">{m.account_title()}</span>
       </PageHeaderContent>
       <AccountPageContent workspaceId={workspaceId} />

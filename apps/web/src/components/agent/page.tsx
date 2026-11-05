@@ -330,9 +330,8 @@ export function AgentPage({ workspaceId, sessionId }: { workspaceId: string; ses
         onCreated={async (id) => {
           await queryClient.invalidateQueries({ queryKey: listKey });
           await navigate({
-            params: { workspaceId },
-            search: { session: id },
-            to: "/w/$workspaceId/agent",
+            params: { sessionId: id, workspaceId },
+            to: "/w/$workspaceId/agent/$sessionId",
           });
         }}
         onRestore={() => {

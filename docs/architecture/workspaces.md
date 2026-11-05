@@ -61,7 +61,7 @@
 
 ## 当前实现
 
-- Web 使用无路径认证布局 `_a`；正式页面位于 `/w/$workspaceId/agent`、`/w/$workspaceId/hub/dashboard`、`/w/$workspaceId/settings` 与 `/w/$workspaceId/account`，并保留当前语言前缀。
+- Web 使用无路径认证布局 `_a`；正式页面位于 `/w/$workspaceId/agent`、`/w/$workspaceId/hub/dashboard`、`/w/$workspaceId/settings` 与 `/w/$workspaceId/account`，使用语言 Cookie 选择界面语言。
 - `/workspaces` 为普通登录入口，恢复最后激活的工作区；`/workspaces?choose=true` 为工作区选择及无目标时的创建／接受邀请入口。
 - `/invite/$invitationId` 为邀请确认页；登录通过经过校验的 `next` 参数保留返回目标。
 - API 的 Better Auth Organization 插件处理工作区、成员、角色和邀请；`databaseHooks.user.create.after` 创建初始工作区及 owner 成员关系。

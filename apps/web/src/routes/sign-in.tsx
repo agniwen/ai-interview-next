@@ -12,7 +12,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth/client";
 import { loginSearch } from "@/lib/workspaces/client";
 import * as m from "@/paraglide/messages";
-import { localizeHref } from "@/paraglide/runtime";
 
 export const Route = createFileRoute("/sign-in")({
   validateSearch: loginSearch,
@@ -32,7 +31,7 @@ export const Route = createFileRoute("/sign-in")({
     const [failed, setFailed] = useState(Boolean(callbackError));
     useEffect(() => {
       if (session) {
-        window.location.replace(localizeHref(next ?? "/workspaces"));
+        window.location.replace(next ?? "/workspaces");
       }
     }, [session, next]);
 
@@ -40,10 +39,10 @@ export const Route = createFileRoute("/sign-in")({
       setPending(true);
       setFailed(false);
       try {
-        const errorCallbackURL = new URL(localizeHref("/sign-in"), window.location.origin);
+        const errorCallbackURL = new URL("/sign-in", window.location.origin);
         errorCallbackURL.searchParams.set("next", next ?? "/workspaces");
         const { error } = await authClient.signIn.social({
-          callbackURL: new URL(localizeHref(next ?? "/workspaces"), window.location.origin).href,
+          callbackURL: new URL(next ?? "/workspaces", window.location.origin).href,
           errorCallbackURL: errorCallbackURL.href,
           provider: "google",
         });

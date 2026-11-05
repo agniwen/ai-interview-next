@@ -8,6 +8,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 
+import languageSettings from "./project.inlang/settings.json";
+import { localizedAssetPath, publicPages } from "./src/lib/localized-pages";
 import { paraglideCompilerOptions } from "./paraglide.config.ts";
 
 const config = defineConfig({
@@ -17,14 +19,16 @@ const config = defineConfig({
     cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
     tanstackStart({
-      pages: paraglideCompilerOptions.urlPatterns[0].localized.flatMap(([, path]) => [
-        { path },
-        { path: path === "/" ? "/sign-in" : `${path}/sign-in` },
-      ]),
+      pages: languageSettings.locales.flatMap((locale) =>
+        publicPages.map((path) => ({
+          path: localizedAssetPath(path, locale),
+          prerender: {
+            headers: { cookie: `PARAGLIDE_LOCALE=${locale}`, "x-sainoa-prerender": "1" },
+          },
+        })),
+      ),
       prerender: {
         autoStaticPathsDiscovery: false,
-        // 输出 .html，使 Cloudflare 保持现有的不带尾斜杠的语言路由。
-        // Emit .html files so Cloudflare preserves the existing slashless locale URLs.
         autoSubfolderIndex: false,
         crawlLinks: false,
         enabled: true,

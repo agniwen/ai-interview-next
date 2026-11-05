@@ -41,7 +41,6 @@ import { CreateWorkspaceModal } from "./create-workspace-modal";
 import { AutoSaveInput } from "@/components/settings/auto-save-input";
 import { SettingsGroup, SettingsRow } from "@/components/settings/settings-group";
 import * as m from "@/paraglide/messages";
-import { localizeHref } from "@/paraglide/runtime";
 
 const roles = ["member", "admin", "owner"] as const;
 type Role = (typeof roles)[number];
@@ -262,9 +261,7 @@ export function WorkspaceSettings({
                       role: inviteRole,
                     }),
                   );
-                  setLink(
-                    new URL(localizeHref(`/invite/${invitation.id}`), window.location.origin).href,
-                  );
+                  setLink(new URL(`/invite/${invitation.id}`, window.location.origin).href);
                   setCopied(false);
                 });
               }}
@@ -328,10 +325,7 @@ export function WorkspaceSettings({
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    setLink(
-                      new URL(localizeHref(`/invite/${invitation.id}`), window.location.origin)
-                        .href,
-                    );
+                    setLink(new URL(`/invite/${invitation.id}`, window.location.origin).href);
                     setCopied(false);
                   }}
                 >

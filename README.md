@@ -58,9 +58,7 @@ bun run dev --filter=@ai-interview/web
 
 ## Web 页面渲染
 
-首页和登录页使用 TanStack Start 静态预渲染（SSG）。`bun run build --filter=@ai-interview/web` 会生成 8 个页面：`/`、`/sign-in`，以及带 `/zh-CN`、`/ja`、`/ko` 前缀的对应页面。路径取自 Paraglide 的首页语言映射，配置位于 `apps/web/vite.config.ts`；关闭自动路由发现和链接爬取，新增页面需明确加入预渲染列表。
-
-HTML 输出到 `apps/web/dist/client/`，由 Cloudflare Static Assets 优先提供，无需调用 Web Worker 渲染这些页面。其他页面仍按请求 SSR，`/api/*` 继续通过 Service Binding 转发到 API。登录状态、用户菜单和登录操作由客户端通过 Better Auth API 动态处理，不写入静态 HTML；登录回调的错误提示在水合后显示。
+首页和登录页使用 TanStack Start 静态预渲染（SSG）。`bun run build --filter=@ai-interview/web` 在 `apps/web/dist/client/_localized/` 为每种语言生成首页和登录页。公开地址为 `/` 和 `/sign-in`，Web Worker 根据语言 Cookie 从 ASSETS 读取对应的 HTML。其他页面按请求 SSR，`/api/*` 通过 Service Binding 转发到 API。登录状态和操作由客户端通过 Better Auth API 处理。
 
 `bun run dev` 仍使用开发服务器渲染。验证实际 SSG 行为请运行 `bun run preview --filter=@ai-interview/web`，它会先构建再启动 Cloudflare 本地预览。
 
@@ -116,13 +114,10 @@ API 构建及两个应用的部署脚本设置 `WRANGLER_NO_SKILLS_UPDATE_PROMPT
 
 ## 全局路由国际化
 
-使用 Paraglide 编译文案，语言由 URL 唯一决定：英文首页为 `/`，中文为 `/zh-CN`，日文为 `/ja`，韩文为 `/ko`。嵌套页面同样应用前缀，例如 `/interviews/123` 与 `/ja/interviews/123`。不使用 Cookie 或浏览器偏好选择语言。
+使用 Paraglide 编译文案。语言切换器写入站点 Cookie `PARAGLIDE_LOCALE`，随后刷新当前地址，保留查询参数和锚点。首次访问默认使用英文。旧语言前缀链接会保存对应语言，并跳转到相同的无前缀地址。
 
-- 翻译源文件：`apps/web/messages/{locale}.json`。首页相关文案参考旧项目 `ai-interview`，按实际使用范围迁入。
-- 语言列表与默认语言：`apps/web/project.inlang/settings.json`；URL 策略：`apps/web/paraglide.config.ts`。
-- 路由文件继续使用无语言前缀的路径。Router 的 `rewrite` 统一处理前缀，普通站内导航使用 TanStack `Link`，不要在组件中手动拼接语言前缀。
-- 组件使用 `@/paraglide/messages` 的消息函数；全局语言切换组件位于 `components/i18n/language-switcher.tsx`，切换语言时保留路径、查询参数及锚点，通过页面导航重新执行对应语言的 SSR。
-- `src/server.ts` 使用 Paraglide middleware 隔离请求语言，Wrangler 的 `main` 必须指向该入口。`/api` 请求不经过文档语言策略；API 调用使用原始 API URL，不使用页面本地化链接函数。
+- 翻译源文件：`apps/web/messages/{locale}.json`。语言列表和默认语言位于 `apps/web/project.inlang/settings.json`，Cookie 策略位于 `apps/web/paraglide.config.ts`。
+- `src/server.ts` 使用 Paraglide middleware 隔离请求语言。公开页按 Cookie 选择静态文件，工作区使用同一 Cookie 渲染首屏。API 和 OAuth 回调沿用原路径。
 - `src/paraglide/` 是生成输出，已排除版本控制、lint 和覆盖率统计。通过根目录 Turbo 命令执行开发、构建、测试和类型检查时会先编译文案。单独编译：`bun run --filter @ai-interview/web i18n:compile`。
 
 首页布局与交互演示迁自旧项目 `ai-interview`，保留暖白背景色调、Tabler 图标和整个首页的 ScrollArea。演示包括招聘台、候选人详情、AI 面试、人工面试及评估流程，数据均为本地示例，不调用业务后端。筛选简历和工作台入口暂时禁用，标注“即将上线”；登录入口已接入 Better Auth + Google，认证数据使用 Cloudflare D1，配置见 [Google 登录](docs/auth/google-login.md)。

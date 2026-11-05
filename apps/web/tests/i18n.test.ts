@@ -1,65 +1,54 @@
 import { describe, expect, it } from "vitest";
 
 import { home_hero_tagline } from "@/paraglide/messages";
-import { deLocalizeUrl, getLocale, localizeUrl } from "@/paraglide/runtime";
+import { getLocale } from "@/paraglide/runtime";
 import { paraglideMiddleware } from "@/paraglide/server";
 
 const origin = "https://sainoa.example";
 
-describe("global URL localization", () => {
-  it.each([
-    ["en", "/"],
-    ["zh-CN", "/zh-CN"],
-    ["ja", "/ja"],
-    ["ko", "/ko"],
-  ] as const)("uses the canonical homepage for %s", (locale, path) => {
-    expect(localizeUrl(`${origin}/`, { locale }).pathname).toBe(path);
+describe("cookie localization", () => {
+  it.each(["/", "/sign-in", "/w/demo/hub/dashboard", "/w/demo/agent/chat"])(
+    "uses the language cookie without changing %s",
+    async (path) => {
+      const request = new Request(new URL(path, origin), {
+        headers: { "Sec-Fetch-Dest": "document", cookie: "PARAGLIDE_LOCALE=ko" },
+      });
+      const response = await paraglideMiddleware(request, ({ request: resolved }) =>
+        Response.json({ locale: getLocale(), url: resolved.url }),
+      );
+      expect(await response.json()).toEqual({ locale: "ko", url: request.url });
+      expect(response.headers.get("vary")).toContain("Cookie");
+    },
+  );
+
+  it.each(["", "PARAGLIDE_LOCALE=unknown"])("defaults to English for cookie %j", async (cookie) => {
+    const request = new Request(origin, { headers: { "Accept-Language": "ja", cookie } });
+    const response = await paraglideMiddleware(request, () => Response.json(getLocale()));
+    expect(await response.json()).toBe("en");
   });
 
-  it("localizes nested pages and preserves query parameters and fragments", () => {
-    const original = new URL("/interviews/123?view=report#answers", origin);
-    const localized = localizeUrl(original, { locale: "ja" });
-    expect(localized.href).toBe(`${origin}/ja/interviews/123?view=report#answers`);
-    expect(deLocalizeUrl(localized).href).toBe(original.href);
-    expect(localizeUrl(localized, { locale: "en" }).href).toBe(original.href);
-  });
-
-  it("uses English for unprefixed requests regardless of cookies or browser language", async () => {
-    const request = new Request(`${origin}/`, {
-      headers: { "Accept-Language": "ja", Cookie: "PARAGLIDE_LOCALE=ko; ARC_LOCALE=zh-CN" },
-    });
-    const response = await paraglideMiddleware(request, () =>
-      Response.json({ locale: getLocale() }),
-    );
-    expect(await response.json()).toEqual({ locale: "en" });
-    expect(response.headers.has("set-cookie")).toBe(false);
-  });
-
-  it("isolates translations between concurrent server requests", async () => {
-    const paths = ["/zh-CN", "/", "/ja", "/ko"];
+  it("isolates concurrent requests to the same URL", async () => {
+    const locales = ["zh-CN", "en", "ja", "ko"];
     const responses = await Promise.all(
-      paths.map((path) =>
-        paraglideMiddleware(new Request(new URL(path, origin)), async () => {
-          await Promise.resolve();
-          return Response.json({ locale: getLocale(), title: home_hero_tagline() });
-        }),
+      locales.map((locale) =>
+        paraglideMiddleware(
+          new Request(origin, { headers: { cookie: `PARAGLIDE_LOCALE=${locale}` } }),
+          () => Response.json({ locale: getLocale(), title: home_hero_tagline() }),
+        ),
       ),
     );
     const values = await Promise.all(responses.map((response) => response.json()));
-    expect(values.map((value) => value.locale)).toEqual(["zh-CN", "en", "ja", "ko"]);
-    expect(values[0].title).toBe("你的新一代招聘智能体");
-    expect(values[1].title).toBe("Your next recruiting agent");
+    expect(values.map((value) => value.locale)).toEqual(locales);
     expect(new Set(values.map((value) => value.title)).size).toBe(4);
   });
 
-  it("passes API requests through without locale redirects", async () => {
+  it("passes API requests through", async () => {
     const request = new Request(`${origin}/api/health`, {
-      headers: { "Accept-Language": "ja", "Sec-Fetch-Dest": "document" },
+      headers: { "Sec-Fetch-Dest": "document", cookie: "PARAGLIDE_LOCALE=ja" },
     });
     const response = await paraglideMiddleware(request, ({ request: resolved }) =>
       Response.json({ url: resolved.url }),
     );
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ url: `${origin}/api/health` });
+    expect(await response.json()).toEqual({ url: request.url });
   });
 });

@@ -25,16 +25,17 @@ describe("workspace shell navigation", () => {
       id: "authenticated",
     });
     const agent = createRoute({ getParentRoute: () => authenticated, path: "/agent" });
+    const chat = createRoute({ getParentRoute: () => authenticated, path: "/agent/$sessionId" });
     const hub = createRoute({ getParentRoute: () => authenticated, path: "/hub" });
     const router = createRouter({
       context: { queryClient },
       history: createMemoryHistory({ initialEntries: ["/agent"] }),
-      routeTree: root.addChildren([authenticated.addChildren([agent, hub])]),
+      routeTree: root.addChildren([authenticated.addChildren([agent, chat, hub])]),
     });
     await router.load();
     router.history.push("/hub");
     await router.load();
-    router.history.push("/agent?session=chat");
+    router.history.push("/agent/chat");
     await router.load();
     expect(getWorkspaceSession).toHaveBeenCalledTimes(1);
     await queryClient.invalidateQueries({ queryKey: workspaceSessionQueryOptions.queryKey });
