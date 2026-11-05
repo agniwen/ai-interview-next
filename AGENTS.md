@@ -27,6 +27,10 @@ A guard is a separate decision. Before adding one, say how the failure happens, 
 
 Validate external input once, at the entry point. After the type is established, pass that value through. Skip further defensive checks on it.
 
+## JSON
+
+Define every project-owned JSON structure as an object with a required, non-null top-level `version` field. Use it to identify the data format when reading or rendering the payload.
+
 ## Functions
 
 The main function is the happy path. Put validation and detail in subfunctions.
