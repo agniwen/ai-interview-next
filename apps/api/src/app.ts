@@ -4,6 +4,7 @@ import { requireSession } from "./middleware/authenticated";
 import type { AuthenticatedEnv } from "./middleware/authenticated";
 import { Hono } from "hono";
 import { z } from "zod";
+import { atsRoutes } from "./modules/ats/routes";
 import { agentRoutes } from "./modules/agent/routes";
 import { authRoutes } from "./modules/auth/routes";
 import { workspaceRoutes } from "./modules/workspaces/routes";
@@ -13,6 +14,7 @@ const protectedApi = new Hono<AuthenticatedEnv>()
   .use(csrf())
   .use(requireSession)
   .route("/agent", agentRoutes)
+  .route("/ats", atsRoutes)
   .route("/workspaces", workspaceRoutes);
 
 export const app = new Hono<{ Bindings: ApiBindings }>()

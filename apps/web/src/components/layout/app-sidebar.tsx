@@ -1,5 +1,14 @@
 import { SidebarPageTarget } from "./sidebar-page";
-import { IconChartBar, IconSparkle, IconStack2, IconSettings, IconUser } from "@tabler/icons-react";
+import {
+  IconChartBar,
+  IconFileCv,
+  IconListDetails,
+  IconUsers,
+  IconSparkle,
+  IconStack2,
+  IconSettings,
+  IconUser,
+} from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "@/components/brand-mark";
 import { UserMenu } from "@/components/auth/user-menu";
@@ -112,6 +121,40 @@ export function AppSidebar({
                     <span>{m.workspace_dashboard()}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                {(
+                  [
+                    {
+                      icon: IconUsers,
+                      label: m.ats_candidates(),
+                      to: "/w/$workspaceId/hub/candidates",
+                    },
+                    { icon: IconFileCv, label: m.ats_resumes(), to: "/w/$workspaceId/hub/resumes" },
+                    {
+                      icon: IconListDetails,
+                      label: m.ats_applications(),
+                      to: "/w/$workspaceId/hub/applications",
+                    },
+                  ] as const
+                ).map(({ icon: Icon, label, to }) => (
+                  <SidebarMenuItem key={to}>
+                    <SidebarMenuButton
+                      tooltip={label}
+                      aria-label={label}
+                      render={
+                        <Link
+                          to={to}
+                          params={{ workspaceId }}
+                          activeProps={{ "data-active": true }}
+                        />
+                      }
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      <Icon className="size-4" aria-hidden="true" />
+                      <span>{label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroup>
             <SidebarGroup>

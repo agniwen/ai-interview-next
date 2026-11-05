@@ -14,3 +14,11 @@ export {
 } from "./ats";
 export { account, rateLimit, session, user, verification } from "./auth";
 export { invitation, member, organization } from "./organization";
+export {
+  applicationActivity,
+  resumeProcessingAttempt,
+  resumeProcessingOutbox,
+  resumeProcessingRun,
+  resumeUploadBatch,
+  resumeUploadItem,
+} from "./resume-processing";

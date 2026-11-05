@@ -32,6 +32,42 @@
       "migrations_dir": "../../packages/db/migrations",
     },
   ],
+  "r2_buckets": [{ "binding": "RESUME_FILES", "bucket_name": "sainoa-resumes" }],
+  "queues": {
+    "producers": [
+      { "binding": "RESUME_EXTRACT_QUEUE", "queue": "sainoa-resume-extract" },
+      { "binding": "RESUME_STRUCTURE_QUEUE", "queue": "sainoa-resume-structure" },
+      { "binding": "RESUME_EVALUATE_QUEUE", "queue": "sainoa-resume-evaluate" },
+    ],
+    "consumers": [
+      {
+        "queue": "sainoa-resume-extract",
+        "max_batch_size": 1,
+        "max_batch_timeout": 0,
+        "max_concurrency": 6,
+      },
+      {
+        "queue": "sainoa-resume-structure",
+        "max_batch_size": 1,
+        "max_batch_timeout": 0,
+        "max_concurrency": 6,
+      },
+      {
+        "queue": "sainoa-resume-evaluate",
+        "max_batch_size": 1,
+        "max_batch_timeout": 0,
+        "max_concurrency": 6,
+      },
+    ],
+  },
+  "workflows": [
+    {
+      "binding": "RESUME_WORKFLOW",
+      "name": "sainoa-resume-processing",
+      "class_name": "ResumeWorkflow",
+    },
+  ],
+  "triggers": { "crons": ["* * * * *"] },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,

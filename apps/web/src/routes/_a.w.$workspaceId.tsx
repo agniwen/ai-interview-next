@@ -29,7 +29,7 @@ function WorkspaceShell() {
     matchRoute({ to: "/w/$workspaceId/settings", params: { workspaceId } }) ||
     matchRoute({ to: "/w/$workspaceId/account", params: { workspaceId }, fuzzy: true }) ||
     matchRoute({
-      to: "/w/$workspaceId/hub/dashboard",
+      to: "/w/$workspaceId/hub",
       params: { workspaceId },
       fuzzy: true,
     })

@@ -31,6 +31,10 @@ Validate external input once, at the entry point. After the type is established,
 
 Define every project-owned JSON structure as an object with a required, non-null top-level `version` field. Use it to identify the data format when reading or rendering the payload.
 
+## File uploads
+
+Use [Files SDK](https://files-sdk.dev/) for R2 and S3 uploads, including presigning and writes through the API.
+
 ## Functions
 
 The main function is the happy path. Put validation and detail in subfunctions.

@@ -79,3 +79,15 @@ interface ResumeWorkflowRuntime {
 ```
 
 Cloudflare 适配层将对象读写映射到 R2 或 S3 兼容接口，将阶段映射到三个 Queue binding，将工作流启动、等候、延迟和通知映射到 Workflows。队列入口负责消息校验和确认，调用应用中的阶段执行函数。应用数据库保存调度器推进所需的业务状态，后续更换实现时可复用阶段执行、重试策略和状态迁移逻辑。
+
+## 本地运行与部署
+
+先运行 `make db-migrate`，再启动 `make dev`。Hub 工作台中的候选人、简历和招聘流程从当前工作区分页读取。可在招聘流程中新建岗位，再到简历页面匹配该岗位；解析和身份确认完成后会自动启动评价。
+
+Cloudflare 适配由 API Worker 持有，资源名如下：
+
+- 私有 R2 桶：`sainoa-resumes`。
+- 队列：`sainoa-resume-extract`、`sainoa-resume-structure`、`sainoa-resume-evaluate`。
+- Workflow：`sainoa-resume-processing`，由 Worker 部署注册。
+
+应用通过 [Files SDK 的 R2 适配器](https://files-sdk.dev/guides/cloudflare-workers-r2-storage)读写绑定并生成直传签名。要启用浏览器直接上传到 R2，在 API 环境配置 `RESUME_S3_ENDPOINT`、`RESUME_S3_ACCESS_KEY_ID` 和 `RESUME_S3_SECRET_ACCESS_KEY`，并为应用域名配置桶的 CORS（允许 `PUT` 和 `Content-Type`）。缺少这些配置时，上传走受工作区权限保护的 API。

@@ -5,5 +5,10 @@ type DurableObjectNamespace<
   T extends import("@cloudflare/workers-types").Rpc.DurableObjectBranded | undefined = undefined,
 > = import("@cloudflare/workers-types").DurableObjectNamespace<T>;
 declare module "cloudflare:workers" {
+  export const WorkflowEntrypoint: typeof import("@cloudflare/workers-types").CloudflareWorkersModule.WorkflowEntrypoint;
+  export type WorkflowEvent<T> =
+    import("@cloudflare/workers-types").CloudflareWorkersModule.WorkflowEvent<T>;
+  export type WorkflowStep =
+    import("@cloudflare/workers-types").CloudflareWorkersModule.WorkflowStep;
   export const DurableObject: typeof import("@cloudflare/workers-types").CloudflareWorkersModule.DurableObject;
 }

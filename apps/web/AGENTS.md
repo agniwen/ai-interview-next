@@ -13,3 +13,8 @@ When creating or changing a page with asynchronous data or lazy content, read [t
   保留已挂载的共享布局、Sidebar、tabs、已知标题和缓存内容；后台刷新继续展示已有内容，骨架只替代尚不可用的内容。提交、删除、登录和生成回答等操作保留进度提示。
 - Skeletons are presentation components: no requests, auth logic, mutations, or imports from the feature being loaded. Use an accessible loading label and `aria-busy` for a loading region; hide decorative shapes from assistive technology.
   骨架只负责展示，不发请求、不处理认证或修改操作，也不导入正在加载的业务组件。加载区域提供可访问的加载标签与 `aria-busy`，装饰图形对辅助技术隐藏。
+
+# Long-form text fields / 长文本表单
+
+Use `src/components/ui/markdown-editor.tsx` for editable long-form fields such as job requirements. Store their values as Markdown strings.
+岗位要求等可编辑的长文本字段使用 `src/components/ui/markdown-editor.tsx`，以 Markdown 字符串保存。

@@ -20,10 +20,14 @@ import { Route as AWWorkspaceIdRouteImport } from './routes/_a.w.$workspaceId'
 import { Route as AWWorkspaceIdIndexRouteImport } from './routes/_a.w.$workspaceId.index'
 import { Route as AWWorkspaceIdAccountRouteImport } from './routes/_a.w.$workspaceId.account'
 import { Route as AWWorkspaceIdAgentRouteImport } from './routes/_a.w.$workspaceId.agent'
+import { Route as AWWorkspaceIdHubRouteImport } from './routes/_a.w.$workspaceId.hub'
 import { Route as AWWorkspaceIdSettingsRouteImport } from './routes/_a.w.$workspaceId.settings'
 import { Route as AWWorkspaceIdAccountTrashRouteImport } from './routes/_a.w.$workspaceId.account_.trash'
 import { Route as AWWorkspaceIdAgentSessionIdRouteImport } from './routes/_a.w.$workspaceId.agent_.$sessionId'
+import { Route as AWWorkspaceIdHubApplicationsRouteImport } from './routes/_a.w.$workspaceId.hub.applications'
+import { Route as AWWorkspaceIdHubCandidatesRouteImport } from './routes/_a.w.$workspaceId.hub.candidates'
 import { Route as AWWorkspaceIdHubDashboardRouteImport } from './routes/_a.w.$workspaceId.hub.dashboard'
+import { Route as AWWorkspaceIdHubResumesRouteImport } from './routes/_a.w.$workspaceId.hub.resumes'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -79,6 +83,11 @@ const AWWorkspaceIdAgentRoute = AWWorkspaceIdAgentRouteImport.update({
   path: '/agent',
   getParentRoute: () => AWWorkspaceIdRoute,
 } as any)
+const AWWorkspaceIdHubRoute = AWWorkspaceIdHubRouteImport.update({
+  id: '/hub',
+  path: '/hub',
+  getParentRoute: () => AWWorkspaceIdRoute,
+} as any)
 const AWWorkspaceIdSettingsRoute = AWWorkspaceIdSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -96,12 +105,29 @@ const AWWorkspaceIdAgentSessionIdRoute =
     path: '/agent/$sessionId',
     getParentRoute: () => AWWorkspaceIdRoute,
   } as any)
+const AWWorkspaceIdHubApplicationsRoute =
+  AWWorkspaceIdHubApplicationsRouteImport.update({
+    id: '/applications',
+    path: '/applications',
+    getParentRoute: () => AWWorkspaceIdHubRoute,
+  } as any)
+const AWWorkspaceIdHubCandidatesRoute =
+  AWWorkspaceIdHubCandidatesRouteImport.update({
+    id: '/candidates',
+    path: '/candidates',
+    getParentRoute: () => AWWorkspaceIdHubRoute,
+  } as any)
 const AWWorkspaceIdHubDashboardRoute =
   AWWorkspaceIdHubDashboardRouteImport.update({
-    id: '/hub/dashboard',
-    path: '/hub/dashboard',
-    getParentRoute: () => AWWorkspaceIdRoute,
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AWWorkspaceIdHubRoute,
   } as any)
+const AWWorkspaceIdHubResumesRoute = AWWorkspaceIdHubResumesRouteImport.update({
+  id: '/resumes',
+  path: '/resumes',
+  getParentRoute: () => AWWorkspaceIdHubRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -113,11 +139,15 @@ export interface FileRoutesByFullPath {
   '/w/$workspaceId': typeof AWWorkspaceIdRouteWithChildren
   '/w/$workspaceId/account': typeof AWWorkspaceIdAccountRoute
   '/w/$workspaceId/agent': typeof AWWorkspaceIdAgentRoute
+  '/w/$workspaceId/hub': typeof AWWorkspaceIdHubRouteWithChildren
   '/w/$workspaceId/settings': typeof AWWorkspaceIdSettingsRoute
   '/w/$workspaceId/': typeof AWWorkspaceIdIndexRoute
   '/w/$workspaceId/account/trash': typeof AWWorkspaceIdAccountTrashRoute
   '/w/$workspaceId/agent/$sessionId': typeof AWWorkspaceIdAgentSessionIdRoute
+  '/w/$workspaceId/hub/applications': typeof AWWorkspaceIdHubApplicationsRoute
+  '/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
+  '/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -128,11 +158,15 @@ export interface FileRoutesByTo {
   '/invite/$invitationId': typeof AInviteInvitationIdRoute
   '/w/$workspaceId/account': typeof AWWorkspaceIdAccountRoute
   '/w/$workspaceId/agent': typeof AWWorkspaceIdAgentRoute
+  '/w/$workspaceId/hub': typeof AWWorkspaceIdHubRouteWithChildren
   '/w/$workspaceId/settings': typeof AWWorkspaceIdSettingsRoute
   '/w/$workspaceId': typeof AWWorkspaceIdIndexRoute
   '/w/$workspaceId/account/trash': typeof AWWorkspaceIdAccountTrashRoute
   '/w/$workspaceId/agent/$sessionId': typeof AWWorkspaceIdAgentSessionIdRoute
+  '/w/$workspaceId/hub/applications': typeof AWWorkspaceIdHubApplicationsRoute
+  '/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
+  '/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -146,11 +180,15 @@ export interface FileRoutesById {
   '/_a/w/$workspaceId': typeof AWWorkspaceIdRouteWithChildren
   '/_a/w/$workspaceId/account': typeof AWWorkspaceIdAccountRoute
   '/_a/w/$workspaceId/agent': typeof AWWorkspaceIdAgentRoute
+  '/_a/w/$workspaceId/hub': typeof AWWorkspaceIdHubRouteWithChildren
   '/_a/w/$workspaceId/settings': typeof AWWorkspaceIdSettingsRoute
   '/_a/w/$workspaceId/': typeof AWWorkspaceIdIndexRoute
   '/_a/w/$workspaceId/account_/trash': typeof AWWorkspaceIdAccountTrashRoute
   '/_a/w/$workspaceId/agent_/$sessionId': typeof AWWorkspaceIdAgentSessionIdRoute
+  '/_a/w/$workspaceId/hub/applications': typeof AWWorkspaceIdHubApplicationsRoute
+  '/_a/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/_a/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
+  '/_a/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -164,11 +202,15 @@ export interface FileRouteTypes {
     | '/w/$workspaceId'
     | '/w/$workspaceId/account'
     | '/w/$workspaceId/agent'
+    | '/w/$workspaceId/hub'
     | '/w/$workspaceId/settings'
     | '/w/$workspaceId/'
     | '/w/$workspaceId/account/trash'
     | '/w/$workspaceId/agent/$sessionId'
+    | '/w/$workspaceId/hub/applications'
+    | '/w/$workspaceId/hub/candidates'
     | '/w/$workspaceId/hub/dashboard'
+    | '/w/$workspaceId/hub/resumes'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -179,11 +221,15 @@ export interface FileRouteTypes {
     | '/invite/$invitationId'
     | '/w/$workspaceId/account'
     | '/w/$workspaceId/agent'
+    | '/w/$workspaceId/hub'
     | '/w/$workspaceId/settings'
     | '/w/$workspaceId'
     | '/w/$workspaceId/account/trash'
     | '/w/$workspaceId/agent/$sessionId'
+    | '/w/$workspaceId/hub/applications'
+    | '/w/$workspaceId/hub/candidates'
     | '/w/$workspaceId/hub/dashboard'
+    | '/w/$workspaceId/hub/resumes'
   id:
     | '__root__'
     | '/'
@@ -196,11 +242,15 @@ export interface FileRouteTypes {
     | '/_a/w/$workspaceId'
     | '/_a/w/$workspaceId/account'
     | '/_a/w/$workspaceId/agent'
+    | '/_a/w/$workspaceId/hub'
     | '/_a/w/$workspaceId/settings'
     | '/_a/w/$workspaceId/'
     | '/_a/w/$workspaceId/account_/trash'
     | '/_a/w/$workspaceId/agent_/$sessionId'
+    | '/_a/w/$workspaceId/hub/applications'
+    | '/_a/w/$workspaceId/hub/candidates'
     | '/_a/w/$workspaceId/hub/dashboard'
+    | '/_a/w/$workspaceId/hub/resumes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -289,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AWWorkspaceIdAgentRouteImport
       parentRoute: typeof AWWorkspaceIdRoute
     }
+    '/_a/w/$workspaceId/hub': {
+      id: '/_a/w/$workspaceId/hub'
+      path: '/hub'
+      fullPath: '/w/$workspaceId/hub'
+      preLoaderRoute: typeof AWWorkspaceIdHubRouteImport
+      parentRoute: typeof AWWorkspaceIdRoute
+    }
     '/_a/w/$workspaceId/settings': {
       id: '/_a/w/$workspaceId/settings'
       path: '/settings'
@@ -310,34 +367,72 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AWWorkspaceIdAgentSessionIdRouteImport
       parentRoute: typeof AWWorkspaceIdRoute
     }
+    '/_a/w/$workspaceId/hub/applications': {
+      id: '/_a/w/$workspaceId/hub/applications'
+      path: '/applications'
+      fullPath: '/w/$workspaceId/hub/applications'
+      preLoaderRoute: typeof AWWorkspaceIdHubApplicationsRouteImport
+      parentRoute: typeof AWWorkspaceIdHubRoute
+    }
+    '/_a/w/$workspaceId/hub/candidates': {
+      id: '/_a/w/$workspaceId/hub/candidates'
+      path: '/candidates'
+      fullPath: '/w/$workspaceId/hub/candidates'
+      preLoaderRoute: typeof AWWorkspaceIdHubCandidatesRouteImport
+      parentRoute: typeof AWWorkspaceIdHubRoute
+    }
     '/_a/w/$workspaceId/hub/dashboard': {
       id: '/_a/w/$workspaceId/hub/dashboard'
-      path: '/hub/dashboard'
+      path: '/dashboard'
       fullPath: '/w/$workspaceId/hub/dashboard'
       preLoaderRoute: typeof AWWorkspaceIdHubDashboardRouteImport
-      parentRoute: typeof AWWorkspaceIdRoute
+      parentRoute: typeof AWWorkspaceIdHubRoute
+    }
+    '/_a/w/$workspaceId/hub/resumes': {
+      id: '/_a/w/$workspaceId/hub/resumes'
+      path: '/resumes'
+      fullPath: '/w/$workspaceId/hub/resumes'
+      preLoaderRoute: typeof AWWorkspaceIdHubResumesRouteImport
+      parentRoute: typeof AWWorkspaceIdHubRoute
     }
   }
 }
 
+interface AWWorkspaceIdHubRouteChildren {
+  AWWorkspaceIdHubApplicationsRoute: typeof AWWorkspaceIdHubApplicationsRoute
+  AWWorkspaceIdHubCandidatesRoute: typeof AWWorkspaceIdHubCandidatesRoute
+  AWWorkspaceIdHubDashboardRoute: typeof AWWorkspaceIdHubDashboardRoute
+  AWWorkspaceIdHubResumesRoute: typeof AWWorkspaceIdHubResumesRoute
+}
+
+const AWWorkspaceIdHubRouteChildren: AWWorkspaceIdHubRouteChildren = {
+  AWWorkspaceIdHubApplicationsRoute: AWWorkspaceIdHubApplicationsRoute,
+  AWWorkspaceIdHubCandidatesRoute: AWWorkspaceIdHubCandidatesRoute,
+  AWWorkspaceIdHubDashboardRoute: AWWorkspaceIdHubDashboardRoute,
+  AWWorkspaceIdHubResumesRoute: AWWorkspaceIdHubResumesRoute,
+}
+
+const AWWorkspaceIdHubRouteWithChildren =
+  AWWorkspaceIdHubRoute._addFileChildren(AWWorkspaceIdHubRouteChildren)
+
 interface AWWorkspaceIdRouteChildren {
   AWWorkspaceIdAccountRoute: typeof AWWorkspaceIdAccountRoute
   AWWorkspaceIdAgentRoute: typeof AWWorkspaceIdAgentRoute
+  AWWorkspaceIdHubRoute: typeof AWWorkspaceIdHubRouteWithChildren
   AWWorkspaceIdSettingsRoute: typeof AWWorkspaceIdSettingsRoute
   AWWorkspaceIdIndexRoute: typeof AWWorkspaceIdIndexRoute
   AWWorkspaceIdAccountTrashRoute: typeof AWWorkspaceIdAccountTrashRoute
   AWWorkspaceIdAgentSessionIdRoute: typeof AWWorkspaceIdAgentSessionIdRoute
-  AWWorkspaceIdHubDashboardRoute: typeof AWWorkspaceIdHubDashboardRoute
 }
 
 const AWWorkspaceIdRouteChildren: AWWorkspaceIdRouteChildren = {
   AWWorkspaceIdAccountRoute: AWWorkspaceIdAccountRoute,
   AWWorkspaceIdAgentRoute: AWWorkspaceIdAgentRoute,
+  AWWorkspaceIdHubRoute: AWWorkspaceIdHubRouteWithChildren,
   AWWorkspaceIdSettingsRoute: AWWorkspaceIdSettingsRoute,
   AWWorkspaceIdIndexRoute: AWWorkspaceIdIndexRoute,
   AWWorkspaceIdAccountTrashRoute: AWWorkspaceIdAccountTrashRoute,
   AWWorkspaceIdAgentSessionIdRoute: AWWorkspaceIdAgentSessionIdRoute,
-  AWWorkspaceIdHubDashboardRoute: AWWorkspaceIdHubDashboardRoute,
 }
 
 const AWWorkspaceIdRouteWithChildren = AWWorkspaceIdRoute._addFileChildren(
