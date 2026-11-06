@@ -15,6 +15,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Frame } from "@/components/ui/frame";
 import { Group, GroupSeparator } from "@/components/ui/group";
 import {
   Pagination,
@@ -58,8 +59,8 @@ function AtsTable({
   rows: AtsRows;
 }) {
   return (
-    <div className="rounded-lg border">
-      <Table>
+    <Frame className="w-full">
+      <Table variant="card">
         <TableHeader>
           <TableRow>
             {headings.map((heading, index) => (
@@ -79,7 +80,7 @@ function AtsTable({
           ))}
         </TableBody>
       </Table>
-    </div>
+    </Frame>
   );
 }
 
