@@ -233,9 +233,9 @@ export function AgentPage({ workspaceId, sessionId }: { workspaceId: string; ses
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const api = agentClient(workspaceId);
-  const listKey = ["agent-sessions", workspaceId];
+  const listOptions = agentSessionsQueryOptions(workspaceId);
   const list = useQuery({
-    ...agentSessionsQueryOptions(workspaceId),
+    ...listOptions,
     refetchInterval: 5000,
   });
   const [deleting, setDeleting] = useState<ChatSummary>();
@@ -244,7 +244,7 @@ export function AgentPage({ workspaceId, sessionId }: { workspaceId: string; ses
   const summaryChanged = useCallback(
     (summary: ChatSummary) => {
       queryClient.setQueryData<{ sessions: ChatSummary[] }>(
-        ["agent-sessions", workspaceId],
+        agentSessionsQueryOptions(workspaceId).queryKey,
         (previous) => {
           if (!previous) {
             return previous;
@@ -276,7 +276,7 @@ export function AgentPage({ workspaceId, sessionId }: { workspaceId: string; ses
     setError("");
     try {
       await (command ? api.command(id, command) : api.remove(id));
-      await queryClient.invalidateQueries({ queryKey: listKey });
+      await queryClient.invalidateQueries({ queryKey: listOptions.queryKey });
       if (
         id === sessionId &&
         (!command || command.type === "trash" || command.type === "restore")
@@ -333,7 +333,7 @@ export function AgentPage({ workspaceId, sessionId }: { workspaceId: string; ses
         sessionId={sessionId}
         onSummary={summaryChanged}
         onCreated={async (id) => {
-          await queryClient.invalidateQueries({ queryKey: listKey });
+          await queryClient.invalidateQueries({ queryKey: listOptions.queryKey });
           await navigate({
             params: { sessionId: id, workspaceId },
             to: "/w/$workspaceId/agent/$sessionId",

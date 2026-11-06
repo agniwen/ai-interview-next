@@ -22,8 +22,8 @@ import * as m from "@/paraglide/messages";
 export function AgentTrashPage({ workspaceId }: { workspaceId: string }) {
   const api = agentClient(workspaceId);
   const queryClient = useQueryClient();
-  const queryKey = ["agent-sessions", workspaceId];
-  const list = useQuery(agentSessionsQueryOptions(workspaceId));
+  const listOptions = agentSessionsQueryOptions(workspaceId);
+  const list = useQuery(listOptions);
   const [deleting, setDeleting] = useState<ChatSummary>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -35,7 +35,7 @@ export function AgentTrashPage({ workspaceId }: { workspaceId: string }) {
     setError(false);
     try {
       await (restore ? api.command(id, { type: "restore" }) : api.remove(id));
-      await queryClient.invalidateQueries({ queryKey });
+      await queryClient.invalidateQueries({ queryKey: listOptions.queryKey });
       setDeleting(undefined);
     } catch {
       setError(true);

@@ -1,3 +1,4 @@
+import { workspaceKeys } from "@/lib/workspaces/query-keys";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { InvitationPageSkeleton } from "@/components/skeletons/pages/invitation-page-skeleton";
 import { InvitationCardSkeleton } from "@/components/skeletons/components/invitation-card-skeleton";
@@ -19,7 +20,7 @@ function Invitation() {
   const navigate = useNavigate();
   const action = useWorkspaceAction();
   const invitation = useQuery({
-    queryKey: ["workspace-invitations", invitationId],
+    queryKey: workspaceKeys.invitations._ctx.detail(invitationId).queryKey,
     queryFn: async () =>
       authData(await authClient.organization.getInvitation({ query: { id: invitationId } })),
   });

@@ -1,3 +1,4 @@
+import { workspaceKeys } from "@/lib/workspaces/query-keys";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { InvitationCardSkeleton } from "@/components/skeletons/components/invitation-card-skeleton";
 import { IconBuilding, IconBuildingOff } from "@tabler/icons-react";
@@ -91,7 +92,7 @@ export function WorkspacePicker({
           invitation.status === "pending" && new Date(invitation.expiresAt) > new Date(),
       );
     },
-    queryKey: ["workspace-invitations"],
+    queryKey: workspaceKeys.invitations.queryKey,
   });
   const phase = useSkeletonPhase(invitations.isPending);
 

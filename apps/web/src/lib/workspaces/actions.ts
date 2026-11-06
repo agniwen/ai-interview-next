@@ -1,3 +1,4 @@
+import { workspaceKeys } from "@/lib/workspaces/query-keys";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import * as m from "@/paraglide/messages";
@@ -19,16 +20,16 @@ export function authData<T>(result: AuthResult<T>) {
   return result.data;
 }
 
-export function useWorkspaceAction() {
+export function useWorkspaceAction<T = unknown>() {
   const router = useRouter();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (action: () => Promise<unknown>) => action(),
+    mutationFn: (action: () => Promise<T>) => action(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: workspaceSessionQueryOptions.queryKey });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["workspace-details"] }),
-        queryClient.invalidateQueries({ queryKey: ["workspace-invitations"] }),
+        queryClient.invalidateQueries({ queryKey: workspaceKeys.details._def }),
+        queryClient.invalidateQueries({ queryKey: workspaceKeys.invitations.queryKey }),
         router.invalidate(),
       ]);
     },

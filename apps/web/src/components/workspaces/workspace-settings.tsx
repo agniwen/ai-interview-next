@@ -1,3 +1,4 @@
+import { workspaceKeys } from "@/lib/workspaces/query-keys";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { WorkspaceSettingsPageSkeleton } from "@/components/skeletons/pages/workspace-settings-page-skeleton";
 import { useState } from "react";
@@ -128,7 +129,7 @@ export function WorkspaceSettings({
         ),
       };
     },
-    queryKey: ["workspace-details", workspaceId],
+    queryKey: workspaceKeys.details(workspaceId).queryKey,
   });
   const owner = role === "owner";
   const manage = owner || role === "admin";

@@ -11,23 +11,30 @@ import * as m from "@/paraglide/messages";
 
 export function CreateWorkspace() {
   const [name, setName] = useState("");
-  const action = useWorkspaceAction();
+  const action = useWorkspaceAction<string>();
   const navigate = useNavigate();
   return (
     <form
       className="flex flex-col gap-4"
       onSubmit={(event) => {
         event.preventDefault();
-        action.mutate(async () => {
-          const workspace = authData(
-            await authClient.organization.create({
-              keepCurrentActiveOrganization: true,
-              name: name.trim(),
-              slug: crypto.randomUUID(),
-            }),
-          );
-          await navigate({ params: { workspaceId: workspace.id }, to: "/w/$workspaceId/agent" });
-        });
+        action.mutate(
+          async () => {
+            const workspace = authData(
+              await authClient.organization.create({
+                keepCurrentActiveOrganization: true,
+                name: name.trim(),
+                slug: crypto.randomUUID(),
+              }),
+            );
+            return workspace.id;
+          },
+          {
+            onSuccess: (workspaceId) => {
+              void navigate({ params: { workspaceId }, to: "/w/$workspaceId/agent" });
+            },
+          },
+        );
       }}
     >
       <Field>
