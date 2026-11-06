@@ -272,12 +272,16 @@ export async function listResumes(
 ) {
   const workspace = eq(item.workspaceId, workspaceId);
   const effectiveStatus = sql`coalesce(${run.status}, ${item.status})`;
+  const candidateName = sql<string | null>`coalesce(${candidate.name}, case
+    when ${submission.identityStatus} = 'pending_review'
+    then nullif(trim(json_extract(${resume.parsedProfile}, '$.identity.name')), '')
+  end)`;
   const where = and(
     workspace,
     search
       ? or(
           includesText(item.filename, search),
-          includesText(candidate.name, search),
+          includesText(candidateName, search),
           includesText(user.name, search),
         )
       : undefined,
@@ -289,7 +293,7 @@ export async function listResumes(
     db
       .select({
         batchId: item.batchId,
-        candidateName: candidate.name,
+        candidateName,
         createdAt: batch.createdAt,
         creatorImage: user.image,
         creatorName: user.name,
@@ -336,6 +340,7 @@ export async function listResumes(
       .leftJoin(user, eq(user.id, batch.createdBy))
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
+      .leftJoin(resume, eq(resume.id, submission.resumeId))
       .leftJoin(candidate, eq(candidate.id, submission.resolvedCandidateId))
       .where(where),
   ]);

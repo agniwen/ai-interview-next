@@ -3,7 +3,9 @@ import {
   application,
   candidate,
   recruitmentProject,
+  resume,
   resumeProcessingRun,
+  resumeSubmission,
   resumeUploadBatch,
   resumeUploadItem,
 } from "@ai-interview/db/schema";
@@ -269,5 +271,58 @@ it("filters resume files before pagination and keeps full upload batch totals", 
     page: 2,
     rows: [{ filename: "first.pdf" }],
     total: 2,
+  });
+});
+
+it("shows and searches the extracted candidate name until identity is confirmed", async () => {
+  const { ats, userId, workspaceId } = await account("resume-review@example.com");
+  const batchId = crypto.randomUUID();
+  const resumeId = crypto.randomUUID();
+  const filename = "intake.pdf";
+  const createdAt = new Date(0);
+  await platform.database.batch([
+    platform.database
+      .insert(resumeUploadBatch)
+      .values({ createdAt, createdBy: userId, id: batchId, workspaceId }),
+    platform.database.insert(resume).values({
+      createdAt,
+      id: resumeId,
+      parseStatus: "succeeded",
+      parsedProfile: { identity: { name: " Extracted Name " }, version: 1 },
+      pdfObjectKey: resumeId,
+      sha256: resumeId,
+      workspaceId,
+    }),
+    platform.database.insert(resumeSubmission).values({
+      createdAt,
+      id: resumeId,
+      identityStatus: "pending_review",
+      originalFilename: filename,
+      resumeId,
+      workspaceId,
+    }),
+    platform.database.insert(resumeUploadItem).values({
+      batchId,
+      filename,
+      id: resumeId,
+      objectKey: resumeId,
+      size: 1,
+      status: "accepted",
+      submissionId: resumeId,
+      workspaceId,
+    }),
+  ]);
+  expect(await read(ats("resumes?search=extracted"))).toMatchObject({
+    rows: [{ candidateName: "Extracted Name", identityStatus: "pending_review" }],
+    total: 1,
+  });
+  const confirmed = await ats(`submissions/${resumeId}/resolve`, {
+    name: "Confirmed Name",
+    version: 1,
+  });
+  expect(confirmed.status).toBe(200);
+  expect(await read(ats("resumes?search=confirmed"))).toMatchObject({
+    rows: [{ candidateName: "Confirmed Name", identityStatus: "resolved" }],
+    total: 1,
   });
 });
