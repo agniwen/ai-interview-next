@@ -5,6 +5,7 @@ import {
   applicationEvaluation,
   candidate,
   job,
+  recruitmentProject,
   resume,
   resumeProcessingAttempt as attempt,
   resumeProcessingRun as run,
@@ -13,9 +14,32 @@ import {
   resumeUploadItem as item,
   user,
 } from "@ai-interview/db/schema";
-import { and, asc, count, desc, eq, exists, inArray, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm";
 
-export const atsPageSize = 20;
+import type { SQLWrapper } from "drizzle-orm";
+import type {
+  ApplicationListQuery,
+  JobListQuery,
+  ListQuery,
+  ResumeListQuery,
+  ResumeOptionsQuery,
+} from "./input";
+
+function includesText(column: SQLWrapper, search: string) {
+  return sql`instr(lower(${column}), lower(${search})) > 0`;
+}
 
 export function completedResumeFilter(db: Database, workspaceId: string) {
   return and(
@@ -49,7 +73,7 @@ export async function applicationOptions(db: Database, workspaceId: string) {
 export async function applicationResumeOptions(
   db: Database,
   workspaceId: string,
-  { offsetMinutes, page, search }: { offsetMinutes: number; page: number; search: string },
+  { offsetMinutes, page, pageSize, search }: ResumeOptionsQuery,
 ) {
   const firstSubmission = db
     .select({ id: submission.id })
@@ -106,11 +130,13 @@ export async function applicationResumeOptions(
     )
     .where(and(completedResumeFilter(db, workspaceId), match))
     .orderBy(desc(createdAt), desc(resume.id))
-    .limit(atsPageSize + 1)
-    .offset((page - 1) * atsPageSize);
+    .limit(pageSize + 1)
+    .offset((page - 1) * pageSize);
   return {
-    nextPage: rows.length > atsPageSize ? page + 1 : null,
-    rows: rows.slice(0, atsPageSize).map(({ creatorImage, creatorName, profile, ...row }) => ({
+    nextPage: rows.length > pageSize ? page + 1 : null,
+    page,
+    pageSize,
+    rows: rows.slice(0, pageSize).map(({ creatorImage, creatorName, profile, ...row }) => ({
       ...row,
       creator: creatorName === null ? null : { image: creatorImage, name: creatorName },
       targetRoles: profile?.targetRoles?.flatMap(({ text }) => (text?.trim() ? [text] : [])) ?? [],
@@ -119,34 +145,84 @@ export async function applicationResumeOptions(
   };
 }
 
-export async function listJobs(db: Database, workspaceId: string, page: number) {
-  const where = eq(job.workspaceId, workspaceId);
+export async function listJobs(
+  db: Database,
+  workspaceId: string,
+  { page, pageSize, search, projectId }: JobListQuery,
+) {
+  const where = and(
+    eq(job.workspaceId, workspaceId),
+    projectId ? eq(job.projectId, projectId) : undefined,
+    search ? includesText(job.title, search) : undefined,
+  );
   const [rows, [result]] = await Promise.all([
     db
-      .select({ createdAt: job.createdAt, id: job.id, title: job.title })
+      .select({
+        createdAt: job.createdAt,
+        id: job.id,
+        projectTitle: recruitmentProject.title,
+        title: job.title,
+      })
       .from(job)
+      .leftJoin(recruitmentProject, eq(recruitmentProject.id, job.projectId))
       .where(where)
       .orderBy(desc(job.createdAt), desc(job.id))
-      .limit(atsPageSize)
-      .offset((page - 1) * atsPageSize),
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
     db.select({ count: count() }).from(job).where(where),
   ]);
-  return { page, pageSize: atsPageSize, rows, total: result?.count ?? 0, version: 1 as const };
+  return { page, pageSize, rows, total: result?.count ?? 0, version: 1 as const };
 }
 
-export async function listCandidates(db: Database, workspaceId: string, page: number) {
-  const where = eq(candidate.workspaceId, workspaceId);
+export async function listRecruitmentProjects(
+  db: Database,
+  workspaceId: string,
+  { page, pageSize, search }: ListQuery,
+) {
+  const where = and(
+    eq(recruitmentProject.workspaceId, workspaceId),
+    search ? includesText(recruitmentProject.title, search) : undefined,
+  );
+  const [rows, [result]] = await Promise.all([
+    db
+      .select()
+      .from(recruitmentProject)
+      .where(where)
+      .orderBy(desc(recruitmentProject.createdAt), desc(recruitmentProject.id))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db.select({ count: count() }).from(recruitmentProject).where(where),
+  ]);
+  return { page, pageSize, rows, total: result?.count ?? 0, version: 1 as const };
+}
+
+export async function listCandidates(
+  db: Database,
+  workspaceId: string,
+  { page, pageSize, search }: ListQuery,
+) {
+  const where = and(
+    eq(candidate.workspaceId, workspaceId),
+    search
+      ? or(
+          includesText(candidate.name, search),
+          includesText(candidate.latestEmployer, search),
+          includesText(candidate.email, search),
+          includesText(candidate.phoneNormalized, search),
+        )
+      : undefined,
+  );
   const [rows, [result]] = await Promise.all([
     db
       .select()
       .from(candidate)
       .where(where)
       .orderBy(desc(candidate.createdAt), desc(candidate.id))
-      .limit(atsPageSize)
-      .offset((page - 1) * atsPageSize),
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
     db.select({ count: count() }).from(candidate).where(where),
   ]);
-  return { page, pageSize: atsPageSize, rows, total: result?.count ?? 0, version: 1 as const };
+  return { page, pageSize, rows, total: result?.count ?? 0, version: 1 as const };
 }
 
 export async function listCandidateResumes(db: Database, workspaceId: string, candidateId: string) {
@@ -189,8 +265,26 @@ export async function listCandidateResumes(db: Database, workspaceId: string, ca
   return { rows, total: rows.length, version: 1 as const };
 }
 
-export async function listResumes(db: Database, workspaceId: string, page: number) {
-  const where = eq(item.workspaceId, workspaceId);
+export async function listResumes(
+  db: Database,
+  workspaceId: string,
+  { page, pageSize, search, status }: ResumeListQuery,
+) {
+  const workspace = eq(item.workspaceId, workspaceId);
+  const effectiveStatus = sql`coalesce(${run.status}, ${item.status})`;
+  const where = and(
+    workspace,
+    search
+      ? or(
+          includesText(item.filename, search),
+          includesText(candidate.name, search),
+          includesText(user.name, search),
+        )
+      : undefined,
+    status === "failed"
+      ? inArray(effectiveStatus, ["failed", "upload_failed"])
+      : status && eq(effectiveStatus, status),
+  );
   const [rows, [result]] = await Promise.all([
     db
       .select({
@@ -233,9 +327,17 @@ export async function listResumes(db: Database, workspaceId: string, page: numbe
       .leftJoin(job, eq(job.id, submission.jobId))
       .where(where)
       .orderBy(desc(batch.createdAt), desc(item.id))
-      .limit(atsPageSize)
-      .offset((page - 1) * atsPageSize),
-    db.select({ count: count() }).from(item).where(where),
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db
+      .select({ count: count() })
+      .from(item)
+      .innerJoin(batch, eq(batch.id, item.batchId))
+      .leftJoin(user, eq(user.id, batch.createdBy))
+      .leftJoin(run, eq(run.id, item.runId))
+      .leftJoin(submission, eq(submission.id, item.submissionId))
+      .leftJoin(candidate, eq(candidate.id, submission.resolvedCandidateId))
+      .where(where),
   ]);
   const batches = rows.length
     ? await db
@@ -247,13 +349,13 @@ export async function listResumes(db: Database, workspaceId: string, page: numbe
         })
         .from(item)
         .leftJoin(run, eq(run.id, item.runId))
-        .where(and(where, inArray(item.batchId, [...new Set(rows.map((row) => row.batchId))])))
+        .where(and(workspace, inArray(item.batchId, [...new Set(rows.map((row) => row.batchId))])))
         .groupBy(item.batchId)
     : [];
   return {
     batches,
     page,
-    pageSize: atsPageSize,
+    pageSize,
     rows: rows.map(({ creatorImage, creatorName, ...row }) => ({
       ...row,
       creator: creatorName === null ? null : { image: creatorImage, name: creatorName },
@@ -280,8 +382,18 @@ export async function getUploadResumeProfile(db: Database, workspaceId: string, 
   return result;
 }
 
-export async function listApplications(db: Database, workspaceId: string, page: number) {
-  const where = eq(application.workspaceId, workspaceId);
+export async function listApplications(
+  db: Database,
+  workspaceId: string,
+  { page, pageSize, projectId, search, status }: ApplicationListQuery,
+) {
+  const where = and(
+    eq(application.workspaceId, workspaceId),
+    projectId ? eq(job.projectId, projectId) : undefined,
+    search ? or(includesText(candidate.name, search), includesText(job.title, search)) : undefined,
+    status === "open" ? isNull(application.closedAt) : undefined,
+    status === "closed" ? isNotNull(application.closedAt) : undefined,
+  );
   const [rows, [result]] = await Promise.all([
     db
       .select({
@@ -304,11 +416,16 @@ export async function listApplications(db: Database, workspaceId: string, page: 
       .innerJoin(job, eq(job.id, application.jobId))
       .where(where)
       .orderBy(desc(application.createdAt), desc(application.id))
-      .limit(atsPageSize)
-      .offset((page - 1) * atsPageSize),
-    db.select({ count: count() }).from(application).where(where),
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db
+      .select({ count: count() })
+      .from(application)
+      .innerJoin(candidate, eq(candidate.id, application.candidateId))
+      .innerJoin(job, eq(job.id, application.jobId))
+      .where(where),
   ]);
-  return { page, pageSize: atsPageSize, rows, total: result?.count ?? 0, version: 1 as const };
+  return { page, pageSize, rows, total: result?.count ?? 0, version: 1 as const };
 }
 
 export async function applicationHistory(db: Database, workspaceId: string, id: string) {

@@ -1,17 +1,25 @@
 import {
   candidate,
   job,
+  recruitmentProject,
   resume,
   resumeSubmission as submission,
   resumeUploadItem as item,
 } from "@ai-interview/db/schema";
 import { sValidator } from "@hono/standard-validator";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthenticatedEnv } from "../../middleware/authenticated";
 import { requireWorkspace } from "../../middleware/workspace";
 import { closeApplication, createApplication, matchSubmissionJob } from "./applications";
+import {
+  applicationListQuery,
+  jobListQuery,
+  listQuery,
+  resumeListQuery,
+  resumeOptionsQuery,
+} from "./input";
 import {
   applicationHistory,
   applicationOptions,
@@ -21,16 +29,14 @@ import {
   listCandidateResumes,
   listCandidates,
   listJobs,
+  listRecruitmentProjects,
   listResumes,
 } from "./queries";
 import { flushResumeOutbox } from "./runtime";
 import { resumeFiles, resumeObjectStore } from "./storage";
 import { acceptUpload, createUploadBatch, findUploadItem, retryResumeRun } from "./uploads";
 
-const page = sValidator(
-  "query",
-  z.object({ page: z.coerce.number().int().positive().max(1_000_000).default(1) }),
-);
+const paginatedList = sValidator("query", listQuery);
 const version = z.literal(1);
 const files = z.object({
   files: z
@@ -55,9 +61,9 @@ const files = z.object({
 
 export const atsRoutes = new Hono<AuthenticatedEnv>()
   .use("/:workspaceId/*", requireWorkspace)
-  .get("/:workspaceId/candidates", page, async (c) =>
+  .get("/:workspaceId/candidates", paginatedList, async (c) =>
     c.json(
-      await listCandidates(c.get("database"), c.get("workspaceId"), c.req.valid("query").page),
+      await listCandidates(c.get("database"), c.get("workspaceId"), c.req.valid("query")),
       200,
     ),
   )
@@ -76,15 +82,12 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       return c.json(result, 200);
     },
   )
-  .get("/:workspaceId/resumes", page, async (c) =>
-    c.json(
-      await listResumes(c.get("database"), c.get("workspaceId"), c.req.valid("query").page),
-      200,
-    ),
+  .get("/:workspaceId/resumes", sValidator("query", resumeListQuery), async (c) =>
+    c.json(await listResumes(c.get("database"), c.get("workspaceId"), c.req.valid("query")), 200),
   )
-  .get("/:workspaceId/applications", page, async (c) =>
+  .get("/:workspaceId/applications", sValidator("query", applicationListQuery), async (c) =>
     c.json(
-      await listApplications(c.get("database"), c.get("workspaceId"), c.req.valid("query").page),
+      await listApplications(c.get("database"), c.get("workspaceId"), c.req.valid("query")),
       200,
     ),
   )
@@ -93,14 +96,7 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
   )
   .get(
     "/:workspaceId/applications/resume-options",
-    sValidator(
-      "query",
-      z.object({
-        offsetMinutes: z.coerce.number().int().min(-840).max(840).default(0),
-        page: z.coerce.number().int().positive().max(1_000_000).default(1),
-        search: z.string().trim().max(200).default(""),
-      }),
-    ),
+    sValidator("query", resumeOptionsQuery),
     async (c) =>
       c.json(
         await applicationResumeOptions(
@@ -142,32 +138,81 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     }
     return c.json({ version: 1 as const }, 200);
   })
-  .get("/:workspaceId/jobs", page, async (c) =>
-    c.json(await listJobs(c.get("database"), c.get("workspaceId"), c.req.valid("query").page), 200),
+  .get("/:workspaceId/jobs", sValidator("query", jobListQuery), async (c) =>
+    c.json(await listJobs(c.get("database"), c.get("workspaceId"), c.req.valid("query")), 200),
+  )
+  .get("/:workspaceId/projects", paginatedList, async (c) =>
+    c.json(
+      await listRecruitmentProjects(c.get("database"), c.get("workspaceId"), c.req.valid("query")),
+      200,
+    ),
+  )
+  .get("/:workspaceId/projects/options", async (c) => {
+    const rows = await c
+      .get("database")
+      .select({ id: recruitmentProject.id, title: recruitmentProject.title })
+      .from(recruitmentProject)
+      .where(eq(recruitmentProject.workspaceId, c.get("workspaceId")))
+      .orderBy(asc(recruitmentProject.title), asc(recruitmentProject.id));
+    return c.json({ rows, version: 1 as const }, 200);
+  })
+  .post(
+    "/:workspaceId/projects",
+    sValidator("json", z.strictObject({ title: z.string().trim().min(1).max(200), version })),
+    async (c) => {
+      const { title } = c.req.valid("json");
+      const id = crypto.randomUUID();
+      await c
+        .get("database")
+        .insert(recruitmentProject)
+        .values({
+          createdAt: new Date(),
+          id,
+          title,
+          workspaceId: c.get("workspaceId"),
+        });
+      return c.json({ id, version: 1 as const }, 201);
+    },
   )
   .post(
     "/:workspaceId/jobs",
     sValidator(
       "json",
       z.strictObject({
+        projectId: z.uuid().optional(),
         requirements: z.string().trim().min(1).max(30_000),
         title: z.string().trim().min(1).max(200),
         version,
       }),
     ),
     async (c) => {
-      const { requirements, title } = c.req.valid("json");
+      const { projectId, requirements, title } = c.req.valid("json");
+      const db = c.get("database");
+      const workspaceId = c.get("workspaceId");
+      if (projectId) {
+        const project = await db
+          .select({ id: recruitmentProject.id })
+          .from(recruitmentProject)
+          .where(
+            and(
+              eq(recruitmentProject.id, projectId),
+              eq(recruitmentProject.workspaceId, workspaceId),
+            ),
+          )
+          .get();
+        if (!project) {
+          return c.json({ error: "PROJECT_UNAVAILABLE", version: 1 as const }, 404);
+        }
+      }
       const id = crypto.randomUUID();
-      await c
-        .get("database")
-        .insert(job)
-        .values({
-          createdAt: new Date(),
-          id,
-          requirements,
-          title,
-          workspaceId: c.get("workspaceId"),
-        });
+      await db.insert(job).values({
+        createdAt: new Date(),
+        id,
+        projectId,
+        requirements,
+        title,
+        workspaceId,
+      });
       return c.json({ id, version: 1 as const }, 201);
     },
   )

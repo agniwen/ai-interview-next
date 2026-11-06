@@ -31,6 +31,17 @@ Validate external input once, at the entry point. After the type is established,
 
 Define every project-owned JSON structure as an object with a required, non-null top-level `version` field. Use it to identify the data format when reading or rendering the payload.
 
+## List pagination / 列表分页
+
+- Numbered lists use GET query parameters `page` (integer from 1 to 1,000,000, default 1) and `pageSize` (integer from 1 to 100, default 20). Use `search` for optional keyword search. Trim it, cap it at 200 characters, and treat an empty value as no search. Name other filters for their domain, such as `projectId` and `status`.
+  页码列表使用 GET 查询参数 `page`（1 至 1,000,000 的整数，默认 1）和 `pageSize`（1 至 100 的整数，默认 20）。关键词用可选的 `search`，去掉首尾空白，最多 200 字符，空值表示不搜索。其他筛选按业务命名，例如 `projectId` 和 `status`。
+- Apply authorization and all filters before pagination. Sort deterministically with a unique tie-breaker. Return `{ version: 1, rows, page, pageSize, total }`, where `total` counts all matching records before pagination. Out-of-range pages return empty `rows` and the same filtered total.
+  先校验权限并应用所有筛选，再分页。排序应稳定，并以唯一字段作为同值时的排序依据。返回 `{ version: 1, rows, page, pageSize, total }`，`total` 为分页前符合条件的记录数。超出数据范围的页返回空 `rows` 和同一筛选总数。
+- Load-more pickers can use the same parameters and return `{ version: 1, rows, page, pageSize, nextPage }` when a total is unnecessary. Use `nextPage: null` at the end.
+  下拉加载更多等无需总数的场景可使用相同参数，返回 `{ version: 1, rows, page, pageSize, nextPage }`。末页返回 `nextPage: null`。
+- Web list routes keep the page, page size, and filters in the URL. Include those values and the workspace in the query key. Changing a filter or page size resets to page 1. Paging and refreshing retain the current filters.
+  Web 列表将页码、每页条数和筛选保存在 URL，并连同工作区纳入查询缓存键。更改筛选或每页条数回到第 1 页，翻页和刷新保留当前筛选。
+
 ## File uploads
 
 Use [Files SDK](https://files-sdk.dev/) for R2 and S3 uploads, including presigning and writes through the API.

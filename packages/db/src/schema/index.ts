@@ -8,6 +8,7 @@ export {
   interviewFeedback,
   interviewRound,
   job,
+  recruitmentProject,
   resume,
   resumeOwnershipChange,
   resumeSubmission,

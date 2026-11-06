@@ -116,6 +116,14 @@ export const resume = sqliteTable(
   ],
 );
 
+/** 工作区内的一批招聘岗位。 / A group of recruiting jobs in a workspace. */
+export const recruitmentProject = sqliteTable("recruitment_project", {
+  createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  workspaceId: workspaceIdColumn(),
+});
+
 /** 工作区内的招聘岗位。 / A job opening in a workspace. */
 export const job = sqliteTable(
   "job",
@@ -124,6 +132,7 @@ export const job = sqliteTable(
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
     /** 岗位 ID。 / Job ID. */
     id: text("id").primaryKey(),
+    projectId: text("projectId").references(() => recruitmentProject.id),
     /** 当前岗位要求。 / Current job requirements. */
     requirements: text("requirements").notNull(),
     /** 岗位名称。 / Job title. */
