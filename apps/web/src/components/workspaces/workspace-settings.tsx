@@ -1,3 +1,4 @@
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { WorkspaceSettingsPageSkeleton } from "@/components/skeletons/pages/workspace-settings-page-skeleton";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -131,8 +132,12 @@ export function WorkspaceSettings({
   });
   const owner = role === "owner";
   const manage = owner || role === "admin";
-  if (details.isPending) {
+  const phase = useSkeletonPhase(details.isPending);
+  if (phase === "skeleton") {
     return <WorkspaceSettingsPageSkeleton />;
+  }
+  if (phase === "pending") {
+    return null;
   }
   if (details.error || !details.data) {
     return <WorkspaceFeedback error={details.error ?? new Error(m.ws_unavailable())} />;

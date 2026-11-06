@@ -1,5 +1,6 @@
 "use client";
 
+import { SkeletonSuspense } from "@/components/skeletons/skeleton-suspense";
 import { DemoCandidateDetail } from "./demo-candidate-detail";
 
 /* oxlint-disable max-lines -- Recruitment chart, tabs and card mirror the production desk within a standalone demo. */
@@ -22,7 +23,7 @@ import {
 // - ResumeLibraryCardList: Toolbar + 当前候选人卡片结构
 // Purpose: simplified Studio resume library mock, mirroring the real components 1:1.
 
-import { lazy, Suspense } from "react";
+import { lazy } from "react";
 import { DemoPanelSkeleton } from "@/components/skeletons/components/demo-panel-skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { DemoPhase } from "./demo-context";
@@ -602,16 +603,16 @@ function ResumesContent() {
   const demo = useDemo();
   if (demo.phase === "human-live") {
     return (
-      <Suspense fallback={<DemoPanelSkeleton className="h-full w-full" />}>
+      <SkeletonSuspense fallback={<DemoPanelSkeleton className="h-full w-full" />}>
         <DemoHumanRoom />
-      </Suspense>
+      </SkeletonSuspense>
     );
   }
   if (demo.phase === "live") {
     return (
-      <Suspense fallback={<DemoPanelSkeleton className="h-full w-full" />}>
+      <SkeletonSuspense fallback={<DemoPanelSkeleton className="h-full w-full" />}>
         <DemoLiveInterview />
-      </Suspense>
+      </SkeletonSuspense>
     );
   }
   if (demo.candidate) {

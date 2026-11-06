@@ -1,3 +1,4 @@
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { UserMenuSkeleton } from "@/components/skeletons/components/user-menu-skeleton";
 import { useState } from "react";
 import { IconChevronDown, IconLogin, IconLogout, IconUser } from "@tabler/icons-react";
@@ -69,6 +70,7 @@ export function UserMenu({
   workspaceId?: string;
 }) {
   const { data: session, isPending } = authClient.useSession();
+  const phase = useSkeletonPhase(isPending);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const sidebar = variant === "sidebar";
@@ -94,10 +96,14 @@ export function UserMenu({
     setPending(false);
   }
 
-  if (isPending) {
+  if (phase === "skeleton") {
     return (
       <UserMenuSkeleton className={triggerClassName} iconOnly={iconOnly} collapsed={collapsed} />
     );
+  }
+
+  if (phase === "pending") {
+    return null;
   }
 
   if (!session) {
@@ -137,17 +143,19 @@ export function UserMenu({
             </AvatarFallback>
           </Avatar>
         </span>
-        {!iconOnly && <span className={labelClassName}>{session.user.name}</span>}
         {!iconOnly && (
-          <IconChevronDown
-            className={cn(
-              "size-3.5",
-              sidebar &&
-                "absolute right-3 top-1/2 -translate-y-1/2 transition-opacity duration-200 ease-linear motion-reduce:transition-none",
-              collapsed && "opacity-0",
-            )}
-            aria-hidden="true"
-          />
+          <>
+            <span className={labelClassName}>{session.user.name}</span>
+            <IconChevronDown
+              className={cn(
+                "size-3.5",
+                sidebar &&
+                  "absolute right-3 top-1/2 -translate-y-1/2 transition-opacity duration-200 ease-linear motion-reduce:transition-none",
+                collapsed && "opacity-0",
+              )}
+              aria-hidden="true"
+            />
+          </>
         )}
       </MenuTrigger>
       <MenuPopup

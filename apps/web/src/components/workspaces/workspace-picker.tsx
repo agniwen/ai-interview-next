@@ -1,3 +1,4 @@
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { InvitationCardSkeleton } from "@/components/skeletons/components/invitation-card-skeleton";
 import { IconBuilding, IconBuildingOff } from "@tabler/icons-react";
 import { useState } from "react";
@@ -92,6 +93,8 @@ export function WorkspacePicker({
     },
     queryKey: ["workspace-invitations"],
   });
+  const phase = useSkeletonPhase(invitations.isPending);
+
   return (
     <main id="main-content" className="flex flex-1 flex-col">
       <header className="flex h-14 shrink-0 items-center justify-end gap-1 border-b px-4 md:px-6">
@@ -155,25 +158,26 @@ export function WorkspacePicker({
         className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6 pb-6"
         aria-label={m.ws_invitation()}
       >
-        <WorkspaceFeedback error={invitations.error} />
-        {invitations.isPending && <InvitationCardSkeleton />}
-        {invitations.data?.map((invitation) => (
-          <Card key={invitation.id}>
-            <CardHeader>
-              <CardTitle>{invitation.organizationName}</CardTitle>
-              <CardDescription>{m.ws_invitation()}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                render={
-                  <Link to="/invite/$invitationId" params={{ invitationId: invitation.id }} />
-                }
-              >
-                {m.ws_review_invitation()}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        {phase === "ready" && <WorkspaceFeedback error={invitations.error} />}
+        {phase === "skeleton" && <InvitationCardSkeleton />}
+        {phase === "ready" &&
+          invitations.data?.map((invitation) => (
+            <Card key={invitation.id}>
+              <CardHeader>
+                <CardTitle>{invitation.organizationName}</CardTitle>
+                <CardDescription>{m.ws_invitation()}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  render={
+                    <Link to="/invite/$invitationId" params={{ invitationId: invitation.id }} />
+                  }
+                >
+                  {m.ws_review_invitation()}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
       </section>
     </main>
   );

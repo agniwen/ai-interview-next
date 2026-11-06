@@ -1,5 +1,6 @@
 "use client";
 
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import {
   IconArrowBackUp,
   IconArrowForwardUp,
@@ -264,8 +265,12 @@ export function MarkdownEditor({
     });
   }, [editor, editorId, countId, label, labelledBy, required, disabled, maxLength, overLimit]);
 
-  if (!editor) {
+  const phase = useSkeletonPhase(!editor);
+  if (phase === "skeleton") {
     return <MarkdownEditorSkeleton className={className} />;
+  }
+  if (!editor) {
+    return null;
   }
 
   return (

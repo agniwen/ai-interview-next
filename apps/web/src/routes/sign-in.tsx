@@ -1,3 +1,4 @@
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { SignInSessionSkeleton } from "@/components/skeletons/components/sign-in-session-skeleton";
 import { useEffect, useState } from "react";
 import { IconArrowLeft, IconAlertCircle } from "@tabler/icons-react";
@@ -27,13 +28,15 @@ export const Route = createFileRoute("/sign-in")({
     const hydrated = useHydrated();
     const { error: callbackError, next } = Route.useSearch();
     const { data: session, isPending } = authClient.useSession();
+    const phase = useSkeletonPhase(isPending && !session);
+    const currentSession = phase === "ready" ? session : null;
     const [pending, setPending] = useState(false);
     const [failed, setFailed] = useState(Boolean(callbackError));
     useEffect(() => {
-      if (session) {
+      if (currentSession) {
         window.location.replace(next ?? "/workspaces");
       }
-    }, [session, next]);
+    }, [currentSession, next]);
 
     async function signIn() {
       setPending(true);
@@ -90,10 +93,10 @@ export const Route = createFileRoute("/sign-in")({
               <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-16 sm:py-24">
                 <div className="flex flex-col gap-2 text-center">
                   <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
-                    {session ? m.login_success() : m.login_heading()}
+                    {currentSession ? m.login_success() : m.login_heading()}
                   </h1>
                   <p className="text-sm leading-6 text-muted-foreground">
-                    {session ? m.login_success_description() : m.login_description()}
+                    {currentSession ? m.login_success_description() : m.login_description()}
                   </p>
                 </div>
 
@@ -107,13 +110,13 @@ export const Route = createFileRoute("/sign-in")({
                   </Alert>
                 )}
 
-                {isPending && !session && <SignInSessionSkeleton />}
-                {session ? (
+                {phase === "skeleton" && <SignInSessionSkeleton />}
+                {currentSession ? (
                   <div className="flex flex-col gap-4">
                     <div className="flex min-w-0 flex-col gap-1 text-center">
-                      <p className="font-medium truncate">{session.user.name}</p>
+                      <p className="font-medium truncate">{currentSession.user.name}</p>
                       <p className="text-sm text-muted-foreground break-all">
-                        {session.user.email}
+                        {currentSession.user.email}
                       </p>
                     </div>
                     <Button variant="outline" size="xl" disabled={pending} onClick={signOut}>
@@ -122,7 +125,7 @@ export const Route = createFileRoute("/sign-in")({
                     </Button>
                   </div>
                 ) : (
-                  !isPending && (
+                  phase === "ready" && (
                     <Button
                       variant="outline"
                       size="xl"

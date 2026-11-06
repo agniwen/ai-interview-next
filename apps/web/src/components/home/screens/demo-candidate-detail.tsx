@@ -1,5 +1,6 @@
 "use client";
 
+import { SkeletonSuspense } from "@/components/skeletons/skeleton-suspense";
 import {
   IconFileText,
   IconRefresh,
@@ -11,7 +12,7 @@ import {
   IconRobot,
   IconVideo,
 } from "@tabler/icons-react";
-import { lazy, Suspense, useState } from "react";
+import { lazy, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FloatingBar } from "@/components/home/support/floating-bar";
 import { Avatar, AvatarFallback } from "@/components/home/support/demo-avatar";
@@ -136,9 +137,9 @@ export function DemoCandidateDetail() {
                   {detail.aiEvaluationTab}
                 </h2>
                 <div className="grid grid-cols-[minmax(14rem,0.8fr)_minmax(0,1.2fr)] items-center gap-5">
-                  <Suspense fallback={<DemoPanelSkeleton className="h-52" />}>
+                  <SkeletonSuspense fallback={<DemoPanelSkeleton className="h-52" />}>
                     <DemoInterviewPanels tab="overview" />
-                  </Suspense>
+                  </SkeletonSuspense>
                   <div className="flex flex-col gap-3">
                     <p className="text-xs text-muted-foreground">
                       {getDemoScreenCopy().evaluationUi.overallTitle}
@@ -184,9 +185,9 @@ export function DemoCandidateDetail() {
             ].map((value) => (
               <TabsPanel data-demo-reveal={value} key={value} value={value}>
                 {tab === value && (
-                  <Suspense fallback={<DemoPanelSkeleton className="h-96 w-full" />}>
+                  <SkeletonSuspense fallback={<DemoPanelSkeleton className="h-96 w-full" />}>
                     <DemoInterviewPanels tab={value} />
-                  </Suspense>
+                  </SkeletonSuspense>
                 )}
               </TabsPanel>
             ))}

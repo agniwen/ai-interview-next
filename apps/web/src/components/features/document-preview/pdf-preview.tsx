@@ -16,8 +16,8 @@ import {
   ZoomMode,
   ZoomPluginPackage,
 } from "@embedpdf/plugin-zoom/react";
-import { useMemo } from "react";
-import { DocumentPreviewSkeleton } from "@/components/skeletons/components/document-preview-skeleton";
+import { useEffect, useMemo } from "react";
+import type { ReactNode } from "react";
 import { DocumentPreviewError } from "./document-preview-dialog";
 import { DocumentPreviewToolbar } from "./document-preview-toolbar";
 import type { DocumentPreviewToolbarTargets } from "./document-preview-toolbar";
@@ -72,12 +72,31 @@ function PdfPreviewContent({
   );
 }
 
+function PdfPreviewResult({
+  children,
+  loading,
+  onLoadingChange,
+  visible,
+}: {
+  children: ReactNode;
+  loading: boolean;
+  onLoadingChange: (loading: boolean) => void;
+  visible: boolean;
+}) {
+  useEffect(() => onLoadingChange(loading), [loading, onLoadingChange]);
+  return visible ? children : null;
+}
+
 export default function PdfPreview({
+  onLoadingChange,
   toolbarTargets,
   url,
+  visible,
 }: {
+  onLoadingChange: (loading: boolean) => void;
   toolbarTargets: DocumentPreviewToolbarTargets;
   url: string;
+  visible: boolean;
 }) {
   const { engine, error } = usePdfiumEngine({
     fontFallback: cdnFontConfig,
@@ -104,29 +123,39 @@ export default function PdfPreview({
   );
 
   if (error) {
-    return <DocumentPreviewError />;
+    return (
+      <PdfPreviewResult loading={false} onLoadingChange={onLoadingChange} visible={visible}>
+        <DocumentPreviewError />
+      </PdfPreviewResult>
+    );
   }
   if (!engine) {
-    return <DocumentPreviewSkeleton />;
+    return null;
   }
   return (
     <EmbedPDF engine={engine} plugins={plugins}>
       {({ activeDocumentId }) =>
-        activeDocumentId ? (
+        activeDocumentId && (
           <DocumentContent documentId={activeDocumentId}>
-            {({ isError, isLoaded }) => {
-              if (isError) {
-                return <DocumentPreviewError />;
-              }
-              return isLoaded ? (
-                <PdfPreviewContent documentId={activeDocumentId} toolbarTargets={toolbarTargets} />
-              ) : (
-                <DocumentPreviewSkeleton />
-              );
-            }}
+            {({ isError, isLoaded }) => (
+              <PdfPreviewResult
+                loading={!isError && !isLoaded}
+                onLoadingChange={onLoadingChange}
+                visible={visible}
+              >
+                {isError ? (
+                  <DocumentPreviewError />
+                ) : (
+                  isLoaded && (
+                    <PdfPreviewContent
+                      documentId={activeDocumentId}
+                      toolbarTargets={toolbarTargets}
+                    />
+                  )
+                )}
+              </PdfPreviewResult>
+            )}
           </DocumentContent>
-        ) : (
-          <DocumentPreviewSkeleton />
         )
       }
     </EmbedPDF>

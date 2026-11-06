@@ -1,3 +1,4 @@
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { AccountSettingsSkeleton } from "@/components/skeletons/components/account-settings-skeleton";
 import { useTheme } from "next-themes";
 import { useHydrated } from "@tanstack/react-router";
@@ -55,8 +56,12 @@ function ThemeSelect() {
 
 export function AccountSettings() {
   const { data: session, isPending } = authClient.useSession();
-  if (isPending) {
+  const phase = useSkeletonPhase(isPending && !session);
+  if (phase === "skeleton") {
     return <AccountSettingsSkeleton />;
+  }
+  if (phase === "pending") {
+    return null;
   }
   if (!session) {
     return null;

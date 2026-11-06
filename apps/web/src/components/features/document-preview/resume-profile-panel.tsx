@@ -1,3 +1,4 @@
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { useQuery } from "@tanstack/react-query";
 import { readResumeProfile } from "@/components/ats/client";
 import { ResumeProfileSkeleton } from "@/components/skeletons/components/resume-profile-skeleton";
@@ -18,11 +19,15 @@ export function ResumeProfilePanel({ id, workspaceId }: { id: string; workspaceI
       !result?.profile && isParsing(result?.parseStatus) ? 5000 : false,
   });
 
+  const phase = useSkeletonPhase(isPending);
+  if (phase === "skeleton") {
+    return <ResumeProfileSkeleton />;
+  }
+  if (phase === "pending") {
+    return null;
+  }
   if (data?.profile?.version === 1) {
     return <ResumeProfileDocument profile={data.profile} />;
-  }
-  if (isPending) {
-    return <ResumeProfileSkeleton />;
   }
   if (isError) {
     return (

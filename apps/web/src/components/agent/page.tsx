@@ -1,3 +1,4 @@
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { ChatTranscriptSkeleton } from "@/components/skeletons/components/chat-transcript-skeleton";
 import { useCallback, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,11 +34,15 @@ function ChatBody({
   snapshot?: ChatSnapshot;
   failed: boolean;
 }) {
+  const phase = useSkeletonPhase(Boolean(sessionId && !snapshot));
+  if (phase === "skeleton") {
+    return <ChatTranscriptSkeleton reconnecting={failed} />;
+  }
+  if (phase === "pending") {
+    return null;
+  }
   if (snapshot) {
     return <Transcript snapshot={snapshot} />;
-  }
-  if (sessionId) {
-    return <ChatTranscriptSkeleton reconnecting={failed} />;
   }
   return (
     <div className="flex shrink-0 flex-col items-center justify-center gap-4 px-6 pb-7">

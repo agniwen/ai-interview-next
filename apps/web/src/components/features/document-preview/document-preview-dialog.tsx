@@ -1,12 +1,10 @@
 import { IconDownload, IconX } from "@tabler/icons-react";
-import { CatchBoundary, ClientOnly } from "@tanstack/react-router";
-import { Suspense } from "react";
+import { CatchBoundary } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import {
   getResumeDocumentFileIconKind,
   ResumeDocumentFileIcon,
 } from "@/components/resume-document-file-icon";
-import { DocumentPreviewSkeleton } from "@/components/skeletons/components/document-preview-skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogPopup, DialogTitle } from "@/components/ui/dialog";
@@ -74,11 +72,9 @@ export function DocumentPreviewDialog({
           </DialogClose>
         </div>
       </header>
-      <ClientOnly fallback={<DocumentPreviewSkeleton />}>
-        <CatchBoundary getResetKey={() => downloadUrl} errorComponent={DocumentPreviewError}>
-          <Suspense fallback={<DocumentPreviewSkeleton />}>{children}</Suspense>
-        </CatchBoundary>
-      </ClientOnly>
+      <CatchBoundary getResetKey={() => downloadUrl} errorComponent={DocumentPreviewError}>
+        {children}
+      </CatchBoundary>
     </DialogPopup>
   );
 }

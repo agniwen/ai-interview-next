@@ -1,6 +1,7 @@
 "use client";
 
-import { lazy, Suspense } from "react";
+import { SkeletonSuspense } from "@/components/skeletons/skeleton-suspense";
+import { lazy } from "react";
 import { useHydrated } from "@tanstack/react-router";
 import { DemoWindowSkeleton } from "@/components/skeletons/components/demo-window-skeleton";
 import { ScreenFrame } from "./screens/screen-frame";
@@ -41,9 +42,9 @@ export function ProductShot() {
     >
       <div className="mx-auto w-full max-w-[calc(1280px+8rem)] px-4 pt-2 pb-12 sm:pb-14 lg:px-16 lg:pb-16">
         {hydrated ? (
-          <Suspense fallback={<DemoWindowPlaceholder />}>
+          <SkeletonSuspense fallback={<DemoWindowPlaceholder />}>
             <ResumesScreen />
-          </Suspense>
+          </SkeletonSuspense>
         ) : (
           <DemoWindowPlaceholder />
         )}

@@ -1,3 +1,4 @@
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { InvitationPageSkeleton } from "@/components/skeletons/pages/invitation-page-skeleton";
 import { InvitationCardSkeleton } from "@/components/skeletons/components/invitation-card-skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ function Invitation() {
     queryFn: async () =>
       authData(await authClient.organization.getInvitation({ query: { id: invitationId } })),
   });
+  const phase = useSkeletonPhase(invitation.isPending);
   return (
     <main
       id="main-content"
@@ -30,9 +32,9 @@ function Invitation() {
       <div className="flex justify-end">
         <UserMenu />
       </div>
-      <WorkspaceFeedback error={invitation.error ?? action.error} />
-      {invitation.isPending && <InvitationCardSkeleton />}
-      {invitation.data && (
+      <WorkspaceFeedback error={(phase === "ready" ? invitation.error : null) ?? action.error} />
+      {phase === "skeleton" && <InvitationCardSkeleton />}
+      {phase === "ready" && invitation.data && (
         <Card>
           <CardHeader>
             <CardTitle>{m.ws_invitation()}</CardTitle>

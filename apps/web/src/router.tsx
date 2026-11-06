@@ -3,12 +3,14 @@ import { routeTree } from "./routeTree.gen";
 
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { getContext } from "./integrations/tanstack-query/root-provider";
+import { skeletonMinVisibleMs } from "@/hooks/use-skeleton-phase";
 
 export function getRouter() {
   const context = getContext();
 
   const router = createTanStackRouter({
     context,
+    defaultPendingMinMs: skeletonMinVisibleMs,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
     routeTree,

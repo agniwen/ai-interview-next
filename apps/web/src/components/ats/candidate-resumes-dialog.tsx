@@ -1,3 +1,4 @@
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { ResumePreviewDialog } from "@/components/features/document-preview/resume-preview-dialog";
@@ -41,21 +42,23 @@ export function CandidateResumesDialog({
     queryKey: ["ats", workspaceId, "candidates", id, "resumes"],
   });
 
+  const phase = useSkeletonPhase(isPending);
+
   return (
     <DialogPopup className="max-h-[min(32rem,75dvh)] sm:max-w-xl">
       <DialogHeader className="shrink-0 pe-12">
         <DialogTitle className="wrap-anywhere">
           {m.ats_candidate_resumes_title({ name })}
         </DialogTitle>
-        {data && (
+        {phase === "ready" && data && (
           <DialogDescription>
             {m.ats_candidate_resumes_count({ count: data.total })}
           </DialogDescription>
         )}
       </DialogHeader>
       <DialogPanel>
-        {isPending && <CandidateResumesSkeleton />}
-        {isError && !data && (
+        {phase === "skeleton" && <CandidateResumesSkeleton />}
+        {phase === "ready" && isError && !data && (
           <div className="flex flex-col items-start gap-3">
             <Alert variant="error">
               <AlertDescription>{m.ats_error()}</AlertDescription>
@@ -65,14 +68,14 @@ export function CandidateResumesDialog({
             </Button>
           </div>
         )}
-        {data?.total === 0 && (
+        {phase === "ready" && data?.total === 0 && (
           <Empty className="py-8 md:py-8">
             <EmptyHeader>
               <EmptyTitle>{m.ats_empty_resumes()}</EmptyTitle>
             </EmptyHeader>
           </Empty>
         )}
-        {data && data.total > 0 && (
+        {phase === "ready" && data && data.total > 0 && (
           <ul className="-mx-2 divide-y">
             {data.rows.map((row) => {
               const filename = row.filename ?? m.ats_unnamed_resume();

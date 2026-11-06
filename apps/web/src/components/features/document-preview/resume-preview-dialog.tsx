@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { atsApi } from "@/components/ats/client";
 import { DocumentPreviewSkeleton } from "@/components/skeletons/components/document-preview-skeleton";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
 import { DocumentPreviewDialog } from "./document-preview-dialog";
 import { ResumeProfilePanel } from "./resume-profile-panel";
@@ -22,6 +23,8 @@ export function ResumePreviewDialog({
   workspaceId: string;
 }) {
   const url = atsApi["upload-files"][":id"].$path({ param: { id, workspaceId } });
+  const [pdfLoading, setPdfLoading] = useState(true);
+  const pdfPhase = useSkeletonPhase(pdfLoading);
   const [view, setView] = useState("original");
   const [paginationTarget, setPaginationTarget] = useState<HTMLDivElement | null>(null);
   const [zoomTarget, setZoomTarget] = useState<HTMLDivElement | null>(null);
@@ -64,10 +67,13 @@ export function ResumePreviewDialog({
             render={<div hidden={false} />}
             value="original"
           >
-            <Suspense fallback={<DocumentPreviewSkeleton />}>
+            {pdfPhase === "skeleton" && <DocumentPreviewSkeleton />}
+            <Suspense fallback={null}>
               <PdfPreview
+                onLoadingChange={setPdfLoading}
                 toolbarTargets={{ pagination: paginationTarget, zoom: zoomTarget }}
                 url={url}
+                visible={pdfPhase === "ready"}
               />
             </Suspense>
           </TabsPanel>

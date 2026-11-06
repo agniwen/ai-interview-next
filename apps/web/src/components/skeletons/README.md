@@ -21,8 +21,8 @@ Page skeletons can compose component skeletons, base Skeleton elements, or both.
    Identify the initial loading boundary: route, component data, or lazy region. Static content and redirect-only routes do not need skeletons.
 2. 在对应目录实现骨架，与真实布局保持宽度、间距、主要区块和移动端行为一致。页面骨架只覆盖页面内容；已存在的共享外壳由父布局保留。
    Implement the skeleton in the matching directory, preserving widths, spacing, major regions, and mobile behavior. Page skeletons cover page content; parent layouts retain mounted shared UI.
-3. 将路由骨架接到 `pendingComponent`，数据骨架接到首次 `isPending`，懒加载骨架接到 `Suspense`。不要使用后台 `isFetching` 把缓存内容换成骨架。
-   Connect route skeletons to `pendingComponent`, data skeletons to initial `isPending`, and lazy skeletons to `Suspense`. Do not replace cached content based on background `isFetching`.
+3. 路由骨架使用 `pendingComponent`，由 Router 统一保证至少显示 1 秒。组件数据用 `useSkeletonPhase` 接收首次 `isPending`，等待 150 毫秒再显示骨架，出现后保留至少 1 秒。`pending` 阶段保留外壳，`ready` 后显示内容、错误或空状态。懒加载区域用 `SkeletonSuspense` 保留已出现的骨架。
+   Use `pendingComponent` for route skeletons. The router keeps them visible for at least one second. For initial component data, pass `isPending` to `useSkeletonPhase`. It waits 150 ms before showing a skeleton, then keeps it visible for at least one second. Keep the surrounding layout in the `pending` phase and show content, errors, or empty states in the `ready` phase. Use `SkeletonSuspense` to hold visible fallbacks for lazy regions.
 4. 加载区域提供 `aria-label` 与 `aria-busy="true"`，其中的装饰元素使用 `aria-hidden="true"`。纯装饰演示占位可整体隐藏。骨架不包含可操作控件。
    Label loading regions and set `aria-busy="true"`; hide decorative shapes with `aria-hidden="true"`. Entirely decorative demo fallbacks may be hidden as a whole. Skeletons contain no interactive controls.
 5. 验证首次加载、缓存返回、后台刷新和窄屏布局。错误与空状态分别使用各自的界面，操作中的 Spinner 保留。

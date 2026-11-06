@@ -1,3 +1,4 @@
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { SessionListSkeleton } from "@/components/skeletons/components/session-list-skeleton";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -128,6 +129,7 @@ export function AgentSidebar({
 }) {
   const { setOpenMobile } = useSidebar();
   const [editing, setEditing] = useState<string>();
+  const phase = useSkeletonPhase(loading && sessions.length === 0);
   const pendingRename = useRef<string | undefined>(undefined);
   return (
     <SidebarPageContent>
@@ -156,88 +158,90 @@ export function AgentSidebar({
           >
             <SidebarGroup>
               <SidebarMenu>
-                {sessions
-                  .filter((session) => !session.trashed)
-                  .map((session) => (
-                    <SidebarMenuItem key={session.id} className="group/session">
-                      {editing === session.id ? (
-                        <SessionTitleEditor
-                          session={session}
-                          save={(title) => rename(session, title)}
-                          close={() => setEditing(undefined)}
-                        />
-                      ) : (
-                        <>
-                          <SidebarMenuButton
-                            isActive={session.id === selected}
-                            render={
-                              <Link
-                                to="/w/$workspaceId/agent/$sessionId"
-                                params={{ sessionId: session.id, workspaceId }}
-                              />
-                            }
-                            onClick={() => setOpenMobile(false)}
-                            className="pr-16"
-                            title={session.title}
-                          >
-                            <span>{session.title}</span>
-                          </SidebarMenuButton>
-                          <time
-                            dateTime={new Date(session.lastSentAt).toISOString()}
-                            className="pointer-events-none absolute top-2 right-2 text-[11px] tabular-nums text-muted-foreground/65 transition-opacity group-hover/session:opacity-0 group-focus-within/session:opacity-0 max-md:hidden"
-                          >
-                            {new Intl.DateTimeFormat(getLocale(), {
-                              day: "numeric",
-                              month: "numeric",
-                            }).format(session.lastSentAt)}
-                          </time>
-                          <Menu
-                            onOpenChangeComplete={(open) => {
-                              if (!open && pendingRename.current === session.id) {
-                                setEditing(session.id);
-                                pendingRename.current = undefined;
-                              }
-                            }}
-                          >
-                            <MenuTrigger
+                {phase === "ready" &&
+                  sessions
+                    .filter((session) => !session.trashed)
+                    .map((session) => (
+                      <SidebarMenuItem key={session.id} className="group/session">
+                        {editing === session.id ? (
+                          <SessionTitleEditor
+                            session={session}
+                            save={(title) => rename(session, title)}
+                            close={() => setEditing(undefined)}
+                          />
+                        ) : (
+                          <>
+                            <SidebarMenuButton
+                              isActive={session.id === selected}
                               render={
-                                <SidebarMenuAction
-                                  className="top-1 right-1 size-6 rounded-md"
-                                  showOnHover
-                                  aria-label={m.agent_actions()}
+                                <Link
+                                  to="/w/$workspaceId/agent/$sessionId"
+                                  params={{ sessionId: session.id, workspaceId }}
                                 />
                               }
+                              onClick={() => setOpenMobile(false)}
+                              className="pr-16"
+                              title={session.title}
                             >
-                              <IconDots />
-                            </MenuTrigger>
-                            <MenuPopup align="start" side="right">
-                              <MenuItem
-                                onClick={() => {
-                                  pendingRename.current = session.id;
-                                }}
+                              <span>{session.title}</span>
+                            </SidebarMenuButton>
+                            <time
+                              dateTime={new Date(session.lastSentAt).toISOString()}
+                              className="pointer-events-none absolute top-2 right-2 text-[11px] tabular-nums text-muted-foreground/65 transition-opacity group-hover/session:opacity-0 group-focus-within/session:opacity-0 max-md:hidden"
+                            >
+                              {new Intl.DateTimeFormat(getLocale(), {
+                                day: "numeric",
+                                month: "numeric",
+                              }).format(session.lastSentAt)}
+                            </time>
+                            <Menu
+                              onOpenChangeComplete={(open) => {
+                                if (!open && pendingRename.current === session.id) {
+                                  setEditing(session.id);
+                                  pendingRename.current = undefined;
+                                }
+                              }}
+                            >
+                              <MenuTrigger
+                                render={
+                                  <SidebarMenuAction
+                                    className="top-1 right-1 size-6 rounded-md"
+                                    showOnHover
+                                    aria-label={m.agent_actions()}
+                                  />
+                                }
                               >
-                                <IconPencil />
-                                {m.agent_rename()}
-                              </MenuItem>
-                              <MenuItem variant="destructive" onClick={() => remove(session)}>
-                                <IconTrash />
-                                {m.agent_move_trash()}
-                              </MenuItem>
-                            </MenuPopup>
-                          </Menu>
-                        </>
-                      )}
-                    </SidebarMenuItem>
-                  ))}
+                                <IconDots />
+                              </MenuTrigger>
+                              <MenuPopup align="start" side="right">
+                                <MenuItem
+                                  onClick={() => {
+                                    pendingRename.current = session.id;
+                                  }}
+                                >
+                                  <IconPencil />
+                                  {m.agent_rename()}
+                                </MenuItem>
+                                <MenuItem variant="destructive" onClick={() => remove(session)}>
+                                  <IconTrash />
+                                  {m.agent_move_trash()}
+                                </MenuItem>
+                              </MenuPopup>
+                            </Menu>
+                          </>
+                        )}
+                      </SidebarMenuItem>
+                    ))}
               </SidebarMenu>
-              {loading ? (
+              {phase === "skeleton" ? (
                 <SessionListSkeleton />
               ) : (
+                phase === "ready" &&
                 !sessions.some((session) => !session.trashed) && (
                   <p className="px-2 py-4 text-xs text-muted-foreground">{m.agent_no_chats()}</p>
                 )
               )}
-              {error && (
+              {phase === "ready" && error && (
                 <Button variant="ghost" size="sm" onClick={retry}>
                   {m.agent_retry()}
                 </Button>
