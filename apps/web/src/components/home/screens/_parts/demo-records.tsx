@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { DataField } from "@/components/home/support/data-field";
 import { DataFields } from "@/components/home/support/data-fields";
 import { MarkdownView } from "@/components/home/support/markdown-view";
-import { ResumeDocumentFileIcon } from "@/components/home/support/resume-document-file-icon";
+import { ResumeDocumentFileIcon } from "@/components/resume-document-file-icon";
 import { Avatar } from "@/components/home/support/demo-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

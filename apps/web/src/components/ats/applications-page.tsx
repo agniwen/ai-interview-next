@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { IconListDetails } from "@tabler/icons-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -15,110 +15,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { MarkdownEditorSkeleton } from "@/components/skeletons/components/markdown-editor-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserColumn } from "@/components/user-column";
 import * as m from "@/paraglide/messages";
 import { atsApi, atsDate, atsStatus, readAts } from "./client";
+import { CreateApplicationDialog } from "./create-application-dialog";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
-
-const MarkdownEditor = lazy(async () => {
-  const { MarkdownEditor: Editor } = await import("@/components/ui/markdown-editor");
-  return { default: Editor };
-});
-const maxJobRequirementsLength = 30_000;
-
-function JobForm({
-  workspaceId,
-  onSuccess,
-}: {
-  workspaceId: string;
-  onSuccess: () => Promise<void>;
-}) {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [requirements, setRequirements] = useState("");
-  const validRequirements =
-    requirements.trim().length > 0 && requirements.length <= maxJobRequirementsLength;
-  const mutation = useMutation({
-    mutationFn: async () =>
-      readAts(
-        await atsApi.jobs.$post({
-          json: { requirements, title, version: 1 },
-          param: { workspaceId },
-        }),
-      ),
-    async onSuccess() {
-      await onSuccess();
-      setOpen(false);
-    },
-  });
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={setOpen}
-      onOpenChangeComplete={(isOpen) => {
-        if (!isOpen) {
-          setTitle("");
-          setRequirements("");
-          mutation.reset();
-        }
-      }}
-    >
-      <DialogTrigger render={<Button />}>{m.ats_create_job()}</DialogTrigger>
-      <DialogPopup className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{m.ats_create_job()}</DialogTitle>
-          <DialogDescription>{m.ats_job_help()}</DialogDescription>
-        </DialogHeader>
-        <DialogPanel>
-          <div className="flex flex-col gap-4">
-            {mutation.isError && (
-              <Alert variant="error">
-                <AlertDescription>{m.ats_error()}</AlertDescription>
-              </Alert>
-            )}
-            <Field>
-              <FieldLabel htmlFor="ats-job-title">{m.ats_job()}</FieldLabel>
-              <Input
-                id="ats-job-title"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                maxLength={200}
-              />
-            </Field>
-            <Field>
-              <FieldLabel id="ats-job-requirements-label" htmlFor="ats-job-requirements">
-                {m.ats_requirements()}
-              </FieldLabel>
-              <Suspense fallback={<MarkdownEditorSkeleton />}>
-                <MarkdownEditor
-                  id="ats-job-requirements"
-                  aria-labelledby="ats-job-requirements-label"
-                  aria-required="true"
-                  value={requirements}
-                  onChange={setRequirements}
-                  placeholder={m.ats_requirements_placeholder()}
-                  maxLength={maxJobRequirementsLength}
-                />
-              </Suspense>
-            </Field>
-          </div>
-        </DialogPanel>
-        <DialogFooter>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !title.trim() || !validRequirements}
-          >
-            {m.ats_save()}
-          </Button>
-        </DialogFooter>
-      </DialogPopup>
-    </Dialog>
-  );
-}
 
 function ApplicationHistory({ workspaceId, id }: { workspaceId: string; id: string }) {
   const { data, isError } = useQuery({
@@ -145,12 +48,17 @@ function ApplicationHistory({ workspaceId, id }: { workspaceId: string; id: stri
                 <p className="text-sm font-medium">
                   {entry.result.reason === "job_changed" ? m.ats_transferred() : m.ats_closed()}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {atsDate(entry.occurredAt, "short")} ·{" "}
-                  {entry.actorType === "system"
-                    ? m.ats_system()
-                    : (entry.actorName ?? entry.actorId)}
-                </p>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                  <time dateTime={entry.occurredAt}>{atsDate(entry.occurredAt, "short")}</time>
+                  <span aria-hidden="true">·</span>
+                  {entry.actorType === "system" ? (
+                    <span>{m.ats_system()}</span>
+                  ) : (
+                    <UserColumn
+                      user={{ image: entry.actorImage, name: entry.actorName ?? entry.actorId }}
+                    />
+                  )}
+                </div>
               </div>
             ))}
             {data.evaluations.map((evaluation) => (
@@ -195,7 +103,7 @@ export function ApplicationsPage({ workspaceId, page, onPage }: AtsPageProps) {
       query.state.data?.rows.some(
         (row) => row.evaluationStatus === "queued" || row.evaluationStatus === "running",
       )
-        ? 2000
+        ? 5000
         : false,
   });
   const retry = useMutation({
@@ -222,7 +130,7 @@ export function ApplicationsPage({ workspaceId, page, onPage }: AtsPageProps) {
               <AlertDescription>{m.ats_error()}</AlertDescription>
             </Alert>
           )}
-          <JobForm workspaceId={workspaceId} onSuccess={refresh} />
+          <CreateApplicationDialog workspaceId={workspaceId} onSuccess={refresh} />
           <Dialog handle={closeDialog}>
             {({ payload }) =>
               payload && (

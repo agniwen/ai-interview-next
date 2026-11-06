@@ -5,8 +5,8 @@ import type { ResumeObjectStore } from "./contracts";
 
 const contentType = "application/pdf";
 
-export function resumeObjectStore(env: ApiBindings, uploadPath = ""): ResumeObjectStore {
-  const files = createFiles({
+export function resumeFiles(env: ApiBindings) {
+  return createFiles({
     adapter: r2({
       accessKeyId: env.RESUME_S3_ACCESS_KEY_ID,
       binding: env.RESUME_FILES,
@@ -15,6 +15,10 @@ export function resumeObjectStore(env: ApiBindings, uploadPath = ""): ResumeObje
       secretAccessKey: env.RESUME_S3_SECRET_ACCESS_KEY,
     }),
   });
+}
+
+export function resumeObjectStore(env: ApiBindings, uploadPath = ""): ResumeObjectStore {
+  const files = resumeFiles(env);
   return {
     async head(objectKey) {
       try {

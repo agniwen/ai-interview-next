@@ -19,7 +19,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 
-import { ResumeDocumentFileIcon } from "@/components/home/support/resume-document-file-icon";
+import { ResumeDocumentFileIcon } from "@/components/resume-document-file-icon";
 import { Avatar } from "@/components/home/support/demo-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

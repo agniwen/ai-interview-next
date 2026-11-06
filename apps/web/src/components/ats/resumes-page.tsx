@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { IconFileCv, IconUpload } from "@tabler/icons-react";
+import { ResumePreviewDialog } from "@/components/features/document-preview/resume-preview-dialog";
+import {
+  getResumeDocumentFileIconKind,
+  ResumeDocumentFileIcon,
+} from "@/components/resume-document-file-icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,8 +30,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserColumn } from "@/components/user-column";
 import * as m from "@/paraglide/messages";
 import { atsApi, atsDate, atsStatus, readAts } from "./client";
+import { CreateApplicationDialog } from "./create-application-dialog";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 
@@ -48,55 +55,47 @@ async function uploadResumeFile(workspaceId: string, id: string, url: string, fi
   }
 }
 
-function ResumeAction({
-  selection,
+function ResumeCandidateDialog({
+  submissionId,
   workspaceId,
   onClose,
   onSuccess,
 }: {
-  selection: { id: string; action: "match" | "resolve" };
+  submissionId: string;
   workspaceId: string;
   onClose: () => void;
   onSuccess: () => Promise<void>;
 }) {
-  const matching = selection.action === "match";
   const [value, setValue] = useState("");
   const [name, setName] = useState("");
   const param = { workspaceId };
   const { data, isError } = useQuery({
     queryFn: async () => {
-      if (matching) {
-        const { rows } = await readAts(await atsApi.jobs.$get({ param }));
-        return rows.map((job) => ({ id: job.id, label: job.title }));
-      }
       const { rows } = await readAts(await atsApi.candidates.$get({ param, query: { page: "1" } }));
       return rows.map((candidate) => ({ id: candidate.id, label: candidate.name }));
     },
-    queryKey: ["ats", workspaceId, "options", selection.action],
+    queryKey: ["ats", workspaceId, "options", "resolve"],
   });
   const mutation = useMutation({
     async mutationFn() {
-      const endpoint = atsApi.submissions[":id"];
-      const request = { ...param, id: selection.id };
-      const response = matching
-        ? await endpoint.match.$post({ json: { jobId: value, version: 1 }, param: request })
-        : await endpoint.resolve.$post({
-            json: value ? { candidateId: value, version: 1 } : { name, version: 1 },
-            param: request,
-          });
-      await readAts(response);
+      await readAts(
+        await atsApi.submissions[":id"].resolve.$post({
+          json: value ? { candidateId: value, version: 1 } : { name, version: 1 },
+          param: { ...param, id: submissionId },
+        }),
+      );
     },
     async onSuccess() {
       await onSuccess();
       onClose();
     },
   });
-  const title = matching ? m.ats_match() : m.ats_review();
+  const title = m.ats_review();
   return (
     <DialogPopup>
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{matching ? m.ats_match_help() : m.ats_review_help()}</DialogDescription>
+        <DialogDescription>{m.ats_review_help()}</DialogDescription>
       </DialogHeader>
       <DialogPanel>
         <div className="flex flex-col gap-4">
@@ -106,13 +105,13 @@ function ResumeAction({
             </Alert>
           )}
           <Field>
-            <FieldLabel>{matching ? m.ats_job() : m.ats_candidate()}</FieldLabel>
+            <FieldLabel>{m.ats_candidate()}</FieldLabel>
             <Select
               value={value}
               onValueChange={(next) => setValue(next ?? "")}
               items={data?.map((entry) => ({ label: entry.label, value: entry.id }))}
             >
-              <SelectTrigger aria-label={matching ? m.ats_job() : m.ats_candidate()}>
+              <SelectTrigger aria-label={m.ats_candidate()}>
                 <SelectValue placeholder={title} />
               </SelectTrigger>
               <SelectPopup>
@@ -126,7 +125,7 @@ function ResumeAction({
               </SelectPopup>
             </Select>
           </Field>
-          {!matching && !value && (
+          {!value && (
             <Field>
               <FieldLabel>{m.ats_name()}</FieldLabel>
               <Input value={name} onChange={(event) => setName(event.target.value)} />
@@ -137,7 +136,7 @@ function ResumeAction({
       <DialogFooter>
         <Button
           onClick={() => mutation.mutate()}
-          disabled={mutation.isPending || (!value && (matching || !name.trim()))}
+          disabled={mutation.isPending || (!value && !name.trim())}
         >
           {m.ats_save()}
         </Button>
@@ -151,10 +150,11 @@ export function ResumesPage({ workspaceId, page, onPage }: AtsPageProps) {
   const client = useQueryClient();
   const param = { workspaceId };
   const refresh = () => client.invalidateQueries({ queryKey: ["ats", workspaceId] });
-  const actionDialog = useMemo(
-    () => createDialogHandle<{ id: string; action: "match" | "resolve" }>(),
-    [],
-  );
+  const refreshApplications = () =>
+    client.invalidateQueries({ queryKey: ["ats", workspaceId, "applications"] });
+  const candidateDialog = useMemo(() => createDialogHandle<string>(), []);
+  const recruitmentDialog = useMemo(() => createDialogHandle<string>(), []);
+  const previewDialog = useMemo(() => createDialogHandle<{ filename: string; id: string }>(), []);
   const { data, isError } = useQuery({
     queryFn: async () =>
       readAts(await atsApi.resumes.$get({ param, query: { page: String(page) } })),
@@ -163,7 +163,7 @@ export function ResumesPage({ workspaceId, page, onPage }: AtsPageProps) {
       query.state.data?.rows.some(
         (row) => row.parseStatus === "queued" || row.parseStatus === "running",
       )
-        ? 2000
+        ? 5000
         : false,
   });
   const uploads = useMutation({
@@ -193,6 +193,11 @@ export function ResumesPage({ workspaceId, page, onPage }: AtsPageProps) {
       readAts(await atsApi.runs[":id"].retry.$post({ param: { ...param, id } })),
     onSuccess: refresh,
   });
+  const recruitmentResumes = new Map(
+    data?.rows
+      .filter((row) => row.parseStatus === "succeeded")
+      .map((row) => [row.id, row.resumeId]),
+  );
   return (
     <AtsListPage
       title={m.ats_resumes()}
@@ -223,39 +228,93 @@ export function ResumesPage({ workspaceId, page, onPage }: AtsPageProps) {
             <IconUpload />
             {uploads.isPending ? m.ats_uploading() : m.ats_upload()}
           </Button>
-          <Dialog handle={actionDialog}>
+          <Dialog handle={candidateDialog}>
             {({ payload }) =>
               payload && (
-                <ResumeAction
-                  key={payload.id + payload.action}
+                <ResumeCandidateDialog
+                  key={payload}
+                  submissionId={payload}
                   workspaceId={workspaceId}
-                  selection={payload}
-                  onClose={() => actionDialog.close()}
+                  onClose={() => candidateDialog.close()}
                   onSuccess={refresh}
                 />
               )
             }
           </Dialog>
+          <CreateApplicationDialog
+            handle={recruitmentDialog}
+            onSuccess={refreshApplications}
+            workspaceId={workspaceId}
+          />
+          <Dialog handle={previewDialog}>
+            {({ payload }) => {
+              if (!payload) {
+                return null;
+              }
+              const resumeId = recruitmentResumes.get(payload.id);
+              return (
+                <ResumePreviewDialog
+                  actions={
+                    resumeId && (
+                      <CreateApplicationDialog
+                        onSuccess={refreshApplications}
+                        resumeId={resumeId}
+                        workspaceId={workspaceId}
+                      />
+                    )
+                  }
+                  key={`${workspaceId}/${payload.id}`}
+                  filename={payload.filename}
+                  id={payload.id}
+                  workspaceId={workspaceId}
+                />
+              );
+            }}
+          </Dialog>
         </>
       }
+      firstColumnClassName="w-120 min-w-40"
       headings={[
         m.ats_filename(),
         m.ats_candidate(),
-        m.ats_job(),
         m.ats_status(),
+        m.ats_creator(),
         m.ats_date(),
         m.ats_action(),
       ]}
       rows={data?.rows.map((row) => {
         const { runId, submissionId } = row;
+        const recruitmentResumeId = recruitmentResumes.get(row.id);
+        const previewPayload = { filename: row.filename, id: row.id };
         const batch = data.batches.find((entry) => entry.id === row.batchId);
+        const filename = (
+          <>
+            <ResumeDocumentFileIcon
+              className="size-5 shrink-0"
+              kind={getResumeDocumentFileIconKind({ fileName: row.filename })}
+            />
+            <span className="min-w-0 truncate">{row.filename}</span>
+          </>
+        );
         return {
           cells: [
-            <span key="name" className="block max-w-64 truncate" title={row.filename}>
-              {row.filename}
-            </span>,
+            <div className="contain-inline-size" key="name">
+              {row.status === "accepted" ? (
+                <DialogTrigger
+                  className="flex max-w-full items-center gap-2 rounded-sm text-left hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                  handle={previewDialog}
+                  payload={previewPayload}
+                  title={row.filename}
+                >
+                  {filename}
+                </DialogTrigger>
+              ) : (
+                <span className="flex max-w-full items-center gap-2" title={row.filename}>
+                  {filename}
+                </span>
+              )}
+            </div>,
             row.candidateName ?? (row.identityStatus === "pending_review" ? m.ats_review() : "—"),
-            row.jobTitle ?? m.ats_unmatched(),
             <div key="status" className="flex flex-col items-start gap-1">
               <Badge variant="outline">{atsStatus(row.parseStatus ?? row.status)}</Badge>
               {row.parseStatus === "failed" && row.error && (
@@ -271,6 +330,7 @@ export function ResumesPage({ workspaceId, page, onPage }: AtsPageProps) {
                 </span>
               )}
             </div>,
+            <UserColumn key="creator" user={row.creator} />,
             atsDate(row.createdAt),
             <div key="actions" className="flex gap-1">
               {runId && row.parseStatus === "failed" && (
@@ -283,19 +343,28 @@ export function ResumesPage({ workspaceId, page, onPage }: AtsPageProps) {
                   {m.ats_retry()}
                 </Button>
               )}
-              {submissionId && (
+              {row.status === "accepted" && (
                 <DialogTrigger
-                  handle={actionDialog}
-                  payload={{ action: "match", id: submissionId }}
+                  handle={previewDialog}
+                  payload={previewPayload}
                   render={<Button variant="outline" size="sm" />}
                 >
-                  {m.ats_match()}
+                  {m.ats_view_resume()}
+                </DialogTrigger>
+              )}
+              {recruitmentResumeId && (
+                <DialogTrigger
+                  handle={recruitmentDialog}
+                  payload={recruitmentResumeId}
+                  render={<Button variant="outline" size="sm" />}
+                >
+                  {m.ats_join_recruitment()}
                 </DialogTrigger>
               )}
               {submissionId && row.identityStatus === "pending_review" && (
                 <DialogTrigger
-                  handle={actionDialog}
-                  payload={{ action: "resolve", id: submissionId }}
+                  handle={candidateDialog}
+                  payload={submissionId}
                   render={<Button variant="outline" size="sm" />}
                 >
                   {m.ats_review()}

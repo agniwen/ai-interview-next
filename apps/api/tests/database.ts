@@ -20,6 +20,7 @@ export async function createTestDatabase() {
     statements.map((statement) => platform.env.AUTH_DB.prepare(statement)),
   );
   return {
+    ctx: platform.ctx,
     database: createDatabase(platform.env.AUTH_DB),
     dispose: () => platform.dispose(),
     env: platform.env,

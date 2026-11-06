@@ -6,15 +6,25 @@ import {
   resumeUploadItem as item,
 } from "@ai-interview/db/schema";
 import { sValidator } from "@hono/standard-validator";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AuthenticatedEnv } from "../../middleware/authenticated";
 import { requireWorkspace } from "../../middleware/workspace";
-import { closeApplication, matchSubmissionJob } from "./applications";
-import { applicationHistory, listApplications, listCandidates, listResumes } from "./queries";
+import { closeApplication, createApplication, matchSubmissionJob } from "./applications";
+import {
+  applicationHistory,
+  applicationOptions,
+  applicationResumeOptions,
+  getUploadResumeProfile,
+  listApplications,
+  listCandidateResumes,
+  listCandidates,
+  listJobs,
+  listResumes,
+} from "./queries";
 import { flushResumeOutbox } from "./runtime";
-import { resumeObjectStore } from "./storage";
+import { resumeFiles, resumeObjectStore } from "./storage";
 import { acceptUpload, createUploadBatch, findUploadItem, retryResumeRun } from "./uploads";
 
 const page = sValidator(
@@ -51,6 +61,21 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       200,
     ),
   )
+  .get(
+    "/:workspaceId/candidates/:id/resumes",
+    sValidator("param", z.object({ id: z.string().min(1), workspaceId: z.string() })),
+    async (c) => {
+      const result = await listCandidateResumes(
+        c.get("database"),
+        c.get("workspaceId"),
+        c.req.valid("param").id,
+      );
+      if (!result) {
+        return c.json({ error: "CANDIDATE_NOT_AVAILABLE", version: 1 as const }, 404);
+      }
+      return c.json(result, 200);
+    },
+  )
   .get("/:workspaceId/resumes", page, async (c) =>
     c.json(
       await listResumes(c.get("database"), c.get("workspaceId"), c.req.valid("query").page),
@@ -62,6 +87,45 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       await listApplications(c.get("database"), c.get("workspaceId"), c.req.valid("query").page),
       200,
     ),
+  )
+  .get("/:workspaceId/applications/options", async (c) =>
+    c.json(await applicationOptions(c.get("database"), c.get("workspaceId")), 200),
+  )
+  .get(
+    "/:workspaceId/applications/resume-options",
+    sValidator(
+      "query",
+      z.object({
+        offsetMinutes: z.coerce.number().int().min(-840).max(840).default(0),
+        page: z.coerce.number().int().positive().max(1_000_000).default(1),
+        search: z.string().trim().max(200).default(""),
+      }),
+    ),
+    async (c) =>
+      c.json(
+        await applicationResumeOptions(
+          c.get("database"),
+          c.get("workspaceId"),
+          c.req.valid("query"),
+        ),
+        200,
+      ),
+  )
+  .post(
+    "/:workspaceId/applications",
+    sValidator("json", z.strictObject({ jobId: z.uuid(), resumeId: z.uuid(), version })),
+    async (c) => {
+      const db = c.get("database");
+      const result = await createApplication(db, c.get("workspaceId"), c.req.valid("json"));
+      if ("error" in result) {
+        return c.json(result, 409);
+      }
+      if (result.runId) {
+        c.executionCtx.waitUntil(flushResumeOutbox(c.env, db, result.runId));
+        return c.json(result, 201);
+      }
+      return c.json(result, 200);
+    },
   )
   .get("/:workspaceId/applications/:id", async (c) =>
     c.json(await applicationHistory(c.get("database"), c.get("workspaceId"), c.req.param("id"))),
@@ -78,15 +142,9 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     }
     return c.json({ version: 1 as const }, 200);
   })
-  .get("/:workspaceId/jobs", async (c) => {
-    const rows = await c
-      .get("database")
-      .select()
-      .from(job)
-      .where(eq(job.workspaceId, c.get("workspaceId")))
-      .orderBy(desc(job.createdAt));
-    return c.json({ rows, version: 1 as const });
-  })
+  .get("/:workspaceId/jobs", page, async (c) =>
+    c.json(await listJobs(c.get("database"), c.get("workspaceId"), c.req.valid("query").page), 200),
+  )
   .post(
     "/:workspaceId/jobs",
     sValidator(
@@ -126,6 +184,35 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       ),
       201,
     );
+  })
+  .get("/:workspaceId/uploads/:id/profile", async (c) => {
+    const result = await getUploadResumeProfile(
+      c.get("database"),
+      c.get("workspaceId"),
+      c.req.param("id"),
+    );
+    if (!result) {
+      return c.json({ error: "UPLOAD_NOT_AVAILABLE", version: 1 as const }, 404);
+    }
+    return c.json({ ...result, version: 1 as const }, 200);
+  })
+  .get("/:workspaceId/upload-files/:id", async (c) => {
+    const file = await findUploadItem(c.get("database"), c.get("workspaceId"), c.req.param("id"));
+    if (!file || file.status !== "accepted") {
+      return c.json({ error: "UPLOAD_NOT_AVAILABLE", version: 1 as const }, 404);
+    }
+    const original = await resumeFiles(c.env).download(file.objectKey, { as: "stream" });
+    const filename = encodeURIComponent(file.filename)
+      .replaceAll("'", "%27")
+      .replaceAll("(", "%28")
+      .replaceAll(")", "%29")
+      .replaceAll("*", "%2A");
+    return c.body(original.stream(), 200, {
+      "Cache-Control": "private, no-store",
+      "Content-Disposition": `attachment; filename*=UTF-8''${filename}`,
+      "Content-Length": String(original.size),
+      "Content-Type": "application/pdf",
+    });
   })
   .put("/:workspaceId/upload-files/:id", async (c) => {
     const file = await findUploadItem(c.get("database"), c.get("workspaceId"), c.req.param("id"));

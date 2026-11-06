@@ -1,9 +1,23 @@
 import { randomBytes } from "node:crypto";
-import { member, organization, user as userTable } from "@ai-interview/db/schema";
+import {
+  application,
+  applicationResume,
+  candidate,
+  member,
+  organization,
+  resume,
+  resumeProcessingOutbox,
+  resumeProcessingRun,
+  resumeSubmission,
+  resumeUploadBatch,
+  resumeUploadItem,
+  user as userTable,
+} from "@ai-interview/db/schema";
 import { makeSignature } from "better-auth/crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
+import { resumeObjectStore } from "../src/modules/ats/storage";
 import { getAuth } from "../src/modules/auth/auth";
 import { createTestDatabase } from "./database";
 import type { ApiBindings } from "../src/env";
@@ -60,6 +74,7 @@ function call(path: string, cookie?: string, body?: object) {
     }),
     undefined,
     env,
+    platform.ctx,
   );
 }
 
@@ -74,6 +89,208 @@ async function data(...args: Parameters<typeof call>) {
 }
 
 describe("workspaces", () => {
+  it("creates independent applications for a completed resume across jobs", async () => {
+    const owner = await account("hiring@example.com");
+    const outsider = await account("other-hiring@example.com");
+    const workspaceId = owner.workspace.id;
+    const base = `ats/${workspaceId}`;
+    const candidateId = crypto.randomUUID();
+    const resumeId = crypto.randomUUID();
+    const batchId = crypto.randomUUID();
+    const createdAt = new Date("2026-11-05T20:00:00.000Z");
+    await platform.database.batch([
+      platform.database.insert(candidate).values({
+        createdAt,
+        creationSource: "manual",
+        id: candidateId,
+        name: "Candidate",
+        workspaceId,
+      }),
+      platform.database.insert(resume).values({
+        candidateId,
+        createdAt,
+        id: resumeId,
+        parseStatus: "succeeded",
+        parsedProfile: { targetRoles: [{ text: "Platform engineer" }], version: 1 },
+        pdfObjectKey: "ready",
+        sha256: "a",
+        workspaceId,
+      }),
+      platform.database.insert(resumeSubmission).values({
+        createdAt,
+        id: resumeId,
+        originalFilename: "Intake.pdf",
+        resumeId,
+        workspaceId,
+      }),
+      platform.database.insert(resumeUploadBatch).values({
+        createdAt,
+        createdBy: owner.user.id,
+        id: batchId,
+        workspaceId,
+      }),
+      platform.database.insert(resumeUploadItem).values({
+        batchId,
+        filename: "Intake.pdf",
+        id: resumeId,
+        objectKey: "ready",
+        size: 12,
+        status: "accepted",
+        submissionId: resumeId,
+        workspaceId,
+      }),
+      platform.database.insert(resumeProcessingRun).values({
+        createdAt,
+        executionId: resumeId,
+        id: resumeId,
+        kind: "parse",
+        resumeId,
+        stage: "structure",
+        status: "running",
+        workspaceId,
+      }),
+    ]);
+    const firstJob = await data(`${base}/jobs`, owner.cookie, {
+      requirements: "First requirements",
+      title: "First job",
+      version: 1,
+    });
+    const secondJob = await data(`${base}/jobs`, owner.cookie, {
+      requirements: "Second requirements",
+      title: "Second job",
+      version: 1,
+    });
+    const path = `${base}/applications`;
+    const firstInput = { jobId: firstJob.id, resumeId, version: 1 };
+    expect(await data(`${base}/jobs?page=1`, owner.cookie)).toMatchObject({ page: 1, total: 2 });
+    expect(await status(path, outsider.cookie, firstInput)).toBe(404);
+    expect(await status(path, owner.cookie, firstInput)).toBe(409);
+    const optionsPath = `${path}/resume-options`;
+    expect(await data(optionsPath, owner.cookie)).toMatchObject({ rows: [] });
+    await platform.database
+      .update(resumeProcessingRun)
+      .set({ status: "succeeded" })
+      .where(eq(resumeProcessingRun.id, resumeId));
+    const results = await Promise.all(
+      ["intake.pdf", "Candidate", "Platform", "hiring", "2026年11月6日"].map((search) =>
+        data(
+          `${optionsPath}?${new URLSearchParams({ offsetMinutes: "480", search })}`,
+          owner.cookie,
+        ),
+      ),
+    );
+    for (const result of results) {
+      expect(result).toMatchObject({
+        nextPage: null,
+        rows: [
+          {
+            candidateName: "Candidate",
+            createdAt: createdAt.toISOString(),
+            creator: { name: owner.user.name },
+            filename: "Intake.pdf",
+            id: resumeId,
+            targetRoles: ["Platform engineer"],
+          },
+        ],
+      });
+    }
+    expect(await data(`${optionsPath}?search=irrelevant`, owner.cookie)).toMatchObject({
+      rows: [],
+    });
+    expect(await status(optionsPath, outsider.cookie)).toBe(404);
+    const firstResponse = await call(path, owner.cookie, firstInput);
+    const secondResponse = await call(path, owner.cookie, { ...firstInput, jobId: secondJob.id });
+    expect(firstResponse.status).toBe(201);
+    expect(secondResponse.status).toBe(201);
+    const first = await firstResponse.json();
+    const second = await secondResponse.json();
+    expect(await data(path, owner.cookie, firstInput)).toEqual({
+      applicationId: first.applicationId,
+      runId: null,
+      version: 1,
+    });
+    expect(await platform.database.select().from(application)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          candidateId,
+          closedAt: null,
+          id: first.applicationId,
+          jobId: firstJob.id,
+        }),
+        expect.objectContaining({
+          candidateId,
+          closedAt: null,
+          id: second.applicationId,
+          jobId: secondJob.id,
+        }),
+      ]),
+    );
+    expect(await platform.database.select().from(applicationResume)).toHaveLength(2);
+    const evaluations = await platform.database
+      .select()
+      .from(resumeProcessingRun)
+      .where(eq(resumeProcessingRun.kind, "evaluate"));
+    expect(evaluations).toHaveLength(2);
+    expect(evaluations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          applicationId: first.applicationId,
+          id: first.runId,
+          jobRequirementsSnapshot: "First requirements",
+          resumeId,
+          status: "queued",
+        }),
+        expect.objectContaining({
+          applicationId: second.applicationId,
+          id: second.runId,
+          jobRequirementsSnapshot: "Second requirements",
+          resumeId,
+          status: "queued",
+        }),
+      ]),
+    );
+    expect(await platform.database.select().from(resumeProcessingOutbox)).toHaveLength(2);
+
+    const newerResumes = Array.from({ length: 20 }, () => {
+      const id = crypto.randomUUID();
+      return { createdAt: new Date("2026-11-07T00:00:00.000Z"), id, workspaceId };
+    });
+    await Promise.all(
+      [newerResumes.slice(0, 10), newerResumes.slice(10)].map((group) =>
+        platform.database.batch([
+          platform.database.insert(resume).values(
+            group.map<typeof resume.$inferInsert>((row) => ({
+              ...row,
+              candidateId,
+              parseStatus: "succeeded",
+              pdfObjectKey: row.id,
+              sha256: row.id,
+            })),
+          ),
+          platform.database.insert(resumeProcessingRun).values(
+            group.map<typeof resumeProcessingRun.$inferInsert>((row) => ({
+              ...row,
+              executionId: row.id,
+              kind: "parse",
+              resumeId: row.id,
+              stage: "structure",
+              status: "succeeded",
+            })),
+          ),
+        ]),
+      ),
+    );
+    const pageOne = await data(`${optionsPath}?page=1`, owner.cookie);
+    expect(pageOne.nextPage).toBe(2);
+    expect(pageOne.rows.map(({ id }: { id: string }) => id).toSorted()).toEqual(
+      newerResumes.map(({ id }) => id).toSorted(),
+    );
+    expect(await data(`${optionsPath}?page=2`, owner.cookie)).toMatchObject({
+      nextPage: null,
+      rows: [{ id: resumeId }],
+    });
+  });
+
   it("creates one collaborative initial workspace and remembers it on registration", async () => {
     const owner = await account("owner@example.com");
     expect(owner.workspace.id).toMatch(/^(?=.*[a-z])(?=.*\d)[a-z0-9]{8}$/u);
@@ -101,6 +318,235 @@ describe("workspaces", () => {
         a.cookie,
       ),
     ).toBeGreaterThanOrEqual(400);
+  });
+
+  it("serves accepted resume originals and profiles only through their own workspace", async () => {
+    const owner = await account("uploader@example.com");
+    const outsider = await account("outsider@example.com");
+    const workspaceId = owner.workspace.id;
+    const id = crypto.randomUUID();
+    const batchId = crypto.randomUUID();
+    const objectKey = `${workspaceId}/${batchId}/${id}`;
+    const filename = "候选人 (1).pdf";
+    const bytes = new TextEncoder().encode("%PDF-1.7\n%%EOF");
+    const image = "https://sainoa.example/creator.png";
+    await platform.database.update(userTable).set({ image }).where(eq(userTable.id, owner.user.id));
+    await platform.database.insert(resumeUploadBatch).values({
+      createdAt: new Date(),
+      createdBy: owner.user.id,
+      id: batchId,
+      workspaceId,
+    });
+    await platform.database.insert(resumeUploadItem).values({
+      batchId,
+      filename,
+      id,
+      objectKey,
+      size: bytes.length,
+      status: "waiting",
+      workspaceId,
+    });
+    await resumeObjectStore(env).write(objectKey, bytes.buffer);
+
+    const path = `ats/${workspaceId}/upload-files/${id}`;
+    const profilePath = `ats/${workspaceId}/uploads/${id}/profile`;
+    expect(await data(`ats/${workspaceId}/resumes`, owner.cookie)).toMatchObject({
+      rows: [{ creator: { image, name: owner.user.name }, id }],
+    });
+    expect(await status(path, owner.cookie)).toBe(404);
+    expect(await status(profilePath, owner.cookie)).toBe(404);
+    await platform.database.insert(resumeProcessingRun).values({
+      createdAt: new Date(),
+      executionId: id,
+      id,
+      kind: "parse",
+      stage: "extract_text",
+      status: "queued",
+      uploadItemId: id,
+      workspaceId,
+    });
+    await platform.database
+      .update(resumeUploadItem)
+      .set({ runId: id, status: "accepted" })
+      .where(eq(resumeUploadItem.id, id));
+    expect(await status(path)).toBe(401);
+    expect(await status(path, outsider.cookie)).toBe(404);
+    expect(await status(`ats/${outsider.workspace.id}/upload-files/${id}`, outsider.cookie)).toBe(
+      404,
+    );
+
+    const original = await call(path, owner.cookie);
+    expect(original.status).toBe(200);
+    expect(original.headers.get("content-type")).toBe("application/pdf");
+    expect(original.headers.get("cache-control")).toContain("no-store");
+    expect(original.headers.get("content-disposition")).toBe(
+      "attachment; filename*=UTF-8''%E5%80%99%E9%80%89%E4%BA%BA%20%281%29.pdf",
+    );
+    expect(new Uint8Array(await original.arrayBuffer())).toEqual(bytes);
+
+    expect(await status(profilePath)).toBe(401);
+    expect(await status(profilePath, outsider.cookie)).toBe(404);
+    expect(
+      await status(`ats/${outsider.workspace.id}/uploads/${id}/profile`, outsider.cookie),
+    ).toBe(404);
+    expect(await data(profilePath, owner.cookie)).toEqual({
+      parseStatus: "queued",
+      profile: null,
+      version: 1,
+    });
+
+    const profile = { identity: { name: "候选人" }, version: 1 as const };
+    const markdown = "# 候选人\n\n- 系统架构师";
+    const resumeId = crypto.randomUUID();
+    await platform.database.batch([
+      platform.database.insert(resume).values({
+        createdAt: new Date(),
+        id: resumeId,
+        markdown,
+        parseStatus: "processing",
+        pdfObjectKey: objectKey,
+        sha256: "a".repeat(64),
+        workspaceId,
+      }),
+      platform.database.insert(resumeSubmission).values({
+        createdAt: new Date(),
+        id,
+        originalFilename: filename,
+        resumeId,
+        workspaceId,
+      }),
+      platform.database
+        .update(resumeUploadItem)
+        .set({ submissionId: id })
+        .where(eq(resumeUploadItem.id, id)),
+      platform.database
+        .update(resumeProcessingRun)
+        .set({ resumeId, stage: "structure", status: "running" })
+        .where(eq(resumeProcessingRun.id, id)),
+    ]);
+    expect(await data(profilePath, owner.cookie)).toEqual({
+      parseStatus: "running",
+      profile: null,
+      version: 1,
+    });
+
+    await platform.database.batch([
+      platform.database
+        .update(resume)
+        .set({ parseStatus: "succeeded", parsedProfile: profile })
+        .where(eq(resume.id, resumeId)),
+      platform.database
+        .update(resumeProcessingRun)
+        .set({ status: "succeeded" })
+        .where(eq(resumeProcessingRun.id, id)),
+    ]);
+    expect(await data(profilePath, owner.cookie)).toEqual({
+      parseStatus: "succeeded",
+      profile,
+      version: 1,
+    });
+  });
+
+  it("lists a candidate's distinct owned resumes within the current workspace", async () => {
+    const owner = await account("recruiter@example.com");
+    const outsider = await account("other-recruiter@example.com");
+    const workspaceId = owner.workspace.id;
+    const firstDate = new Date("2026-11-01T00:00:00.000Z");
+    const secondDate = new Date("2026-11-02T00:00:00.000Z");
+    const uploads = [
+      { createdAt: firstDate, filename: "first.pdf", id: "first-upload", resumeId: "first-resume" },
+      {
+        createdAt: secondDate,
+        filename: "repeat.pdf",
+        id: "repeat-upload",
+        resumeId: "first-resume",
+      },
+    ];
+    await platform.database.batch([
+      platform.database.insert(candidate).values(
+        ["candidate-with-resumes", "candidate-without-resumes"].map((id) => ({
+          createdAt: firstDate,
+          creationSource: "manual" as const,
+          id,
+          name: id,
+          workspaceId,
+        })),
+      ),
+      platform.database.insert(resume).values(
+        [firstDate, secondDate].map((createdAt, index) => ({
+          candidateId: "candidate-with-resumes",
+          createdAt,
+          id: index === 0 ? "first-resume" : "second-resume",
+          pdfObjectKey: `sample-${index}.pdf`,
+          sha256: String(index).repeat(64),
+          workspaceId,
+        })),
+      ),
+      platform.database.insert(resumeSubmission).values(
+        uploads.map(({ createdAt, filename, id, resumeId }) => ({
+          createdAt,
+          id,
+          identityStatus: "resolved" as const,
+          originalFilename: filename,
+          resolvedCandidateId:
+            id === "repeat-upload" ? "candidate-without-resumes" : "candidate-with-resumes",
+          resumeId,
+          workspaceId,
+        })),
+      ),
+      platform.database.insert(resumeUploadBatch).values({
+        createdAt: firstDate,
+        createdBy: owner.user.id,
+        id: "candidate-resumes-batch",
+        workspaceId,
+      }),
+      platform.database.insert(resumeUploadItem).values(
+        uploads.map(({ filename, id }) => ({
+          batchId: "candidate-resumes-batch",
+          filename,
+          id,
+          objectKey: filename,
+          size: 12,
+          status: "accepted" as const,
+          submissionId: id,
+          workspaceId,
+        })),
+      ),
+    ]);
+
+    const path = `ats/${workspaceId}/candidates/candidate-with-resumes/resumes`;
+    expect(await status(path)).toBe(401);
+    expect(await status(path, outsider.cookie)).toBe(404);
+    expect(
+      await status(
+        `ats/${outsider.workspace.id}/candidates/candidate-with-resumes/resumes`,
+        outsider.cookie,
+      ),
+    ).toBe(404);
+    const response = await call(path, owner.cookie);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(await response.json()).toEqual({
+      rows: [
+        {
+          createdAt: secondDate.toISOString(),
+          filename: null,
+          id: "second-resume",
+          uploadId: null,
+        },
+        {
+          createdAt: firstDate.toISOString(),
+          filename: "first.pdf",
+          id: "first-resume",
+          uploadId: "first-upload",
+        },
+      ],
+      total: 2,
+      version: 1,
+    });
+    expect(
+      await data(`ats/${workspaceId}/candidates/candidate-without-resumes/resumes`, owner.cookie),
+    ).toEqual({ rows: [], total: 0, version: 1 });
   });
 
   it("persists activation across sessions without using the session's active organization", async () => {

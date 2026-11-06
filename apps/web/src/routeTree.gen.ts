@@ -27,6 +27,7 @@ import { Route as AWWorkspaceIdAgentSessionIdRouteImport } from './routes/_a.w.$
 import { Route as AWWorkspaceIdHubApplicationsRouteImport } from './routes/_a.w.$workspaceId.hub.applications'
 import { Route as AWWorkspaceIdHubCandidatesRouteImport } from './routes/_a.w.$workspaceId.hub.candidates'
 import { Route as AWWorkspaceIdHubDashboardRouteImport } from './routes/_a.w.$workspaceId.hub.dashboard'
+import { Route as AWWorkspaceIdHubJobsRouteImport } from './routes/_a.w.$workspaceId.hub.jobs'
 import { Route as AWWorkspaceIdHubResumesRouteImport } from './routes/_a.w.$workspaceId.hub.resumes'
 
 const IndexRoute = IndexRouteImport.update({
@@ -123,6 +124,11 @@ const AWWorkspaceIdHubDashboardRoute =
     path: '/dashboard',
     getParentRoute: () => AWWorkspaceIdHubRoute,
   } as any)
+const AWWorkspaceIdHubJobsRoute = AWWorkspaceIdHubJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => AWWorkspaceIdHubRoute,
+} as any)
 const AWWorkspaceIdHubResumesRoute = AWWorkspaceIdHubResumesRouteImport.update({
   id: '/resumes',
   path: '/resumes',
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/w/$workspaceId/hub/applications': typeof AWWorkspaceIdHubApplicationsRoute
   '/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
+  '/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRoute
   '/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRoute
 }
 export interface FileRoutesByTo {
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/w/$workspaceId/hub/applications': typeof AWWorkspaceIdHubApplicationsRoute
   '/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
+  '/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRoute
   '/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRoute
 }
 export interface FileRoutesById {
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/_a/w/$workspaceId/hub/applications': typeof AWWorkspaceIdHubApplicationsRoute
   '/_a/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/_a/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
+  '/_a/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRoute
   '/_a/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRoute
 }
 export interface FileRouteTypes {
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/hub/applications'
     | '/w/$workspaceId/hub/candidates'
     | '/w/$workspaceId/hub/dashboard'
+    | '/w/$workspaceId/hub/jobs'
     | '/w/$workspaceId/hub/resumes'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/hub/applications'
     | '/w/$workspaceId/hub/candidates'
     | '/w/$workspaceId/hub/dashboard'
+    | '/w/$workspaceId/hub/jobs'
     | '/w/$workspaceId/hub/resumes'
   id:
     | '__root__'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/_a/w/$workspaceId/hub/applications'
     | '/_a/w/$workspaceId/hub/candidates'
     | '/_a/w/$workspaceId/hub/dashboard'
+    | '/_a/w/$workspaceId/hub/jobs'
     | '/_a/w/$workspaceId/hub/resumes'
   fileRoutesById: FileRoutesById
 }
@@ -388,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AWWorkspaceIdHubDashboardRouteImport
       parentRoute: typeof AWWorkspaceIdHubRoute
     }
+    '/_a/w/$workspaceId/hub/jobs': {
+      id: '/_a/w/$workspaceId/hub/jobs'
+      path: '/jobs'
+      fullPath: '/w/$workspaceId/hub/jobs'
+      preLoaderRoute: typeof AWWorkspaceIdHubJobsRouteImport
+      parentRoute: typeof AWWorkspaceIdHubRoute
+    }
     '/_a/w/$workspaceId/hub/resumes': {
       id: '/_a/w/$workspaceId/hub/resumes'
       path: '/resumes'
@@ -402,6 +421,7 @@ interface AWWorkspaceIdHubRouteChildren {
   AWWorkspaceIdHubApplicationsRoute: typeof AWWorkspaceIdHubApplicationsRoute
   AWWorkspaceIdHubCandidatesRoute: typeof AWWorkspaceIdHubCandidatesRoute
   AWWorkspaceIdHubDashboardRoute: typeof AWWorkspaceIdHubDashboardRoute
+  AWWorkspaceIdHubJobsRoute: typeof AWWorkspaceIdHubJobsRoute
   AWWorkspaceIdHubResumesRoute: typeof AWWorkspaceIdHubResumesRoute
 }
 
@@ -409,6 +429,7 @@ const AWWorkspaceIdHubRouteChildren: AWWorkspaceIdHubRouteChildren = {
   AWWorkspaceIdHubApplicationsRoute: AWWorkspaceIdHubApplicationsRoute,
   AWWorkspaceIdHubCandidatesRoute: AWWorkspaceIdHubCandidatesRoute,
   AWWorkspaceIdHubDashboardRoute: AWWorkspaceIdHubDashboardRoute,
+  AWWorkspaceIdHubJobsRoute: AWWorkspaceIdHubJobsRoute,
   AWWorkspaceIdHubResumesRoute: AWWorkspaceIdHubResumesRoute,
 }
 

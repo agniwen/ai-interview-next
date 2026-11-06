@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from "react";
-import type { ResumeDocumentKind } from "@/components/home/support/resume-documents";
-import { getResumeDocumentKind } from "@/components/home/support/resume-documents";
+import type { ResumeDocumentKind } from "@/lib/resume-documents";
+import { getResumeDocumentKind } from "@/lib/resume-documents";
 
 export interface ResumeDocumentFileIconProps extends SVGProps<SVGSVGElement> {
   kind: ResumeDocumentKind;

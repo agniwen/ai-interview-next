@@ -11,6 +11,116 @@ import {
 } from "@ai-interview/db/schema";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { outboxEntry } from "./outbox";
+import { completedResumeFilter } from "./queries";
+
+function evaluationStatements(
+  db: Database,
+  runId: string,
+  input: {
+    applicationId: string;
+    createdAt: Date;
+    jobRequirementsSnapshot: string;
+    resumeId: string;
+    workspaceId: string;
+  },
+) {
+  return [
+    db.insert(run).values({
+      ...input,
+      executionId: runId,
+      id: runId,
+      kind: "evaluate",
+      stage: "evaluate",
+      status: "queued",
+    }),
+    db.insert(outbox).values(outboxEntry("start", runId, runId)),
+  ] as const;
+}
+
+export async function createApplication(
+  db: Database,
+  workspaceId: string,
+  input: { jobId: string; resumeId: string },
+) {
+  const { jobId, resumeId } = input;
+  const [pdf, target] = await Promise.all([
+    db
+      .select({ candidateId: resume.candidateId })
+      .from(resume)
+      .where(and(eq(resume.id, resumeId), completedResumeFilter(db, workspaceId)))
+      .get(),
+    db
+      .select({ requirements: job.requirements })
+      .from(job)
+      .where(and(eq(job.workspaceId, workspaceId), eq(job.id, jobId)))
+      .get(),
+  ]);
+  if (!pdf || !target) {
+    return { error: "APPLICATION_INPUT_UNAVAILABLE" as const, version: 1 as const };
+  }
+  const { candidateId } = pdf;
+  if (!candidateId) {
+    return { error: "RESUME_CANDIDATE_REQUIRED" as const, version: 1 as const };
+  }
+  const existing = await db
+    .select({ id: application.id, resumeId: applicationResume.resumeId })
+    .from(application)
+    .leftJoin(
+      applicationResume,
+      and(
+        eq(applicationResume.applicationId, application.id),
+        eq(applicationResume.resumeId, resumeId),
+      ),
+    )
+    .where(
+      and(
+        eq(application.workspaceId, workspaceId),
+        eq(application.jobId, jobId),
+        eq(application.candidateId, candidateId),
+        isNull(application.closedAt),
+      ),
+    )
+    .get();
+  if (existing?.resumeId) {
+    return { applicationId: existing.id, runId: null, version: 1 as const };
+  }
+  const applicationId = existing?.id ?? crypto.randomUUID();
+  const runId = crypto.randomUUID();
+  const createdAt = new Date();
+  const actions = [
+    db.insert(applicationResume).values({
+      applicationId,
+      createdAt,
+      id: crypto.randomUUID(),
+      resumeId,
+      status: "available",
+      workspaceId,
+    }),
+    ...evaluationStatements(db, runId, {
+      applicationId,
+      createdAt,
+      jobRequirementsSnapshot: target.requirements,
+      resumeId,
+      workspaceId,
+    }),
+  ] as const;
+  await db.batch(
+    existing
+      ? actions
+      : [
+          db.insert(application).values({
+            candidateId,
+            createdAt,
+            id: applicationId,
+            jobId,
+            stage: "screening",
+            workspaceId,
+          }),
+          ...actions,
+        ],
+  );
+  return { applicationId, runId, version: 1 as const };
+}
 
 export async function matchSubmissionJob(
   db: Database,
@@ -76,19 +186,13 @@ export async function matchSubmissionJob(
   const actions = [
     attachResume,
     updateSubmission,
-    db.insert(run).values({
+    ...evaluationStatements(db, runId, {
       applicationId,
       createdAt,
-      executionId: runId,
-      id: runId,
       jobRequirementsSnapshot: target.requirements,
-      kind: "evaluate",
       resumeId: record.resumeId,
-      stage: "evaluate",
-      status: "queued",
       workspaceId,
     }),
-    db.insert(outbox).values(outboxEntry("start", runId, runId)),
   ] as const;
   const queries = existing
     ? actions

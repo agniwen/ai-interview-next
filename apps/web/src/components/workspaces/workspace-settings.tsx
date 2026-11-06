@@ -40,6 +40,7 @@ import { WorkspaceFeedback } from "./workspace-feedback";
 import { CreateWorkspaceModal } from "./create-workspace-modal";
 import { AutoSaveInput } from "@/components/settings/auto-save-input";
 import { SettingsGroup, SettingsRow } from "@/components/settings/settings-group";
+import { UserColumn } from "@/components/user-column";
 import * as m from "@/paraglide/messages";
 
 const roles = ["member", "admin", "owner"] as const;
@@ -170,8 +171,10 @@ export function WorkspaceSettings({
         {members.map((member) => (
           <ListItem key={member.id}>
             <ListContent>
-              <ListTitle>{member.user.name}</ListTitle>
-              <ListDescription>{member.user.email}</ListDescription>
+              <ListTitle>
+                <UserColumn user={member.user} />
+              </ListTitle>
+              <ListDescription className="ps-6.5">{member.user.email}</ListDescription>
             </ListContent>
             <ListActions>
               {manage && (owner || member.role !== "owner") ? (

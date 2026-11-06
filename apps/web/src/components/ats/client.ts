@@ -18,6 +18,10 @@ export function readAts<T extends AtsResponse>(
   return response.json() as ReturnType<Exclude<T, { ok: false }>["json"]>;
 }
 
+export async function readResumeProfile(param: { id: string; workspaceId: string }) {
+  return readAts(await atsApi.uploads[":id"].profile.$get({ param }));
+}
+
 export function atsDate(value: string | Date, timeStyle?: "short") {
   return new Intl.DateTimeFormat(getLocale(), { dateStyle: "medium", timeStyle }).format(
     new Date(value),

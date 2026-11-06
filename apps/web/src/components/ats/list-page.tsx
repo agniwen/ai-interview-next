@@ -34,6 +34,7 @@ export function AtsListPage({
   icon: Icon,
   toolbar,
   headings,
+  firstColumnClassName,
   rows,
   empty,
   page,
@@ -46,6 +47,7 @@ export function AtsListPage({
   icon: Icon;
   toolbar?: ReactNode;
   headings: string[];
+  firstColumnClassName?: string;
   rows?: { id: string; cells: ReactNode[] }[];
   empty: string;
   page: number;
@@ -86,8 +88,13 @@ export function AtsListPage({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {headings.map((heading) => (
-                        <TableHead key={heading}>{heading}</TableHead>
+                      {headings.map((heading, index) => (
+                        <TableHead
+                          className={index === 0 ? firstColumnClassName : undefined}
+                          key={heading}
+                        >
+                          {heading}
+                        </TableHead>
                       ))}
                     </TableRow>
                   </TableHeader>
