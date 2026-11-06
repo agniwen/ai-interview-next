@@ -1,6 +1,7 @@
 # Connecting scenarios to the agent
 
 ## Contents
+
 - Detect the simulation, change nothing else
 - Seed state from per-scenario data
 - Mock tools for the session's lifetime
@@ -45,7 +46,7 @@ the agent at runtime. That's how one scenario says "these rooms are free that da
   no case conversion.
 - **Seed the backend instead of special-casing the agent.** Build a fake calendar, an in-memory
   database, or a fixture inventory that the agent's real tools read through unchanged. Once the
-  agent's *logic* branches on simulation state, the test is no longer testing the agent.
+  agent's _logic_ branches on simulation state, the test is no longer testing the agent.
 - **Pin the clock.** Scenarios written against absolute dates need the agent's idea of "now" fixed,
   usually from an environment variable, optionally overridden per scenario. Otherwise the suite
   starts failing as the calendar moves and nothing tells you why.
@@ -56,7 +57,7 @@ A simulation runs a whole session by itself. Nothing wraps the turns the way a t
 have to be installed for the session's lifetime instead of scoped to a block. The tool-mocking
 helper has a form for this case.
 
-The model still sees the real tool schemas and only execution is intercepted, so tool *selection*
+The model still sees the real tool schemas and only execution is intercepted, so tool _selection_
 stays under test. That's usually what you most want graded.
 
 If a language has no session-scoped mocking helper, get the same result by defining tools inside
@@ -78,10 +79,10 @@ The semantics tend to surprise people:
 - **The judge's verdict is readable** inside the callback, if you want to log it or make your check
   depend on it.
 
-Compare at the level you care about: room *type*, booking *status*, followup *kind*. Asserting on
+Compare at the level you care about: room _type_, booking _status_, followup _kind_. Asserting on
 every field of a record gives you failures about formatting instead of behavior.
 
-With this in place, a run passes only if the conversation was right *and* the agent ended in the
+With this in place, a run passes only if the conversation was right _and_ the agent ended in the
 right state.
 
 ## Which scenarios need this

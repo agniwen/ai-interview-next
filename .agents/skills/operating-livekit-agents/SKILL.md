@@ -114,7 +114,7 @@ Three things make a production incident tractable instead of a mystery:
 
 - **Every log line carries the session id**, so one call can be traced end to end.
 - **Phase boundaries are timed** — connected, first user speech, first agent response — so you
-  can see *where* latency entered, not just that it did.
+  can see _where_ latency entered, not just that it did.
 - **Provider metrics are tracked separately** from application logs, so a degrading provider is
   visible without digging.
 

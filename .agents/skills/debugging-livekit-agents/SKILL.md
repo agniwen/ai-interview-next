@@ -93,13 +93,13 @@ Audio mode still can't interrupt the agent mid-reply or tell you how the agent s
 
 ## When to use something else
 
-| Situation | Use |
-|---|---|
-| You want to *hear* it, or hand the user something to try | `lk agent console` (mic and speakers, a human at the keyboard) |
-| The same failure keeps coming back | A turn-level regression test (`testing-livekit-agents`) |
-| You need whole-conversation outcomes graded at scale | Simulations (`running-livekit-simulations`) |
-| Transcription or endpointing on a turn you're investigating | The debugger in audio mode (above) |
-| Interruptions, or speech behavior graded across many conversations | Audio simulations (`running-livekit-simulations`) |
+| Situation                                                          | Use                                                            |
+| ------------------------------------------------------------------ | -------------------------------------------------------------- |
+| You want to _hear_ it, or hand the user something to try           | `lk agent console` (mic and speakers, a human at the keyboard) |
+| The same failure keeps coming back                                 | A turn-level regression test (`testing-livekit-agents`)        |
+| You need whole-conversation outcomes graded at scale               | Simulations (`running-livekit-simulations`)                    |
+| Transcription or endpointing on a turn you're investigating        | The debugger in audio mode (above)                             |
+| Interruptions, or speech behavior graded across many conversations | Audio simulations (`running-livekit-simulations`)              |
 
 The debugger is for finding bugs interactively. Once you've found one, write a test for it so a
 later change can't reintroduce it unnoticed.

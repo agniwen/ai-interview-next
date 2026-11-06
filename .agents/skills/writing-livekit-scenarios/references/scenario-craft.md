@@ -1,6 +1,7 @@
 # Writing instructions a simulated user follows well
 
 ## Contents
+
 - Two shapes: point-form direction, and persona-and-goals
 - Rules that hold for both shapes
 - Varying the cast across a suite
@@ -55,7 +56,7 @@ Goals:
 
 ## Rules that hold for both shapes
 
-- **The simulated user talks *to* the agent.** Goals are requests ("order a large fries"), never the
+- **The simulated user talks _to_ the agent.** Goals are requests ("order a large fries"), never the
   agent's own actions ("greet the caller", "process the order"). A simulated user doing the agent's
   job is the most common broken scenario.
 - **Only what the agent handles.** Base every goal on a capability the agent has. Don't ask a
@@ -81,7 +82,7 @@ Spread the suite across framings so it doesn't all sound the same:
 - **Stress**: difficult but realistic behavior for this domain.
 
 For stress cases, give the caller a **communication challenge**: hostile, evasive, won't verify,
-tries to befriend the agent, talks around the question. The difficulty should be in *how* they talk
+tries to befriend the agent, talks around the question. The difficulty should be in _how_ they talk
 while the request itself stays realistic. An absurd request tests nothing. A reasonable caller who
 won't answer questions tests a lot.
 
@@ -93,12 +94,12 @@ Put the identity the scenario needs directly in the instructions (name, contact 
 details where the flow needs them), using obviously fictional values. Keep them consistent with any
 seeded state and with the expected end state.
 
-It's fine, and often the point, for a caller to *lack* a credential: no order number, no PIN, can't
+It's fine, and often the point, for a caller to _lack_ a credential: no order number, no PIN, can't
 verify. Don't invent a specific wrong value unless the scenario is about a mismatch.
 
 ## Scenarios written for audio
 
-Most scenarios should run in text. Write a scenario *for* audio when what you're testing only
+Most scenarios should run in text. Write a scenario _for_ audio when what you're testing only
 exists in speech:
 
 - **Entities that have to survive transcription**: spelled-out names, confirmation codes, account

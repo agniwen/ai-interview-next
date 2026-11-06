@@ -108,7 +108,7 @@ the demo and fail in production" have that line blurred somewhere.
 - **Never classify intent with code.** Approval, refusal, correction, cancellation, "next
   Tuesday" — the runtime model interprets those. A regex, a keyword list, or a phrase whitelist
   will be wrong in ways you never test, and adding one as a "conservative" second gate has the same
-  defect. Validate *structure* in code (typed dates, enums, required fields); leave *meaning* to
+  defect. Validate _structure_ in code (typed dates, enums, required fields); leave _meaning_ to
   the model.
 - **A tool call is the model's interpretation, not proof it was right.** Keep message provenance,
   version checks, ordering, and business rules in code, where they can be checked.
@@ -124,12 +124,12 @@ the demo and fail in production" have that line blurred somewhere.
 The costliest agent bugs are mutations that did more or less than the caller meant: "no note for
 him" clearing the whole list, a correction that also reset a confirmed field, a re-stated value
 that invalidated an approval. Before writing a mutating tool, state its target, what changes, and
-what must stay the same — then pair it with the nearest request that must do something *different*.
+what must stay the same — then pair it with the nearest request that must do something _different_.
 
 The rules in short: omission preserves; missing, empty, unknown, and cleared are four different
 things; collections get application-issued ids; validate before applying; a scoped negative never
 clears a collection; unchanged values are no-ops. When a task requires review before an effect,
-approval is a *later real user message* for *that version*, delivery is tracked at the speech
+approval is a _later real user message_ for _that version_, delivery is tracked at the speech
 boundary, and success is published only after the write commits. The full treatment — including
 closing, output ownership, and how text and audio input take different hook paths — is in
 `references/state-and-effects.md`. Read it before building anything that books, edits, confirms, or

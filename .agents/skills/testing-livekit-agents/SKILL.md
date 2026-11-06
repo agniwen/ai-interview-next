@@ -96,7 +96,7 @@ and confusing them is how a green suite ships a broken agent:
   storage failure, and retries, against the application core directly. Fast, exact, no model.
 - **Real-SDK tests with a scripted provider** prove event wiring and tool plumbing: that the
   listener fires, that the tool receives what the session sends. A scripted provider proves
-  *mechanics*, never language understanding — its exact sentences are fixtures, not requirements.
+  _mechanics_, never language understanding — its exact sentences are fixtures, not requirements.
 - **Ordinary-language tests with the real model** prove the model can complete the task from how
   callers actually talk: paraphrases absent from the prompt, corrections mixed with agreement,
   the same short reply answering different questions.

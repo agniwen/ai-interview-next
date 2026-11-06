@@ -10,7 +10,7 @@ metadata:
 
 A simulation plays a scenario against the real agent using an LLM-driven simulated user, then a
 judge grades the transcript. A unit test asserts on one turn. A simulation tells you whether a
-*whole conversation* reached the right outcome.
+_whole conversation_ reached the right outcome.
 
 Read `lk agent simulate --help` before running. Subcommands and flags change, a wrong flag wastes a
 paid run, and this skill doesn't restate them. `reading-livekit-docs` has the rest.
@@ -20,7 +20,7 @@ paid run, and this skill doesn't restate them. `reading-livekit-docs` has the re
 Use simulations to regression-test long-horizon behavior before deploying to production: whether a
 multi-turn conversation reaches the right outcome when the caller backtracks, whether details
 gathered early survive to the end, whether the agent holds to its instructions under pressure, and
-whether it ended in the right *state*. For a single turn, use `testing-livekit-agents`; to poke at
+whether it ended in the right _state_. For a single turn, use `testing-livekit-agents`; to poke at
 behavior while editing, use `debugging-livekit-agents`.
 
 ## Running

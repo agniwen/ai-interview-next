@@ -66,7 +66,7 @@ can ask for (**capabilities**), where requests get blocked (**constraints**: req
 unavailable items by name, caps, eligibility), and what the agent must refuse.
 
 Constraints matter most. A scenario that asks for something the agent can't do is only valid if the
-expectation is that the agent *says so*. Written the other way, the test fails when the agent
+expectation is that the agent _says so_. Written the other way, the test fails when the agent
 behaves correctly.
 
 Scope is the agent reachable from the session entrypoint, plus agents it hands off to and tasks it
@@ -83,7 +83,7 @@ examples are in `references/scenario-craft.md`.
 - **A persona paragraph plus goals** for open-ended and adversarial scenarios graded only on the
   conversation, where you want the simulated user to improvise.
 
-In both shapes, goals are requests *to* the agent, never the agent's own actions. Use real values
+In both shapes, goals are requests _to_ the agent, never the agent's own actions. Use real values
 from the agent's domain and assume no prior state. Vary persona, mood and difficulty across the
 suite so it isn't ten copies of the same cooperative caller.
 
@@ -94,7 +94,7 @@ run separately, which usually isn't topic.
 
 The most important axis is **how the set is graded**:
 
-- Scenarios that drive concrete tool flows to a deterministic end state, graded on final state *and*
+- Scenarios that drive concrete tool flows to a deterministic end state, graded on final state _and_
   the conversation (see "Make the agent consume the scenario" below).
 - Open-ended and adversarial scenarios graded on `agent_expectations` alone.
 

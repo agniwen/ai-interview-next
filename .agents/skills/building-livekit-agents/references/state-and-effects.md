@@ -1,6 +1,7 @@
 # State, effects, and evidence
 
 ## Contents
+
 - Evidence comes from the boundary
 - Precise mutation semantics
 - Review and approval are separate runtime events
@@ -20,7 +21,7 @@ edits, confirms, publishes, or ends the call. Look up the SDK helpers named in p
 Completion needs evidence from where it actually happens: a committed write, a delivered
 utterance, a runtime lifecycle event. An instruction to do something, a tool that returned a string,
 or a boolean named after the action is not that evidence. A tool call is the model's
-*interpretation* of the conversation, not independent proof the interpretation was right — so keep
+_interpretation_ of the conversation, not independent proof the interpretation was right — so keep
 message provenance, version checks, ordering, and business constraints in code, where the model's
 reading can be checked rather than trusted.
 
@@ -33,14 +34,14 @@ don't manufacture a successful snapshot at export time.
 
 Most damage from a well-meaning agent comes from a mutation that did more, or less, than the user
 meant. Before defining a change, state its target, what changes, and what must stay the same. Then
-pair its happy path with the nearest ordinary request that must produce a *different* operation:
+pair its happy path with the nearest ordinary request that must produce a _different_ operation:
 
-| Caller meaning | Intended change | Must remain unchanged |
-|---|---|---|
-| "No, that's everyone" | Confirm the collection as recorded | Every existing entry and field |
-| "No note for that one" | Record explicit absence on one entry | Its identity, title, all other entries |
-| "Actually I'm not sure about that" | Retract one fact to unknown | The entry and unrelated facts |
-| "It's spelled Okafor" | Change one identified entry's field | Its identity, other fields, other entries |
+| Caller meaning                     | Intended change                      | Must remain unchanged                     |
+| ---------------------------------- | ------------------------------------ | ----------------------------------------- |
+| "No, that's everyone"              | Confirm the collection as recorded   | Every existing entry and field            |
+| "No note for that one"             | Record explicit absence on one entry | Its identity, title, all other entries    |
+| "Actually I'm not sure about that" | Retract one fact to unknown          | The entry and unrelated facts             |
+| "It's spelled Okafor"              | Change one identified entry's field  | Its identity, other fields, other entries |
 
 Derive the equivalent distinctions for the task at hand; these fields are an example, not a schema.
 The rules that fall out of them:
@@ -74,8 +75,8 @@ separate fact to verify:
    them naturally; then track that generated speech through the SDK's output handle and record a
    receipt only when it finishes successfully. A returned tool string or queued speech isn't
    delivery. An interruption or correction invalidates the receipt; a no-op doesn't.
-2. **Approval came later, from the user, for that version.** Approval is a *later actual user
-   message* that the model interprets as agreement with the reviewed version. Code binds that
+2. **Approval came later, from the user, for that version.** Approval is a _later actual user
+   message_ that the model interprets as agreement with the reviewed version. Code binds that
    interpretation to the message's identity and ordering and to the current review. A model-supplied
    boolean, a quoted phrase, a turn counter, or a delivery flag is not independent evidence.
 3. **Nothing changed in between.** If the user corrects a fact, asks for a change, or attaches a
@@ -101,7 +102,7 @@ post-commit changes through the same validated path. Export state without changi
 
 ## Own required output and closing
 
-When a review, an operation result, or a farewell *must* reach the user, application code owns
+When a review, an operation result, or a farewell _must_ reach the user, application code owns
 delivery even though the model owns the wording. Track the generated output through the SDK's
 speech handle; check its interruption and error state before treating delivery as done. Avoid
 duplicate output from a tool's return value and the model's follow-up reply — the SDK's batch reply
