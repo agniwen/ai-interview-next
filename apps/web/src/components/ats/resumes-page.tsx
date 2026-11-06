@@ -1,6 +1,6 @@
 import { TableFilterSelect } from "@/components/layout/table-filters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { IconFileCv, IconUpload } from "@tabler/icons-react";
 import { ResumePreviewDialog } from "@/components/features/document-preview/resume-preview-dialog";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/components/resume-document-file-icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import type { BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PreviewCard, PreviewCardPopup, PreviewCardTrigger } from "@/components/ui/preview-card";
 import {
   Select,
   SelectGroup,
@@ -40,6 +42,58 @@ import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { listParams, resumeStatuses } from "./list-search";
 import type { ResumeListSearch } from "./list-search";
+
+const statusVariants: Partial<Record<string, BadgeProps["variant"]>> = {
+  failed: "error",
+  running: "info",
+  succeeded: "success",
+  upload_failed: "error",
+};
+
+function ResumeStatusBadge({
+  status,
+  progress,
+  error,
+}: {
+  status: string;
+  progress?: string;
+  error?: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const descriptionId = useId();
+  const variant = statusVariants[status] ?? "outline";
+  const label = atsStatus(status);
+
+  if (!progress && !error) {
+    return <Badge variant={variant}>{label}</Badge>;
+  }
+
+  return (
+    <PreviewCard open={open} onOpenChange={setOpen}>
+      <PreviewCardTrigger
+        aria-describedby={descriptionId}
+        aria-expanded={open}
+        delay={200}
+        onClick={() => setOpen(true)}
+        render={<Badge render={<button aria-label={label} type="button" />} variant={variant} />}
+      >
+        {label}
+      </PreviewCardTrigger>
+      <span className="sr-only" id={descriptionId}>
+        {[progress, error].filter(Boolean).join(" ")}
+      </span>
+      <PreviewCardPopup
+        align="start"
+        className="max-w-[calc(100vw-2rem)] flex-col gap-2 p-3 text-left text-xs"
+      >
+        {progress && <p className="text-muted-foreground">{progress}</p>}
+        {error && (
+          <p className="wrap-anywhere whitespace-pre-wrap text-destructive-foreground">{error}</p>
+        )}
+      </PreviewCardPopup>
+    </PreviewCard>
+  );
+}
 
 async function uploadResumeFile(workspaceId: string, id: string, url: string, file: File) {
   const param = { id, workspaceId };
@@ -249,6 +303,14 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
         const recruitmentResumeId = recruitmentResumes.get(row.id);
         const previewPayload = { filename: row.filename, id: row.id };
         const batch = data.batches.find((entry) => entry.id === row.batchId);
+        const progress =
+          batch && batch.total > 1
+            ? m.ats_batch_progress({
+                complete: String(batch.complete),
+                failed: String(batch.failed),
+                total: String(batch.total),
+              })
+            : undefined;
         const filename = (
           <>
             <ResumeDocumentFileIcon
@@ -277,21 +339,12 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
               )}
             </div>,
             row.candidateName ?? (row.identityStatus === "pending_review" ? m.ats_review() : "—"),
-            <div key="status" className="flex flex-col items-start gap-1">
-              <Badge variant="outline">{atsStatus(row.parseStatus ?? row.status)}</Badge>
-              {row.parseStatus === "failed" && row.error && (
-                <span className="text-xs text-muted-foreground">{row.error}</span>
-              )}
-              {batch && batch.total > 1 && (
-                <span className="whitespace-nowrap text-xs text-muted-foreground">
-                  {m.ats_batch_progress({
-                    complete: String(batch.complete),
-                    failed: String(batch.failed),
-                    total: String(batch.total),
-                  })}
-                </span>
-              )}
-            </div>,
+            <ResumeStatusBadge
+              error={row.parseStatus === "failed" ? row.error : undefined}
+              key="status"
+              progress={progress}
+              status={row.parseStatus ?? row.status}
+            />,
             <UserColumn key="creator" user={row.creator} />,
             atsDate(row.createdAt),
             <div key="actions" className="flex gap-1">
