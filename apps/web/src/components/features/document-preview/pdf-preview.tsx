@@ -9,7 +9,13 @@ import {
 } from "@embedpdf/plugin-document-manager/react";
 import { RenderLayer, RenderPluginPackage } from "@embedpdf/plugin-render/react";
 import { Scroller, ScrollPluginPackage, useScroll } from "@embedpdf/plugin-scroll/react";
-import { Viewport, ViewportPluginPackage } from "@embedpdf/plugin-viewport/react";
+import {
+  ViewportPluginPackage,
+  ViewportElementContext,
+  useViewportRef,
+  useIsViewportGated,
+} from "@embedpdf/plugin-viewport/react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useZoom,
   ZoomGestureWrapper,
@@ -21,6 +27,26 @@ import type { ReactNode } from "react";
 import { DocumentPreviewError } from "./document-preview-dialog";
 import { DocumentPreviewToolbar } from "./document-preview-toolbar";
 import type { DocumentPreviewToolbarTargets } from "./document-preview-toolbar";
+
+const viewportGap = 16;
+
+function PdfViewport({ documentId, children }: { documentId: string; children: ReactNode }) {
+  const viewportRef = useViewportRef(documentId);
+  const isGated = useIsViewportGated(documentId);
+  return (
+    <ViewportElementContext.Provider value={viewportRef}>
+      <ScrollArea
+        overscrollContain
+        viewportProps={{
+          ref: viewportRef,
+          style: { padding: viewportGap, touchAction: "pan-x pan-y" },
+        }}
+      >
+        {!isGated && children}
+      </ScrollArea>
+    </ViewportElementContext.Provider>
+  );
+}
 
 function PdfPreviewContent({
   documentId,
@@ -55,7 +81,7 @@ function PdfPreviewContent({
         />
       )}
       <div className="min-h-0 flex-1 bg-muted/40">
-        <Viewport documentId={documentId} style={{ touchAction: "pan-x pan-y" }}>
+        <PdfViewport documentId={documentId}>
           <ZoomGestureWrapper documentId={documentId}>
             <Scroller
               documentId={documentId}
@@ -66,7 +92,7 @@ function PdfPreviewContent({
               )}
             />
           </ZoomGestureWrapper>
-        </Viewport>
+        </PdfViewport>
       </div>
     </>
   );
@@ -114,7 +140,7 @@ export default function PdfPreview({
           },
         ],
       }),
-      createPluginRegistration(ViewportPluginPackage, { viewportGap: 16 }),
+      createPluginRegistration(ViewportPluginPackage, { viewportGap }),
       createPluginRegistration(ScrollPluginPackage),
       createPluginRegistration(RenderPluginPackage),
       createPluginRegistration(ZoomPluginPackage, { defaultZoomLevel: ZoomMode.Automatic }),

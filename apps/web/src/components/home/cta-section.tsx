@@ -25,7 +25,7 @@ export function CtaSection() {
           <div className="mt-8 grid w-full max-w-xs grid-cols-1 gap-3 sm:w-auto sm:max-w-none sm:auto-cols-fr sm:grid-flow-col sm:grid-cols-none">
             <Button
               className="group h-11 sm:h-11 min-w-40 gap-2 rounded-full border-transparent bg-white px-6 font-medium text-[#071233] text-[15px] shadow-none inset-shadow-none hover:bg-white/90 has-[>svg]:px-6 active:inset-shadow-none"
-              render={<Link to="/sign-in" />}
+              render={<Link to="/workspaces" search={{ destination: "agent" }} />}
             >
               {messages.home_hero_resume_cta()}
               <IconArrowUpRight
@@ -36,7 +36,7 @@ export function CtaSection() {
             </Button>
             <Button
               className="h-11 sm:h-11 min-w-40 rounded-full border-white/35 bg-white/10 px-6 font-medium text-[15px] text-white shadow-none backdrop-blur-md hover:bg-white/20 hover:text-white dark:border-white/25 dark:bg-white/10 dark:hover:bg-white/15"
-              render={<Link to="/sign-in" />}
+              render={<Link to="/workspaces" search={{ destination: "hub" }} />}
               variant="outline"
             >
               {messages.home_hero_workbench_cta()}

@@ -42,6 +42,14 @@ function includesText(column: SQLWrapper, search: string) {
   return sql`instr(lower(${column}), lower(${search})) > 0`;
 }
 
+const parsedResumeName = sql<string | null>`case
+  when json_extract(${resume.parsedProfile}, '$.version') = 1
+  then nullif(trim(json_extract(${resume.parsedProfile}, '$.identity.name')), '')
+end`;
+const candidateAvatarResumeId = sql<string | null>`case
+  when ${resume.avatarObjectKey} is not null then ${resume.id}
+end`;
+
 export function completedResumeFilter(db: Database, workspaceId: string) {
   return and(
     eq(resume.workspaceId, workspaceId),
@@ -104,7 +112,7 @@ export async function applicationResumeOptions(
   const match = search
     ? or(
         sql`instr(lower(${submission.originalFilename}), lower(${search})) > 0`,
-        sql`instr(lower(${candidate.name}), lower(${search})) > 0`,
+        includesText(parsedResumeName, search),
         sql`instr(lower(${user.name}), lower(${search})) > 0`,
         sql`instr(strftime('%Y-%m-%d', ${createdAt} / 1000, 'unixepoch', ${`${offsetMinutes} minutes`}), ${normalizedDate}) > 0`,
         sql`exists (select 1 from json_each(${resume.parsedProfile}, '$.targetRoles') where instr(lower(json_extract(value, '$.text')), lower(${search})) > 0)`,
@@ -112,7 +120,7 @@ export async function applicationResumeOptions(
     : undefined;
   const rows = await db
     .select({
-      candidateName: candidate.name,
+      candidateName: parsedResumeName,
       createdAt,
       creatorImage: user.image,
       creatorName: user.name,
@@ -125,10 +133,6 @@ export async function applicationResumeOptions(
     .leftJoin(item, eq(item.id, sql`(${firstUpload})`))
     .leftJoin(batch, and(eq(batch.workspaceId, workspaceId), eq(batch.id, item.batchId)))
     .leftJoin(user, eq(user.id, batch.createdBy))
-    .leftJoin(
-      candidate,
-      and(eq(candidate.workspaceId, workspaceId), eq(candidate.id, resume.candidateId)),
-    )
     .where(and(completedResumeFilter(db, workspaceId), match))
     .orderBy(desc(createdAt), desc(resume.id))
     .limit(pageSize + 1)
@@ -161,6 +165,7 @@ export async function listJobs(
       .select({
         createdAt: job.createdAt,
         id: job.id,
+        projectId: recruitmentProject.id,
         projectTitle: recruitmentProject.title,
         title: job.title,
       })
@@ -254,6 +259,9 @@ function firstAcceptedResumeUpload(db: Database) {
 export async function listCandidateResumes(db: Database, workspaceId: string, candidateId: string) {
   const matches = await db
     .select({
+      canJoinRecruitment: sql`coalesce(${completedResumeFilter(db, workspaceId)}, 0)`.mapWith(
+        Boolean,
+      ),
       filename: item.filename,
       record: { createdAt: resume.createdAt, id: resume.id },
       uploadId: item.id,
@@ -270,8 +278,8 @@ export async function listCandidateResumes(db: Database, workspaceId: string, ca
   if (!matches.length) {
     return;
   }
-  const rows = matches.flatMap(({ filename, record, uploadId }) =>
-    record ? [{ ...record, filename, uploadId }] : [],
+  const rows = matches.flatMap(({ canJoinRecruitment, filename, record, uploadId }) =>
+    record ? [{ ...record, canJoinRecruitment, filename, uploadId }] : [],
   );
   return { rows, total: rows.length, version: 1 as const };
 }
@@ -283,16 +291,12 @@ export async function listResumes(
 ) {
   const workspace = eq(item.workspaceId, workspaceId);
   const effectiveStatus = sql`coalesce(${run.status}, ${item.status})`;
-  const candidateName = sql<string | null>`coalesce(${candidate.name}, case
-    when ${submission.identityStatus} = 'pending_review'
-    then nullif(trim(json_extract(${resume.parsedProfile}, '$.identity.name')), '')
-  end)`;
   const where = and(
     workspace,
     search
       ? or(
           includesText(item.filename, search),
-          includesText(candidateName, search),
+          includesText(parsedResumeName, search),
           includesText(user.name, search),
         )
       : undefined,
@@ -304,7 +308,8 @@ export async function listResumes(
     db
       .select({
         batchId: item.batchId,
-        candidateName,
+        candidateAvatarResumeId,
+        candidateName: parsedResumeName,
         createdAt: batch.createdAt,
         creatorImage: user.image,
         creatorName: user.name,
@@ -338,7 +343,6 @@ export async function listResumes(
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
       .leftJoin(resume, eq(resume.id, submission.resumeId))
-      .leftJoin(candidate, eq(candidate.id, submission.resolvedCandidateId))
       .leftJoin(job, eq(job.id, submission.jobId))
       .where(where)
       .orderBy(desc(batch.createdAt), desc(item.id))
@@ -352,7 +356,6 @@ export async function listResumes(
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
       .leftJoin(resume, eq(resume.id, submission.resumeId))
-      .leftJoin(candidate, eq(candidate.id, submission.resolvedCandidateId))
       .where(where),
   ]);
   const batches = rows.length
@@ -383,7 +386,12 @@ export async function listResumes(
 
 export async function getUploadResumeProfile(db: Database, workspaceId: string, id: string) {
   const [result] = await db
-    .select({ parseStatus: run.status, profile: resume.parsedProfile })
+    .select({
+      avatarObjectKey: resume.avatarObjectKey,
+      parseStatus: run.status,
+      profile: resume.parsedProfile,
+      resumeId: resume.id,
+    })
     .from(item)
     .leftJoin(run, and(eq(run.id, item.runId), eq(run.workspaceId, item.workspaceId)))
     .leftJoin(
@@ -398,6 +406,36 @@ export async function getUploadResumeProfile(db: Database, workspaceId: string, 
   return result;
 }
 
+function applicationResumeForDisplay(db: Database) {
+  const selectedResume = db
+    .select({ id: resume.id })
+    .from(applicationResume)
+    .innerJoin(
+      resume,
+      and(
+        eq(resume.workspaceId, applicationResume.workspaceId),
+        eq(resume.id, applicationResume.resumeId),
+      ),
+    )
+    .where(
+      and(
+        eq(applicationResume.workspaceId, application.workspaceId),
+        eq(applicationResume.applicationId, application.id),
+        eq(applicationResume.status, "available"),
+      ),
+    )
+    .orderBy(
+      desc(isNotNull(resume.parsedProfile)),
+      desc(applicationResume.createdAt),
+      desc(applicationResume.id),
+    )
+    .limit(1);
+  return and(
+    eq(resume.workspaceId, application.workspaceId),
+    eq(resume.id, sql`(${selectedResume})`),
+  );
+}
+
 export async function listApplications(
   db: Database,
   workspaceId: string,
@@ -407,14 +445,17 @@ export async function listApplications(
     eq(application.workspaceId, workspaceId),
     isNull(application.deletedAt),
     projectId ? eq(job.projectId, projectId) : undefined,
-    search ? or(includesText(candidate.name, search), includesText(job.title, search)) : undefined,
+    search
+      ? or(includesText(parsedResumeName, search), includesText(job.title, search))
+      : undefined,
     status === "open" ? isNull(application.closedAt) : undefined,
     status === "closed" ? isNotNull(application.closedAt) : undefined,
   );
   const [rows, [result]] = await Promise.all([
     db
       .select({
-        candidateName: candidate.name,
+        candidateAvatarResumeId,
+        candidateName: parsedResumeName,
         closedAt: application.closedAt,
         createdAt: application.createdAt,
         evaluationRunId: sql<
@@ -424,12 +465,13 @@ export async function listApplications(
           typeof run.$inferSelect.status | null
         >`(${db.select({ status: run.status }).from(run).where(eq(run.applicationId, application.id)).orderBy(desc(run.createdAt), desc(run.id)).limit(1)})`,
         id: application.id,
+        jobId: job.id,
         jobTitle: job.title,
         outcome: application.outcome,
         stage: application.stage,
       })
       .from(application)
-      .innerJoin(candidate, eq(candidate.id, application.candidateId))
+      .leftJoin(resume, applicationResumeForDisplay(db))
       .innerJoin(job, eq(job.id, application.jobId))
       .where(where)
       .orderBy(desc(application.createdAt), desc(application.id))
@@ -438,7 +480,7 @@ export async function listApplications(
     db
       .select({ count: count() })
       .from(application)
-      .innerJoin(candidate, eq(candidate.id, application.candidateId))
+      .leftJoin(resume, applicationResumeForDisplay(db))
       .innerJoin(job, eq(job.id, application.jobId))
       .where(where),
   ]);
@@ -453,7 +495,7 @@ export async function applicationDetail(
 ) {
   const [details] = await db
     .select({
-      candidateName: candidate.name,
+      candidateName: parsedResumeName,
       closedAt: application.closedAt,
       createdAt: application.createdAt,
       creatorId: application.createdBy,
@@ -461,13 +503,21 @@ export async function applicationDetail(
       creatorName: user.name,
       creatorType: application.createdByType,
       id: application.id,
+      jobId: job.id,
       jobTitle: job.title,
+      projectId: recruitmentProject.id,
       projectTitle: recruitmentProject.title,
+      resumeFilename: item.filename,
+      resumeHasAvatar: isNotNull(resume.avatarObjectKey).mapWith(Boolean),
+      resumeId: resume.id,
+      resumeProfile: resume.parsedProfile,
+      resumeUploadId: item.id,
     })
     .from(application)
-    .innerJoin(candidate, eq(candidate.id, application.candidateId))
+    .leftJoin(resume, applicationResumeForDisplay(db))
     .innerJoin(job, eq(job.id, application.jobId))
     .leftJoin(recruitmentProject, eq(recruitmentProject.id, job.projectId))
+    .leftJoin(item, eq(item.id, sql`(${firstAcceptedResumeUpload(db)})`))
     .leftJoin(user, and(eq(application.createdByType, "user"), eq(user.id, application.createdBy)))
     .where(
       and(
@@ -479,9 +529,20 @@ export async function applicationDetail(
   if (!details) {
     return null;
   }
-  const { creatorId, creatorImage, creatorName, creatorType, ...record } = details;
+  const {
+    creatorId,
+    creatorImage,
+    creatorName,
+    creatorType,
+    resumeFilename,
+    resumeHasAvatar,
+    resumeId,
+    resumeProfile,
+    resumeUploadId,
+    ...record
+  } = details;
 
-  const [activity, evaluations, [latestRun], [latestResume]] = await Promise.all([
+  const [activity, evaluations, [latestRun]] = await Promise.all([
     db
       .select({ actorImage: user.image, actorName: user.name, event: applicationActivity })
       .from(applicationActivity)
@@ -509,32 +570,6 @@ export async function applicationDetail(
       .where(and(eq(run.workspaceId, workspaceId), eq(run.applicationId, id)))
       .orderBy(desc(run.createdAt), desc(run.id))
       .limit(1),
-    db
-      .select({
-        filename: item.filename,
-        id: resume.id,
-        profile: resume.parsedProfile,
-        uploadId: item.id,
-      })
-      .from(applicationResume)
-      .innerJoin(
-        resume,
-        and(eq(resume.id, applicationResume.resumeId), eq(resume.workspaceId, workspaceId)),
-      )
-      .leftJoin(item, eq(item.id, sql`(${firstAcceptedResumeUpload(db)})`))
-      .where(
-        and(
-          eq(applicationResume.workspaceId, workspaceId),
-          eq(applicationResume.applicationId, id),
-          eq(applicationResume.status, "available"),
-        ),
-      )
-      .orderBy(
-        desc(isNotNull(resume.parsedProfile)),
-        desc(applicationResume.createdAt),
-        desc(applicationResume.id),
-      )
-      .limit(1),
   ]);
   return {
     activity: activity.map(({ actorImage, actorName, event }) => ({
@@ -558,10 +593,15 @@ export async function applicationDetail(
       evaluationStatus: latestRun?.status ?? null,
     },
     evaluations,
-    resume: latestResume
-      ? { filename: latestResume.filename, id: latestResume.id, uploadId: latestResume.uploadId }
+    resume: resumeId
+      ? {
+          filename: resumeFilename,
+          hasAvatar: resumeHasAvatar,
+          id: resumeId,
+          uploadId: resumeUploadId,
+        }
       : null,
-    resumeProfile: latestResume?.profile ?? null,
+    resumeProfile,
     version: 1 as const,
   };
 }

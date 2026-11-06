@@ -62,7 +62,7 @@ function MeetingInfo() {
           </button>
         }
       />
-      <HoverCardContent align="start" className="w-72 p-4" sideOffset={8}>
+      <HoverCardContent align="start" className="w-72" sideOffset={8}>
         <h2 className="mb-3 font-medium text-sm">{copy.title}</h2>
         <dl className="space-y-3 text-sm">
           {details.map(([label, value]) => (

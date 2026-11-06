@@ -10,20 +10,24 @@ import {
   resumeSubmission as submission,
   resumeUploadItem as item,
 } from "@ai-interview/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { ResumeObjectStore, StageMessage } from "./contracts";
 import type { PdfTextExtractor } from "../../lib/pdf-text";
+import { matchesResumeMediaType, resumeMediaType } from "../../lib/resume-file";
+import type { ResumeMediaType } from "../../lib/resume-file";
 import type { ResumeStructurer } from "../../lib/resume-structuring";
 import { normalizedPhone, resolveParsedResume } from "./identity";
 import { outboxEntry } from "./outbox";
 
 type Parameters = NonNullable<typeof attempt.$inferSelect.parameters>;
 type Evaluation = typeof applicationEvaluation.$inferInsert.result;
-type ModelParameters = Omit<Parameters, "input" | "version">;
+type ModelParameters = Omit<Parameters, "avatar" | "input" | "version">;
 
 export interface ResumeStageDependencies {
   storage: ResumeObjectStore;
+  extractAvatar: (bytes: Uint8Array, mediaType: ResumeMediaType) => Promise<ArrayBuffer | null>;
+  avatarParameters: NonNullable<Parameters["avatar"]>;
   extract: (transport: typeof fetch) => PdfTextExtractor;
   structure: (transport: typeof fetch) => ResumeStructurer;
   evaluate: (
@@ -35,13 +39,19 @@ export interface ResumeStageDependencies {
   evaluateParameters: ModelParameters;
 }
 
-class InvalidPdfError extends Error {
-  override name = "InvalidPdfError";
+class InvalidResumeError extends Error {
+  override name = "InvalidResumeError";
+  readonly reason: "INVALID_PDF" | "INVALID_RESUME_IMAGE";
+
+  constructor(reason: "INVALID_PDF" | "INVALID_RESUME_IMAGE") {
+    super(reason);
+    this.reason = reason;
+  }
 }
 
 function stageFailure(error: unknown, status: number | undefined) {
-  if (error instanceof InvalidPdfError) {
-    return { reason: "INVALID_PDF", retryable: false };
+  if (error instanceof InvalidResumeError) {
+    return { reason: error.reason, retryable: false };
   }
   if (error instanceof z.ZodError || error instanceof SyntaxError) {
     return { reason: "INVALID_MODEL_OUTPUT", retryable: true };
@@ -58,21 +68,22 @@ function stageFailure(error: unknown, status: number | undefined) {
   };
 }
 
-async function registerPdf(db: Database, entry: typeof run.$inferSelect, bytes: Uint8Array) {
-  if (!new TextDecoder().decode(bytes.subarray(0, 1024)).includes("%PDF-")) {
-    throw new InvalidPdfError("INVALID_PDF");
-  }
+async function registerResume(
+  db: Database,
+  entry: typeof run.$inferSelect,
+  file: typeof item.$inferSelect,
+  bytes: Uint8Array,
+) {
   const sha256 = Array.from(
     new Uint8Array(await crypto.subtle.digest("SHA-256", new Uint8Array(bytes).buffer)),
     (byte) => byte.toString(16).padStart(2, "0"),
   ).join("");
-  const [file] = await db.select().from(item).where(eq(item.id, entry.uploadItemId!));
   await db
     .insert(resume)
     .values({
       createdAt: new Date(),
       id: entry.id,
-      pdfObjectKey: file!.objectKey,
+      pdfObjectKey: file.objectKey,
       sha256,
       workspaceId: entry.workspaceId,
     })
@@ -101,19 +112,44 @@ async function registerPdf(db: Database, entry: typeof run.$inferSelect, bytes: 
       .insert(submission)
       .values({
         createdAt: new Date(),
-        id: file!.id,
-        originalFilename: file!.filename,
+        id: file.id,
+        originalFilename: file.filename,
         resumeId,
         workspaceId: entry.workspaceId,
       })
       .onConflictDoNothing(),
-    db.update(item).set({ runId, submissionId: file!.id }).where(eq(item.id, file!.id)),
+    db.update(item).set({ runId, submissionId: file.id }).where(eq(item.id, file.id)),
   ]);
   return {
     pdf: pdf!,
     reused: runId !== entry.id || pdf!.parseStatus === "succeeded",
-    submissionId: file!.id,
+    submissionId: file.id,
   };
+}
+
+async function saveResumeAvatar(
+  deps: ResumeStageDependencies,
+  record: typeof resume.$inferSelect,
+  attemptId: string,
+  bytes: Uint8Array,
+  mediaType: ResumeMediaType,
+) {
+  if (record.avatarObjectKey) {
+    return;
+  }
+  try {
+    const avatar = await deps.extractAvatar(bytes, mediaType);
+    if (avatar) {
+      const key = `${record.workspaceId}/avatars/${record.id}/${attemptId}.png`;
+      await deps.storage.write(key, avatar, "image/png");
+      return key;
+    }
+  } catch (error) {
+    console.warn("Resume avatar extraction failed", {
+      error: error instanceof Error ? error.name : "UnknownError",
+      resumeId: record.id,
+    });
+  }
 }
 
 export async function consumeResumeStage(
@@ -129,6 +165,7 @@ export async function consumeResumeStage(
     return;
   }
   const { stage } = task!;
+  const avatar = stage === "extract_text" ? deps.avatarParameters : undefined;
   const parameters = {
     evaluate: deps.evaluateParameters,
     extract_text: deps.extractParameters,
@@ -140,9 +177,12 @@ export async function consumeResumeStage(
   const [claimed] = await db
     .update(attempt)
     .set({
-      deadlineAt: new Date(startedAt.getTime() + parameters.timeoutMs + 15_000),
+      deadlineAt: new Date(
+        startedAt.getTime() + parameters.timeoutMs + (avatar?.timeoutMs ?? 0) + 15_000,
+      ),
       parameters: {
         ...parameters,
+        avatar,
         input:
           stage === "extract_text" ? `upload:${entry!.uploadItemId}` : `resume:${entry!.resumeId}`,
         version: 1,
@@ -208,28 +248,44 @@ export async function consumeResumeStage(
     if (stage === "extract_text") {
       const [file] = await db.select().from(item).where(eq(item.id, entry!.uploadItemId!));
       const bytes = await deps.storage.read(file!.objectKey);
-      const { pdf, reused, submissionId } = await registerPdf(db, entry!, bytes);
+      const mediaType = resumeMediaType(file!.filename);
+      if (!matchesResumeMediaType(bytes, mediaType)) {
+        throw new InvalidResumeError(
+          mediaType === "application/pdf" ? "INVALID_PDF" : "INVALID_RESUME_IMAGE",
+        );
+      }
+      const { pdf, reused, submissionId } = await registerResume(db, entry!, file!, bytes);
+      const linkAvatar = (key: string) =>
+        db
+          .update(resume)
+          .set({ avatarObjectKey: key })
+          .where(and(eq(resume.id, pdf.id), isNull(resume.avatarObjectKey), activeExists));
       if (reused) {
+        let avatarKey: string | undefined;
         if (pdf.parseStatus === "succeeded") {
           await resolveParsedResume(db, pdf.id, submissionId);
+          avatarKey = await saveResumeAvatar(deps, pdf, message.attemptId, bytes, mediaType);
         }
         await db.batch([
           db
             .update(run)
             .set({ status: "succeeded" })
             .where(and(eq(run.id, entry!.id), activeExists)),
+          ...(avatarKey ? [linkAvatar(avatarKey)] : []),
           wake(),
           finished("succeeded"),
         ]);
         return;
       }
       await db.update(resume).set({ parseStatus: "processing" }).where(eq(resume.id, pdf.id));
-      const { text } = await deps.extract(transport)(bytes);
+      const { text } = await deps.extract(transport)(bytes, mediaType);
+      const avatarKey = await saveResumeAvatar(deps, pdf, message.attemptId, bytes, mediaType);
       await db.batch([
         db
           .update(resume)
           .set({ markdown: text })
           .where(and(eq(resume.id, pdf.id), activeExists)),
+        ...(avatarKey ? [linkAvatar(avatarKey)] : []),
         wake(),
         finished("succeeded"),
       ]);

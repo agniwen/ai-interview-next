@@ -40,7 +40,7 @@ import { UserColumn } from "@/components/user-column";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, atsStatus, readAts } from "./client";
+import { atsApi, atsDate, atsStatus, getResumeCandidateDisplay, readAts } from "./client";
 import { CreateApplicationDialog } from "./create-application-dialog";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
@@ -89,7 +89,8 @@ function ResumeStatusBadge({
       </span>
       <PreviewCardPopup
         align="start"
-        className="max-w-[calc(100vw-2rem)] flex-col gap-2 p-3 text-left text-xs"
+        className="max-w-[calc(100vw-2rem)] text-left text-xs"
+        panelClassName="flex flex-col gap-2 p-3"
       >
         {progress && <p className="text-muted-foreground">{progress}</p>}
         {error && (
@@ -285,6 +286,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
       ]}
       rows={data?.rows.map((row) => {
         const { runId } = row;
+        const candidate = getResumeCandidateDisplay(workspaceId, row);
         const recruitmentResumeId = recruitmentResumes.get(row.id);
         const previewPayload = { filename: row.filename, id: row.id };
         const batch = data.batches.find((entry) => entry.id === row.batchId);
@@ -358,17 +360,17 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
             row.identityStatus === "pending_review" ? (
               <Tooltip key="candidate">
                 <TooltipTrigger
-                  className="inline-flex items-center gap-1.5 rounded-sm text-warning-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-sm text-warning-foreground focus-visible:outline-2 focus-visible:outline-ring"
                   render={<span />}
                   tabIndex={0}
                 >
-                  {row.candidateName ?? m.ats_candidate_pending_review()}
+                  {candidate ? <UserColumn user={candidate} /> : m.ats_candidate_pending_review()}
                   <IconAlertCircle aria-hidden="true" className="size-4 shrink-0" />
                 </TooltipTrigger>
                 <TooltipPopup>{m.ats_review_in_resume_details()}</TooltipPopup>
               </Tooltip>
             ) : (
-              (row.candidateName ?? "—")
+              <UserColumn key="candidate" user={candidate} />
             ),
             <ResumeStatusBadge
               error={row.parseStatus === "failed" ? row.error : undefined}

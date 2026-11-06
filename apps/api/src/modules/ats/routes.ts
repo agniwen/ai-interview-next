@@ -7,9 +7,10 @@ import {
   resumeUploadItem as item,
 } from "@ai-interview/db/schema";
 import { sValidator } from "@hono/standard-validator";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, count, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { resumeFileExtension, resumeMediaType } from "../../lib/resume-file";
 import type { AuthenticatedEnv } from "../../middleware/authenticated";
 import { requireWorkspace } from "../../middleware/workspace";
 import {
@@ -23,7 +24,7 @@ import {
   jobInput,
   jobListQuery,
   listQuery,
-  projectInput,
+  projectDetailsInput,
   resumeListQuery,
   resumeOptionsQuery,
   updateJobInput,
@@ -61,11 +62,7 @@ const files = z.object({
   files: z
     .array(
       z.object({
-        filename: z
-          .string()
-          .trim()
-          .max(255)
-          .regex(/\.pdf$/iu),
+        filename: z.string().trim().max(255).regex(resumeFileExtension),
         size: z
           .number()
           .int()
@@ -201,28 +198,57 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       .orderBy(asc(recruitmentProject.title), asc(recruitmentProject.id));
     return c.json({ rows, version: 1 as const }, 200);
   })
-  .post("/:workspaceId/projects", sValidator("json", projectInput), async (c) => {
-    const { title } = c.req.valid("json");
+  .get("/:workspaceId/projects/:id", async (c) => {
+    const workspaceId = c.get("workspaceId");
+    const [project] = await c
+      .get("database")
+      .select({
+        createdAt: recruitmentProject.createdAt,
+        description: recruitmentProject.description,
+        id: recruitmentProject.id,
+        jobCount: count(job.id),
+        title: recruitmentProject.title,
+      })
+      .from(recruitmentProject)
+      .leftJoin(
+        job,
+        and(eq(job.projectId, recruitmentProject.id), eq(job.workspaceId, workspaceId)),
+      )
+      .where(
+        and(
+          eq(recruitmentProject.id, c.req.param("id")),
+          eq(recruitmentProject.workspaceId, workspaceId),
+        ),
+      )
+      .groupBy(recruitmentProject.id);
+    if (!project) {
+      return c.json({ error: "PROJECT_UNAVAILABLE", version: 1 as const }, 404);
+    }
+    return c.json({ ...project, version: 1 as const }, 200);
+  })
+  .post("/:workspaceId/projects", sValidator("json", projectDetailsInput), async (c) => {
+    const { title, description } = c.req.valid("json");
     const id = crypto.randomUUID();
     await c
       .get("database")
       .insert(recruitmentProject)
       .values({
         createdAt: new Date(),
+        description,
         id,
         title,
         workspaceId: c.get("workspaceId"),
       });
     return c.json({ id, version: 1 as const }, 201);
   })
-  .put("/:workspaceId/projects/:id", sValidator("json", projectInput), async (c) => {
-    const { title } = c.req.valid("json");
+  .put("/:workspaceId/projects/:id", sValidator("json", projectDetailsInput), async (c) => {
+    const { title, description } = c.req.valid("json");
     const workspaceId = c.get("workspaceId");
     const id = c.req.param("id");
     const [project] = await c
       .get("database")
       .update(recruitmentProject)
-      .set({ title })
+      .set({ description, title })
       .where(and(eq(recruitmentProject.id, id), eq(recruitmentProject.workspaceId, workspaceId)))
       .returning({ id: recruitmentProject.id });
     if (!project) {
@@ -231,7 +257,7 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     return c.json({ id: project.id, version: 1 as const }, 200);
   })
   .post("/:workspaceId/jobs", sValidator("json", jobInput), async (c) => {
-    const { projectId, requirements, title } = c.req.valid("json");
+    const { department, projectId, requirements, title } = c.req.valid("json");
     const db = c.get("database");
     const workspaceId = c.get("workspaceId");
     if (projectId && !(await findRecruitmentProject(db, workspaceId, projectId))) {
@@ -240,6 +266,7 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     const id = crypto.randomUUID();
     await db.insert(job).values({
       createdAt: new Date(),
+      department,
       id,
       projectId,
       requirements,
@@ -252,12 +279,21 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     const record = await c
       .get("database")
       .select({
+        department: job.department,
         id: job.id,
         projectId: job.projectId,
+        projectTitle: recruitmentProject.title,
         requirements: job.requirements,
         title: job.title,
       })
       .from(job)
+      .leftJoin(
+        recruitmentProject,
+        and(
+          eq(recruitmentProject.id, job.projectId),
+          eq(recruitmentProject.workspaceId, job.workspaceId),
+        ),
+      )
       .where(and(eq(job.id, c.req.param("id")), eq(job.workspaceId, c.get("workspaceId"))))
       .get();
     if (!record) {
@@ -266,7 +302,7 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     return c.json({ ...record, version: 1 as const }, 200);
   })
   .put("/:workspaceId/jobs/:id", sValidator("json", updateJobInput), async (c) => {
-    const { projectId, requirements, title } = c.req.valid("json");
+    const { department, projectId, requirements, title } = c.req.valid("json");
     const db = c.get("database");
     const workspaceId = c.get("workspaceId");
     const id = c.req.param("id");
@@ -275,7 +311,7 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     }
     const [record] = await db
       .update(job)
-      .set({ projectId, requirements, title })
+      .set({ department, projectId, requirements, title })
       .where(and(eq(job.id, id), eq(job.workspaceId, workspaceId)))
       .returning({ id: job.id });
     if (!record) {
@@ -306,7 +342,24 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     if (!result) {
       return c.json({ error: "UPLOAD_NOT_AVAILABLE", version: 1 as const }, 404);
     }
-    return c.json({ ...result, version: 1 as const }, 200);
+    const { avatarObjectKey, ...profile } = result;
+    return c.json({ ...profile, hasAvatar: avatarObjectKey !== null, version: 1 as const }, 200);
+  })
+  .get("/:workspaceId/resumes/:id/avatar", async (c) => {
+    const record = await c
+      .get("database")
+      .select({ key: resume.avatarObjectKey })
+      .from(resume)
+      .where(and(eq(resume.workspaceId, c.get("workspaceId")), eq(resume.id, c.req.param("id"))))
+      .get();
+    if (!record?.key) {
+      return c.json({ error: "AVATAR_NOT_AVAILABLE", version: 1 as const }, 404);
+    }
+    const avatar = await resumeFiles(c.env).download(record.key, { as: "stream" });
+    return c.body(avatar.stream(), 200, {
+      "Cache-Control": "private, max-age=300",
+      "Content-Type": "image/png",
+    });
   })
   .get("/:workspaceId/upload-files/:id", async (c) => {
     const file = await findUploadItem(c.get("database"), c.get("workspaceId"), c.req.param("id"));
@@ -323,7 +376,7 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       "Cache-Control": "private, no-store",
       "Content-Disposition": `attachment; filename*=UTF-8''${filename}`,
       "Content-Length": String(original.size),
-      "Content-Type": "application/pdf",
+      "Content-Type": resumeMediaType(file.filename),
     });
   })
   .put("/:workspaceId/upload-files/:id", async (c) => {
@@ -332,10 +385,11 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       return c.json({ error: "UPLOAD_NOT_AVAILABLE", version: 1 as const }, 404);
     }
     const bytes = await c.req.arrayBuffer();
-    if (bytes.byteLength !== file.size || c.req.header("Content-Type") !== "application/pdf") {
+    const contentType = resumeMediaType(file.filename);
+    if (bytes.byteLength !== file.size || c.req.header("Content-Type") !== contentType) {
       return c.json({ error: "INVALID_UPLOAD", version: 1 as const }, 400);
     }
-    await resumeObjectStore(c.env).write(file.objectKey, bytes);
+    await resumeObjectStore(c.env).write(file.objectKey, bytes, contentType);
     return c.body(null, 204);
   })
   .post("/:workspaceId/uploads/:id/confirm", async (c) => {

@@ -32,6 +32,7 @@ export const atsKeys = createQueryKeys("ats", {
   }),
   projects: (workspaceId: string) => ({
     contextQueries: {
+      detail: (id: string) => [id],
       list: (query: ListSearch) => [query],
       options: null,
     },

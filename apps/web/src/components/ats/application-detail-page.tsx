@@ -4,14 +4,13 @@ import { Link, useCanGoBack, useLocation, useRouter } from "@tanstack/react-rout
 import { useState } from "react";
 import {
   getResumeProfileBasics,
-  ResumeBadgeList,
   ResumeProfileDocument,
 } from "@/components/features/document-preview/resume-profile-document";
 import { ResumePreviewDialog } from "@/components/features/document-preview/resume-preview-dialog";
 import { PageHeader, PageHeaderContent } from "@/components/layout/page-header";
 import { ApplicationDetailSkeleton } from "@/components/skeletons/pages/application-detail-skeleton";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,9 +33,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
+import { Toolbar, ToolbarButton, ToolbarSeparator } from "@/components/ui/toolbar";
 import { UserColumn } from "@/components/user-column";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
+import { ProjectPreviewCard } from "./project-preview-card";
+import { JobPreviewCard } from "./job-preview-card";
 import { atsApi, atsDate, atsStatus, readAts } from "./client";
 import type { ApplicationListSearch } from "./list-search";
 import { atsKeys } from "./query-keys";
@@ -65,7 +67,10 @@ function CloseApplicationDialog({ id, workspaceId }: { id: string; workspaceId: 
   });
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />} onClick={() => close.reset()}>
+      <DialogTrigger
+        render={<ToolbarButton render={<Button size="sm" variant="outline" />} />}
+        onClick={() => close.reset()}
+      >
         {m.ats_close_application()}
       </DialogTrigger>
       <DialogPopup>
@@ -113,12 +118,17 @@ function DeleteApplicationPopover({
   return (
     <Popover>
       <PopoverTrigger
-        render={<Button disabled={remove.isPending} size="sm" variant="destructive-outline" />}
+        render={
+          <ToolbarButton
+            disabled={remove.isPending}
+            render={<Button size="sm" variant="destructive-outline" />}
+          />
+        }
         onClick={() => remove.reset()}
       >
         {m.ats_delete_application()}
       </PopoverTrigger>
-      <PopoverPopup align="end" className="w-72">
+      <PopoverPopup align="end" side="top" className="w-72 max-w-(--available-width)">
         <div className="flex flex-col gap-3">
           <PopoverTitle className="text-sm">{m.ats_delete_application_title()}</PopoverTitle>
           <PopoverDescription>{m.ats_delete_application_help()}</PopoverDescription>
@@ -148,14 +158,25 @@ function DeleteApplicationPopover({
   );
 }
 
-function ApplicationActor({ actor }: { actor?: ApplicationActorDetails | null }) {
+function ApplicationActor({
+  actor,
+  className,
+}: {
+  actor?: ApplicationActorDetails | null;
+  className?: string;
+}) {
   if (!actor) {
     return <span className="text-muted-foreground">{m.ats_application_creator_unrecorded()}</span>;
   }
   if (actor.actorType === "system") {
     return <span>{m.ats_system()}</span>;
   }
-  return <UserColumn user={{ image: actor.actorImage, name: actor.actorName ?? actor.actorId }} />;
+  return (
+    <UserColumn
+      className={className}
+      user={{ image: actor.actorImage, name: actor.actorName ?? actor.actorId }}
+    />
+  );
 }
 
 function ApplicationResumeFile({
@@ -168,13 +189,16 @@ function ApplicationResumeFile({
   const filename = resume.filename ?? m.ats_unnamed_resume();
   return resume.uploadId ? (
     <Dialog>
-      <DialogTrigger className="cursor-pointer rounded-sm text-start wrap-anywhere underline decoration-muted-foreground/40 underline-offset-4 hover:decoration-foreground focus-visible:outline-2 focus-visible:outline-ring">
+      <DialogTrigger
+        className="block max-w-full cursor-pointer truncate rounded-sm text-start underline decoration-muted-foreground/40 underline-offset-2 hover:decoration-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+        title={filename}
+      >
         {filename}
       </DialogTrigger>
       <ResumePreviewDialog filename={filename} id={resume.uploadId} workspaceId={workspaceId} />
     </Dialog>
   ) : (
-    filename
+    <span title={filename}>{filename}</span>
   );
 }
 
@@ -186,38 +210,51 @@ function ApplicationHeader({
 }: Pick<ApplicationDetail, "application" | "resume" | "resumeProfile"> & {
   workspaceId: string;
 }) {
-  const { candidateName, closedAt, createdAt, jobTitle, projectTitle } = application;
+  const { candidateName, closedAt, createdAt, jobId, jobTitle, projectId, projectTitle } =
+    application;
   const basics = resumeProfile && getResumeProfileBasics(resumeProfile);
   return (
     <header className="flex min-w-0 flex-col gap-4">
       <div className="flex min-w-0 items-center gap-3">
         <Avatar aria-hidden="true" className="[--avatar-size:--spacing(14)]">
-          <AvatarFallback>{candidateName.slice(0, 1).toUpperCase()}</AvatarFallback>
+          {resume?.hasAvatar && (
+            <AvatarImage
+              alt=""
+              src={atsApi.resumes[":id"].avatar.$path({ param: { id: resume.id, workspaceId } })}
+            />
+          )}
+          <AvatarFallback>{candidateName?.slice(0, 1).toUpperCase() ?? "—"}</AvatarFallback>
         </Avatar>
         <div className="flex min-w-0 flex-col items-start gap-1">
-          <h1 className="wrap-anywhere text-2xl font-semibold tracking-tight">{candidateName}</h1>
+          <h1 className="wrap-anywhere text-2xl font-semibold tracking-tight">
+            {candidateName ?? m.ats_application_detail()}
+          </h1>
           <Badge variant="outline">{closedAt ? m.ats_closed() : m.ats_open()}</Badge>
         </div>
       </div>
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-3 @min-[23.5rem]:grid-cols-2 @min-[36rem]:grid-cols-3 @min-[48.5rem]:grid-cols-4 *:min-w-0 [&_dd]:mt-0.5 [&_dd]:text-sm [&_dd]:wrap-anywhere [&_dt]:text-xs [&_dt]:text-muted-foreground">
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-3 @min-[23.5rem]:grid-cols-2 @min-[36rem]:grid-cols-3 @min-[48.5rem]:grid-cols-4 *:min-w-0 [&_dd]:mt-0.5 [&_dd]:truncate [&_dd]:text-sm [&_dt]:text-xs [&_dt]:text-muted-foreground">
         <div>
           <dt>{m.ats_candidate()}</dt>
-          <dd>{candidateName}</dd>
+          <dd title={candidateName ?? undefined}>{candidateName ?? "—"}</dd>
         </div>
         <div>
           <dt>{m.ats_job()}</dt>
-          <dd className="font-medium">{jobTitle}</dd>
+          <dd className="font-medium">
+            <JobPreviewCard id={jobId} title={jobTitle} workspaceId={workspaceId} />
+          </dd>
         </div>
-        {projectTitle && (
+        {projectId && projectTitle && (
           <div>
             <dt>{m.ats_project()}</dt>
-            <dd>{projectTitle}</dd>
+            <dd>
+              <ProjectPreviewCard id={projectId} title={projectTitle} workspaceId={workspaceId} />
+            </dd>
           </div>
         )}
         <div>
           <dt>{m.ats_creator()}</dt>
           <dd>
-            <ApplicationActor actor={application.creator} />
+            <ApplicationActor actor={application.creator} className="max-w-full" />
           </dd>
         </div>
         <div>
@@ -232,23 +269,15 @@ function ApplicationHeader({
             {resume ? <ApplicationResumeFile resume={resume} workspaceId={workspaceId} /> : "—"}
           </dd>
         </div>
-        {basics?.contacts.map(({ detail, label, value }, index) => (
-          <div key={`${value}-${index}`}>
-            <dt>{label}</dt>
-            <dd>
-              {value}
-              {detail && <span className="ms-1.5">({detail})</span>}
-            </dd>
-          </div>
-        ))}
-        {basics && basics.targetRoles.length > 0 && (
-          <div>
-            <dt>{m.resume_profile_target_roles()}</dt>
-            <dd>
-              <ResumeBadgeList labels={basics.targetRoles} size="lg" />
-            </dd>
-          </div>
-        )}
+        {basics?.contacts.map(({ detail, label, value }, index) => {
+          const contact = detail ? `${value} (${detail})` : value;
+          return (
+            <div key={`${value}-${index}`}>
+              <dt>{label}</dt>
+              <dd title={contact ?? undefined}>{contact}</dd>
+            </div>
+          );
+        })}
       </dl>
     </header>
   );
@@ -340,32 +369,13 @@ function ApplicationActivityItem({
 function ApplicationActivity({
   activity,
   application,
-  onDeleted,
-  workspaceId,
-}: Pick<ApplicationDetail, "activity" | "application"> & {
-  onDeleted: () => Promise<void>;
-  workspaceId: string;
-}) {
+}: Pick<ApplicationDetail, "activity" | "application">) {
   return (
     <aside
       aria-label={m.ats_history()}
       className="flex min-w-0 flex-col gap-4 border-t pt-4 @min-[56rem]:sticky @min-[56rem]:top-16 @min-[56rem]:border-t-0 @min-[56rem]:ps-5 @min-[56rem]:pt-0"
     >
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">{m.ats_history()}</h2>
-        <div className="flex flex-wrap gap-2">
-          {!application.closedAt && (
-            <CloseApplicationDialog id={application.id} workspaceId={workspaceId} />
-          )}
-          {application.canDelete && (
-            <DeleteApplicationPopover
-              id={application.id}
-              onDeleted={onDeleted}
-              workspaceId={workspaceId}
-            />
-          )}
-        </div>
-      </header>
+      <h2 className="text-sm font-semibold">{m.ats_history()}</h2>
       <ol className="ms-1 flex flex-col gap-4 border-s ps-4">
         {activity.map((entry) => {
           let label = m.ats_closed();
@@ -413,7 +423,7 @@ function ApplicationDetailContent({
         resumeProfile={profile}
         workspaceId={workspaceId}
       />
-      <Tabs defaultValue="overview" className="w-full min-w-0 gap-4">
+      <Tabs defaultValue="overview" className="w-full min-w-0 flex-1 gap-4">
         <TabsList
           aria-label={m.ats_application_detail()}
           className="w-full justify-start border-b"
@@ -447,14 +457,29 @@ function ApplicationDetailContent({
               />
             </TabsPanel>
           </div>
-          <ApplicationActivity
-            activity={activity}
-            application={application}
-            onDeleted={onDeleted}
-            workspaceId={workspaceId}
-          />
+          <ApplicationActivity activity={activity} application={application} />
         </div>
       </Tabs>
+      {(!application.closedAt || application.canDelete) && (
+        <Toolbar
+          aria-label={m.ats_action()}
+          className="sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 mx-auto mb-[env(safe-area-inset-bottom)] w-fit max-w-full shrink-0 items-center bg-card/95 p-1.5 shadow-lg backdrop-blur-md"
+        >
+          {!application.closedAt && (
+            <CloseApplicationDialog id={application.id} workspaceId={workspaceId} />
+          )}
+          {!application.closedAt && application.canDelete && (
+            <ToolbarSeparator orientation="vertical" />
+          )}
+          {application.canDelete && (
+            <DeleteApplicationPopover
+              id={application.id}
+              onDeleted={onDeleted}
+              workspaceId={workspaceId}
+            />
+          )}
+        </Toolbar>
+      )}
     </>
   );
 }
@@ -550,7 +575,7 @@ export function ApplicationDetailPage({
           {m.ats_back_to_applications()}
         </Button>
       </PageHeaderContent>
-      <div className="@container mx-auto flex w-full max-w-[76rem] flex-col gap-6">
+      <div className="@container mx-auto flex w-full max-w-[76rem] flex-1 flex-col gap-6">
         {phase === "ready" && !data && <PageHeader title={m.ats_application_detail()} />}
         {content}
       </div>

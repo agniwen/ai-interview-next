@@ -19,7 +19,7 @@ export function UserColumn({
         className,
       )}
     >
-      <Avatar aria-hidden="true" className="[--avatar-size:18px]">
+      <Avatar aria-hidden="true" className="ring-1 ring-foreground/10 [--avatar-size:18px]">
         <AvatarImage alt="" referrerPolicy="no-referrer" src={user.image ?? undefined} />
         <AvatarFallback className="text-[10px]">
           {user.name.slice(0, 1).toUpperCase()}

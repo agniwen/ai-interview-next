@@ -1,7 +1,7 @@
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { useQuery } from "@tanstack/react-query";
 import { atsKeys } from "@/components/ats/query-keys";
-import { readResumeProfile } from "@/components/ats/client";
+import { atsApi, readResumeProfile } from "@/components/ats/client";
 import { ResumeProfileSkeleton } from "@/components/skeletons/components/resume-profile-skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,11 @@ export function ResumeProfilePanel({ id, workspaceId }: { id: string; workspaceI
     return null;
   }
   if (data?.profile?.version === 1) {
-    return <ResumeProfileDocument profile={data.profile} />;
+    const avatarSrc =
+      data.hasAvatar && data.resumeId
+        ? atsApi.resumes[":id"].avatar.$path({ param: { id: data.resumeId, workspaceId } })
+        : undefined;
+    return <ResumeProfileDocument avatarSrc={avatarSrc} profile={data.profile} />;
   }
   if (isError) {
     return (

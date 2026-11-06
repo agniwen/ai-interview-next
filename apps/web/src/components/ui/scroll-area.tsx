@@ -9,6 +9,7 @@ export function ScrollArea({
   children,
   scrollFade = false,
   viewportClassName,
+  viewportProps,
   scrollbarGutter = false,
   fill = false,
   clampContentMinWidth = true,
@@ -17,6 +18,7 @@ export function ScrollArea({
 }: ScrollAreaPrimitive.Root.Props & {
   scrollFade?: boolean;
   viewportClassName?: string;
+  viewportProps?: ScrollAreaPrimitive.Viewport.Props;
   scrollbarGutter?: boolean;
   fill?: boolean;
   clampContentMinWidth?: boolean;
@@ -25,6 +27,7 @@ export function ScrollArea({
   return (
     <ScrollAreaPrimitive.Root className={cn("size-full min-h-0", className)} {...props}>
       <ScrollAreaPrimitive.Viewport
+        {...viewportProps}
         className={cn(
           "h-full rounded-[inherit] outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
           overscrollContain &&
@@ -32,6 +35,7 @@ export function ScrollArea({
           scrollFade &&
             "mask-t-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-start)))] mask-b-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-end)))] mask-l-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-start)))] mask-r-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-end)))] [--fade-size:1.5rem]",
           viewportClassName,
+          viewportProps?.className,
           scrollbarGutter && "data-has-overflow-y:pe-2.5 data-has-overflow-x:pb-2.5",
         )}
         data-slot="scroll-area-viewport"

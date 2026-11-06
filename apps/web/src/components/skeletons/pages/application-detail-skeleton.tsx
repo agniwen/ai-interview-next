@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function ApplicationDetailSkeleton() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-1 flex-col gap-6">
       <div aria-hidden="true" className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
           <Skeleton className="size-14 shrink-0 rounded-full" />
@@ -33,16 +33,20 @@ export function ApplicationDetailSkeleton() {
             aria-hidden="true"
             className="flex min-w-0 flex-col gap-4 border-t pt-4 @min-[56rem]:border-t-0 @min-[56rem]:ps-5 @min-[56rem]:pt-0"
           >
-            <div className="flex items-center justify-between gap-2">
-              <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-8 w-20 rounded-lg sm:h-7" />
-            </div>
+            <Skeleton className="h-5 w-16" />
             <div className="ms-1 flex flex-col gap-1 border-s ps-4">
               <Skeleton className="h-5 w-28 max-w-full" />
               <Skeleton className="h-4 w-40 max-w-full" />
             </div>
           </div>
         </div>
+      </div>
+      <div
+        aria-hidden="true"
+        className="sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] mx-auto mb-[env(safe-area-inset-bottom)] flex w-fit gap-2 rounded-xl border bg-card p-1.5"
+      >
+        <Skeleton className="h-8 w-20 rounded-lg sm:h-7" />
+        <Skeleton className="h-8 w-20 rounded-lg sm:h-7" />
       </div>
     </div>
   );

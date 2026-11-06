@@ -77,34 +77,33 @@ function ContextShowcase() {
 
   return (
     <div className={cn(FRAGMENT_AREA, "items-center justify-center gap-3")}>
-      <fieldset
-        aria-label={messages.home_capability_context_aria()}
-        className={cn(
-          "flex min-w-0 max-w-full gap-0.5 overflow-x-auto rounded-full p-0.5 [scrollbar-width:none]",
-          GLASS,
-        )}
-      >
-        {positions.map((item, index) => {
-          const selected = index === activeIndex;
-          return (
-            <button
-              aria-pressed={selected}
-              className={cn(
-                "h-7 shrink-0 whitespace-nowrap rounded-full px-3 font-medium text-[12px] transition-colors duration-200",
-                selected
-                  ? "bg-card text-foreground shadow-default"
-                  : "text-foreground/60 hover:text-foreground dark:text-white/70",
-              )}
-              data-context-position={index}
-              key={item.name}
-              onClick={() => setActiveIndex(index)}
-              type="button"
-            >
-              {item.name}
-            </button>
-          );
-        })}
-      </fieldset>
+      <ScrollArea className="h-auto w-auto min-w-0 max-w-full rounded-full">
+        <fieldset
+          aria-label={messages.home_capability_context_aria()}
+          className={cn("flex w-max min-w-0 gap-0.5 rounded-full p-0.5", GLASS)}
+        >
+          {positions.map((item, index) => {
+            const selected = index === activeIndex;
+            return (
+              <button
+                aria-pressed={selected}
+                className={cn(
+                  "h-7 shrink-0 whitespace-nowrap rounded-full px-3 font-medium text-[12px] transition-colors duration-200",
+                  selected
+                    ? "bg-card text-foreground shadow-default"
+                    : "text-foreground/60 hover:text-foreground dark:text-white/70",
+                )}
+                data-context-position={index}
+                key={item.name}
+                onClick={() => setActiveIndex(index)}
+                type="button"
+              >
+                {item.name}
+              </button>
+            );
+          })}
+        </fieldset>
+      </ScrollArea>
 
       {/* 区域高度固定，切换岗位时只淡入淡出内容。 Fixed area; switching roles only crossfades content. */}
       <div className="relative h-[11.5rem] w-full">
@@ -371,7 +370,7 @@ export function CapabilityGrid() {
         action={
           <Button
             className="group h-10 gap-1.5 rounded-full border-border bg-card px-5 font-medium shadow-none"
-            render={<Link to="/sign-in" />}
+            render={<Link to="/workspaces" search={{ destination: "agent" }} />}
             variant="outline"
           >
             {messages.home_hero_resume_cta()}

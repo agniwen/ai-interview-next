@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableFilterSelect } from "@/components/layout/table-filters";
 import { DialogCreateHandle as createDialogHandle, DialogTrigger } from "@/components/ui/dialog";
+import { UserColumn } from "@/components/user-column";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, atsStatus, readAts } from "./client";
+import { atsApi, atsDate, atsStatus, getResumeCandidateDisplay, readAts } from "./client";
 import { CreateApplicationDialog } from "./create-application-dialog";
+import { JobPreviewCard } from "./job-preview-card";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { listParams, applicationStatuses } from "./list-search";
@@ -85,8 +87,13 @@ export function ApplicationsPage({
           </Button>
         ),
         cells: [
-          row.candidateName,
-          row.jobTitle,
+          <UserColumn key="candidate" user={getResumeCandidateDisplay(workspaceId, row)} />,
+          <JobPreviewCard
+            id={row.jobId}
+            key="job"
+            title={row.jobTitle}
+            workspaceId={workspaceId}
+          />,
           <Badge key="status" variant="outline">
             {row.closedAt ? m.ats_closed() : m.ats_open()}
           </Badge>,

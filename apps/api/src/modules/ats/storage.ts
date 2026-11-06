@@ -3,8 +3,6 @@ import { r2 } from "files-sdk/r2";
 import type { ApiBindings } from "../../env";
 import type { ResumeObjectStore } from "./contracts";
 
-const contentType = "application/pdf";
-
 export function resumeFiles(env: ApiBindings) {
   return createFiles({
     adapter: r2({
@@ -31,17 +29,17 @@ export function resumeObjectStore(env: ApiBindings, uploadPath = ""): ResumeObje
       }
     },
     async read(objectKey) {
-      const file = await files.download(objectKey);
-      return new Uint8Array(await file.arrayBuffer());
+      const file = await files.download(objectKey, { as: "stream" });
+      return new Uint8Array(await new Response(file.stream()).arrayBuffer());
     },
-    async signUpload(objectKey) {
+    async signUpload(objectKey, contentType) {
       if (!files.capabilities.signedUpload.supported) {
         return `${uploadPath}/${objectKey.split("/").at(-1)}`;
       }
       const { url } = await files.signedUploadUrl(objectKey, { contentType, expiresIn: 900 });
       return url;
     },
-    async write(objectKey, bytes) {
+    async write(objectKey, bytes, contentType) {
       await files.upload(objectKey, bytes, { contentType });
     },
   };

@@ -1,6 +1,7 @@
 import { IconLink, IconMail, IconMapPin, IconPhone } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import type { readResumeProfile } from "@/components/ats/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { BadgeProps } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -339,9 +340,11 @@ function ResumeSection({ children, title }: { children: ReactNode; title: string
 }
 
 export function ResumeProfileDocument({
+  avatarSrc,
   profile,
   layout = "preview",
 }: {
+  avatarSrc?: string;
   profile: ResumeProfile;
   layout?: "inline" | "preview";
 }) {
@@ -356,7 +359,7 @@ export function ResumeProfileDocument({
   if (
     !summary.length &&
     !sections.length &&
-    !(basics && (name || basics.targetRoles.length || basics.contacts.length))
+    !(basics && (avatarSrc || name || basics.targetRoles.length || basics.contacts.length))
   ) {
     return (
       <p className="p-6 text-center text-sm text-muted-foreground">{m.resume_profile_empty()}</p>
@@ -372,9 +375,17 @@ export function ResumeProfileDocument({
     >
       {basics && (
         <header className="flex flex-col gap-3">
-          <h2 className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">
-            {name || m.resume_preview_standard()}
-          </h2>
+          <div className="flex min-w-0 items-center gap-3">
+            {avatarSrc && (
+              <Avatar aria-hidden="true" className="[--avatar-size:--spacing(14)]">
+                <AvatarImage alt="" src={avatarSrc} />
+                <AvatarFallback>{name?.slice(0, 1).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            )}
+            <h2 className="min-w-0 wrap-anywhere text-2xl font-semibold tracking-tight sm:text-3xl">
+              {name || m.resume_preview_standard()}
+            </h2>
+          </div>
           <ResumeProfileBasics {...basics} />
         </header>
       )}

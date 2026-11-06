@@ -3,8 +3,10 @@ import { lazy, Suspense, useState } from "react";
 import type { ReactNode } from "react";
 import { atsApi } from "@/components/ats/client";
 import { DocumentPreviewSkeleton } from "@/components/skeletons/components/document-preview-skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
+import { getResumeDocumentKind } from "@/lib/resume-documents";
 import * as m from "@/paraglide/messages";
 import { DocumentPreviewDialog } from "./document-preview-dialog";
 import { ResumeProfilePanel } from "./resume-profile-panel";
@@ -23,6 +25,7 @@ export function ResumePreviewDialog({
   workspaceId: string;
 }) {
   const url = atsApi["upload-files"][":id"].$path({ param: { id, workspaceId } });
+  const isImage = getResumeDocumentKind({ fileName: filename }) === "image";
   const [pdfLoading, setPdfLoading] = useState(true);
   const pdfPhase = useSkeletonPhase(pdfLoading);
   const [view, setView] = useState("original");
@@ -67,21 +70,33 @@ export function ResumePreviewDialog({
             render={<div hidden={false} />}
             value="original"
           >
-            {pdfPhase === "skeleton" && <DocumentPreviewSkeleton />}
-            <Suspense fallback={null}>
-              <PdfPreview
-                onLoadingChange={setPdfLoading}
-                toolbarTargets={{ pagination: paginationTarget, zoom: zoomTarget }}
-                url={url}
-                visible={pdfPhase === "ready"}
-              />
-            </Suspense>
+            {isImage ? (
+              <ScrollArea className="flex-1 bg-muted/40" overscrollContain>
+                <div className="flex justify-center p-4">
+                  <img alt={filename} className="h-fit max-w-full object-contain" src={url} />
+                </div>
+              </ScrollArea>
+            ) : (
+              <>
+                {pdfPhase === "skeleton" && <DocumentPreviewSkeleton />}
+                <Suspense fallback={null}>
+                  <PdfPreview
+                    onLoadingChange={setPdfLoading}
+                    toolbarTargets={{ pagination: paginationTarget, zoom: zoomTarget }}
+                    url={url}
+                    visible={pdfPhase === "ready"}
+                  />
+                </Suspense>
+              </>
+            )}
           </TabsPanel>
           <TabsPanel
-            className="min-h-0 overflow-y-auto bg-card text-card-foreground"
+            className="flex min-h-0 flex-col overflow-hidden bg-card text-card-foreground"
             value="standard"
           >
-            <ResumeProfilePanel id={id} workspaceId={workspaceId} />
+            <ScrollArea overscrollContain>
+              <ResumeProfilePanel id={id} workspaceId={workspaceId} />
+            </ScrollArea>
           </TabsPanel>
         </div>
       </Tabs>

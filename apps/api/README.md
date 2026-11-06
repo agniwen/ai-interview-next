@@ -55,6 +55,9 @@ wrangler.jsonc
 - `GET`、`POST /api/auth/*` 由 Better Auth 处理。Web 通过 Service Binding 转发原始请求，浏览器 Cookie 和 Google 回调使用 Web 来源。
 - `GET /api/workspaces` 列出当前用户所属的工作区和最后激活的工作区；`POST /api/workspaces/:workspaceId/activate` 在验证成员关系后持久记录最后激活的工作区。匿名请求返回 401，不可访问的激活目标返回 404。
 
+- `GET /api/ats/:workspaceId/projects/:id` 返回项目预览详情 `{ version: 1, id, title, description, createdAt, jobCount }`，仅限所属工作区成员访问；不存在或不属于当前工作区的项目返回 404。列表不携带长篇说明，Web 在打开项目预览卡或编辑弹窗时加载详情。
+- `POST /api/ats/:workspaceId/projects` 与 `PUT /api/ats/:workspaceId/projects/:id` 接受可选的 Markdown `description`（去除首尾空白，最多 30,000 字符）；创建时省略则保存为空字符串，编辑时省略则保留原说明，提交空字符串可清空说明。
+
 工作区、成员、邀请及固定角色使用 Better Auth Organization 插件；首次创建用户时自动创建初始工作区和 owner 成员关系。所有 Organization 操作都传入明确的组织标识，Web 页面不依赖共享 session 中的当前组织。设计和页面入口见 [工作区文档](../../docs/architecture/workspaces.md)。
 
 工作区使用服务端生成的 8 位小写字母数字 ID；注册时的初始工作区与 Organization 创建钩子共用生成与查重逻辑，重复时重新生成，slug 与 ID 一致。

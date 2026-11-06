@@ -1,6 +1,10 @@
 import { IconFolders } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId, useMemo, useState } from "react";
+import { lazy, useId, useMemo, useState } from "react";
+import { SkeletonSuspense } from "@/components/skeletons/skeleton-suspense";
+import { MarkdownEditorSkeleton } from "@/components/skeletons/components/markdown-editor-skeleton";
+import { ProjectFormSkeleton } from "@/components/skeletons/components/project-form-skeleton";
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,10 +22,17 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, readAts } from "./client";
+import { atsApi, atsDate, projectDetailsQuery, readAts } from "./client";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
+import { ProjectPreviewCard } from "./project-preview-card";
 import { listParams } from "./list-search";
+
+const MarkdownEditor = lazy(async () => {
+  const { MarkdownEditor: Editor } = await import("@/components/ui/markdown-editor");
+  return { default: Editor };
+});
+const maxProjectDescriptionLength = 30_000;
 
 interface EditableProject {
   id: string;
@@ -34,15 +45,16 @@ function ProjectForm({
   workspaceId,
 }: {
   onSuccess: () => void;
-  project?: EditableProject;
+  project?: EditableProject & { description: string };
   workspaceId: string;
 }) {
   const client = useQueryClient();
   const formId = useId();
   const [title, setTitle] = useState(project?.title ?? "");
+  const [description, setDescription] = useState(project?.description ?? "");
   const mutation = useMutation({
     mutationFn: async () => {
-      const json = { title, version: 1 as const };
+      const json = { description, title, version: 1 as const };
       return readAts(
         project
           ? await atsApi.projects[":id"].$put({ json, param: { id: project.id, workspaceId } })
@@ -53,7 +65,13 @@ function ProjectForm({
       await Promise.all([
         client.invalidateQueries({ queryKey: atsKeys.projects(workspaceId).queryKey }),
         ...(project
-          ? [client.invalidateQueries({ queryKey: atsKeys.jobs(workspaceId)._ctx.list._def })]
+          ? [
+              client.invalidateQueries({ queryKey: atsKeys.jobs(workspaceId)._ctx.list._def }),
+              client.invalidateQueries({ queryKey: atsKeys.jobs(workspaceId)._ctx.detail._def }),
+              client.invalidateQueries({
+                queryKey: atsKeys.applications(workspaceId)._ctx.detail._def,
+              }),
+            ]
           : []),
       ]);
       onSuccess();
@@ -61,11 +79,8 @@ function ProjectForm({
   });
   return (
     <>
-      <DialogHeader>
-        <DialogTitle>{project ? m.ats_edit_project() : m.ats_create_project()}</DialogTitle>
-        {!project && <DialogDescription>{m.ats_create_project_help()}</DialogDescription>}
-      </DialogHeader>
       <DialogPanel
+        className="flex flex-col gap-4"
         render={
           <form
             id={formId}
@@ -91,14 +106,64 @@ function ProjectForm({
             value={title}
           />
         </Field>
+        <Field>
+          <FieldLabel id={`${formId}-description-label`} htmlFor={`${formId}-description`}>
+            {m.ats_project_description()}
+          </FieldLabel>
+          <SkeletonSuspense fallback={<MarkdownEditorSkeleton />}>
+            <MarkdownEditor
+              id={`${formId}-description`}
+              aria-labelledby={`${formId}-description-label`}
+              value={description}
+              onChange={setDescription}
+              maxLength={maxProjectDescriptionLength}
+            />
+          </SkeletonSuspense>
+        </Field>
       </DialogPanel>
       <DialogFooter>
-        <Button disabled={!title.trim()} form={formId} loading={mutation.isPending} type="submit">
+        <Button
+          disabled={!title.trim() || description.length > maxProjectDescriptionLength}
+          form={formId}
+          loading={mutation.isPending}
+          type="submit"
+        >
           {m.ats_save()}
         </Button>
       </DialogFooter>
     </>
   );
+}
+
+function EditProjectForm({
+  id,
+  workspaceId,
+  onSuccess,
+}: {
+  id: string;
+  workspaceId: string;
+  onSuccess: () => void;
+}) {
+  const { data, isPending } = useQuery(projectDetailsQuery(workspaceId, id));
+  const phase = useSkeletonPhase(isPending);
+  if (phase === "pending") {
+    return null;
+  }
+  if (phase === "skeleton") {
+    return (
+      <DialogPanel>
+        <ProjectFormSkeleton />
+      </DialogPanel>
+    );
+  }
+  if (!data) {
+    return (
+      <DialogPanel>
+        <output>{m.ats_error()}</output>
+      </DialogPanel>
+    );
+  }
+  return <ProjectForm project={data} workspaceId={workspaceId} onSuccess={onSuccess} />;
 }
 
 export function ProjectsPage({ workspaceId, query, onQueryChange }: AtsPageProps) {
@@ -134,7 +199,15 @@ export function ProjectsPage({ workspaceId, query, onQueryChange }: AtsPageProps
             {m.ats_edit()}
           </DialogTrigger>
         ),
-        cells: [row.title, atsDate(row.createdAt)],
+        cells: [
+          <ProjectPreviewCard
+            key="project"
+            id={row.id}
+            title={row.title}
+            workspaceId={workspaceId}
+          />,
+          atsDate(row.createdAt),
+        ],
         id: row.id,
       }))}
       empty={m.ats_empty_projects()}
@@ -147,18 +220,28 @@ export function ProjectsPage({ workspaceId, query, onQueryChange }: AtsPageProps
     >
       <Dialog handle={dialog}>
         {({ payload }) => (
-          <DialogPopup>
-            <ProjectForm
-              key={payload?.id}
-              project={payload}
-              workspaceId={workspaceId}
-              onSuccess={() => {
-                dialog.close();
-                if (!payload && query.page !== 1) {
-                  onQueryChange({ page: 1 });
-                }
-              }}
-            />
+          <DialogPopup className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{payload ? m.ats_edit_project() : m.ats_create_project()}</DialogTitle>
+              {!payload && <DialogDescription>{m.ats_create_project_help()}</DialogDescription>}
+            </DialogHeader>
+            {payload ? (
+              <EditProjectForm
+                id={payload.id}
+                workspaceId={workspaceId}
+                onSuccess={() => dialog.close()}
+              />
+            ) : (
+              <ProjectForm
+                workspaceId={workspaceId}
+                onSuccess={() => {
+                  dialog.close();
+                  if (query.page !== 1) {
+                    onQueryChange({ page: 1 });
+                  }
+                }}
+              />
+            )}
           </DialogPopup>
         )}
       </Dialog>

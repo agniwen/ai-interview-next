@@ -20,7 +20,7 @@ describe("MessageResponse", () => {
     );
     expect(html).toContain("中文。</span>");
     expect(html).toContain("<table");
-    expect(html).toContain("overflow-x-auto rounded-lg border border-input");
+    expect(html).toContain('data-slot="scroll-area-viewport"');
     expect(html).toContain("完成");
   });
 });

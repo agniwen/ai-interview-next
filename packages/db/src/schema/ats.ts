@@ -75,13 +75,15 @@ export const candidatePhoneHistory = sqliteTable(
   ],
 );
 
-/** 工作区内一份 PDF 的简历版本、解析结果和长期归属。 / A workspace PDF resume version with its parsed result and lasting ownership. */
+/** 工作区内一份简历的版本、解析结果和长期归属。 / A workspace resume version with its parsed result and lasting ownership. */
 export const resume = sqliteTable(
   "resume",
   {
-    /** PDF 查重时采用的候选人归属，待识别时为空。 / Candidate matched by PDF hash. Null while ownership is unresolved. */
+    /** 私有简历头像的对象键，没有提取到时为空。 / Private object key for the extracted resume avatar, if available. */
+    avatarObjectKey: text("avatarObjectKey"),
+    /** 文件查重时采用的候选人归属，待识别时为空。 / Candidate matched by file hash. Null while ownership is unresolved. */
     candidateId: text("candidateId"),
-    /** 首次登记该 PDF 的时间。 / Time this PDF was first registered. */
+    /** 首次登记该简历文件的时间。 / Time this resume file was first registered. */
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
     /** 唯一选定用于自动查重的归一化本人手机号。 / The candidate's normalized mobile number uniquely selected for automatic matching. */
     extractedPhoneNormalized: text("extractedPhoneNormalized"),
@@ -97,11 +99,11 @@ export const resume = sqliteTable(
       .default("pending"),
     /** 这份简历提交时的结构化事实及原文证据。 / Structured facts and source evidence from this submitted resume. */
     parsedProfile: text("parsedProfile", { mode: "json" }).$type<ResumeParsedProfile>(),
-    /** 原始 PDF 在对象存储中的键。 / Object storage key for the original PDF. */
+    /** 原始简历文件在对象存储中的键，沿用原 PDF 字段。 / Original resume file key, kept in the existing PDF column. */
     pdfObjectKey: text("pdfObjectKey").notNull(),
-    /** 停用这份 PDF 的手机号匹配线索的时间。 / Time the phone matching hint was disabled for this PDF. */
+    /** 停用这份简历的手机号匹配线索的时间。 / Time the phone matching hint was disabled for this resume. */
     phoneMatchDisabledAt: integer("phoneMatchDisabledAt", { mode: "timestamp_ms" }),
-    /** 原始 PDF 字节的 SHA-256。 / SHA-256 of the original PDF bytes. */
+    /** 原始简历文件字节的 SHA-256。 / SHA-256 of the original resume file bytes. */
     sha256: text("sha256").notNull(),
     /** 简历所属工作区。 / Workspace that owns the resume. */
     workspaceId: workspaceIdColumn(),
@@ -119,6 +121,7 @@ export const resume = sqliteTable(
 /** 工作区内的一批招聘岗位。 / A group of recruiting jobs in a workspace. */
 export const recruitmentProject = sqliteTable("recruitment_project", {
   createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+  description: text("description").notNull().default(""),
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   workspaceId: workspaceIdColumn(),
@@ -130,6 +133,8 @@ export const job = sqliteTable(
   {
     /** 岗位建立时间。 / Job creation time. */
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+    /** 所属部门的名称。 / Name of the department that owns the job. */
+    department: text("department"),
     /** 岗位 ID。 / Job ID. */
     id: text("id").primaryKey(),
     projectId: text("projectId").references(() => recruitmentProject.id),

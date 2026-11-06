@@ -7,6 +7,7 @@ export function JobFormSkeleton() {
     <div aria-busy="true" aria-label={m.ats_loading()} className="flex flex-col gap-4">
       <Skeleton aria-hidden="true" className="h-13 w-full" />
       <Skeleton aria-hidden="true" className="h-13 w-full" />
+      <Skeleton aria-hidden="true" className="h-13 w-full" />
       <MarkdownEditorSkeleton />
     </div>
   );

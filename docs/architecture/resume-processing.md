@@ -1,13 +1,13 @@
 # 简历处理流程设计
 
-首版按[可移植的简历处理流程](../adr/0005-portable-resume-processing.md)实现。现有的 [PDF 文本提取](../../apps/api/src/lib/pdf-text/README.md)和[简历结构化](../../apps/api/src/lib/resume-structuring/README.md)分别作为前两个阶段的执行依赖。岗位评价接收已确定的候选人、应聘、简历解析结果和岗位要求快照，成功结果保存至 `application_evaluation.result`。
+首版按[可移植的简历处理流程](../adr/0005-portable-resume-processing.md)实现。现有的[简历文本提取](../../apps/api/src/lib/pdf-text/README.md)和[简历结构化](../../apps/api/src/lib/resume-structuring/README.md)分别作为前两个阶段的执行依赖。岗位评价接收已确定的候选人、应聘、简历解析结果和岗位要求快照，成功结果保存至 `application_evaluation.result`。
 
 ## 上传和解析
 
-1. API 为一次选择的 PDF 创建上传批次和逐文件上传条目，并为每个对象签发私有 S3 兼容存储的上传地址。每个对象键由服务端分配并绑定该条目。
+1. API 为一次选择的 PDF、JPEG 或 PNG 创建上传批次和逐文件上传条目，并为每个对象签发私有 S3 兼容存储的上传地址。每个对象键由服务端分配并绑定该条目。
 2. 客户端逐文件直传并确认。API 核对该条目的对象已上传，在同一数据库事务里接受文件、记录处理运行并登记启动解析 Workflow 的 Outbox 消息。批次内其余文件继续独立处理。
-3. 解析 Workflow 派发文本提取尝试。消费者读取 PDF 字节，计算 SHA-256 并按工作区查重。新 PDF 建立 `Resume`，关联该次 `ResumeSubmission`，随后执行文本提取。已解析的 PDF 直接复用产物，解析中的重复 PDF 则将上传条目关联到已有解析运行。每份上传保留自己的投递记录和后续身份识别状态。
-4. 文本提取成功后保存 Markdown，再派发结构化。结构化成功后保存 `ResumeParsedProfile`，解析 Workflow 结束。每次投递独立应用候选人识别规则。多个上传条目跟随同一次解析运行时，共享解析进度和结果。
+3. 解析 Workflow 派发文本提取尝试。消费者读取原件字节，计算 SHA-256 并按工作区查重。新文件建立 `Resume`，关联该次 `ResumeSubmission`，随后执行文本提取。已解析的文件复用产物，解析中的重复文件则将上传条目关联到已有解析运行。每份上传保留自己的投递记录和后续身份识别状态。
+4. 文本提取成功后，消费者在同一阶段尝试[从首页提取头像](../adr/0005-portable-resume-processing.md#ocr-阶段提取简历头像)。保存 Markdown 和已写入 R2 的头像引用后，再派发结构化。结构化成功后保存 `ResumeParsedProfile`，解析 Workflow 结束。每次投递独立应用候选人识别规则。多个上传条目跟随同一次解析运行时，共享解析进度和结果。
 5. 上传批次从条目和关联的解析运行汇总上传与解析结果。简历列表展示上传和解析状态，以及是否需要确认候选人。岗位和岗位评价显示在应聘记录中。
 
 首版复用 `resume.markdown` 和 `resume.parsedProfile` 保存阶段产物。手动重试读取已完成阶段的产物。以后开放对已有成功简历的完整重新解析时，按运行保留独立的解析版本，以便历史评价继续引用当时的产物。
@@ -63,9 +63,10 @@ type StageMessage = {
 };
 
 interface ResumeObjectStore {
-  signUpload(objectKey: string): Promise<string>;
+  signUpload(objectKey: string, contentType: ResumeMediaType): Promise<string>;
   head(objectKey: string): Promise<{ size: number } | null>;
   read(objectKey: string): Promise<Uint8Array>;
+  write(objectKey: string, bytes: ArrayBuffer, contentType: ResumeMediaType): Promise<void>;
 }
 
 interface ResumeStageQueue {

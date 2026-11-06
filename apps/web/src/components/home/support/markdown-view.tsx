@@ -1,16 +1,17 @@
 import type { ComponentProps } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export const markdownComponents = {
   table({ children, className, ...props }: ComponentProps<"table">) {
     return (
-      <div className="my-3 max-w-full overflow-x-auto rounded-md border" data-not-typeset>
+      <ScrollArea className="my-3 h-auto max-w-full rounded-md border" data-not-typeset>
         <table className={cn("w-max min-w-full border-collapse text-sm", className)} {...props}>
           {children}
         </table>
-      </div>
+      </ScrollArea>
     );
   },
   tbody({ className, ...props }: ComponentProps<"tbody">) {

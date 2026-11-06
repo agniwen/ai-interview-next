@@ -30,6 +30,7 @@ interface UploadTask {
 }
 
 interface UploadTarget {
+  contentType: string;
   id: string;
   url: string | null;
 }
@@ -40,7 +41,12 @@ const uploadStatus = {
   waiting: { label: m.ats_waiting, variant: "outline" },
 } as const;
 
-function putPdf(url: string, file: File, onProgress: (progress: number) => void) {
+function putResume(
+  url: string,
+  file: File,
+  contentType: string,
+  onProgress: (progress: number) => void,
+) {
   // oxlint-disable-next-line promise/avoid-new -- 上传进度由 XHR 事件提供。 / XHR events provide upload progress.
   return new Promise<void>((resolve, reject) => {
     const request = new XMLHttpRequest();
@@ -61,7 +67,7 @@ function putPdf(url: string, file: File, onProgress: (progress: number) => void)
       { once: true },
     );
     request.open("PUT", url);
-    request.setRequestHeader("Content-Type", "application/pdf");
+    request.setRequestHeader("Content-Type", contentType);
     request.send(file);
   });
 }
@@ -87,10 +93,12 @@ export function ResumeUploadDialog({
     let { uploadId } = task;
     updateTask(task.index, { progress: null, status: "uploading" });
     try {
-      const { id, url } = await target;
+      const { contentType, id, url } = await target;
       uploadId = id;
       if (url) {
-        await putPdf(url, task.file, (progress) => updateTask(task.index, { progress }));
+        await putResume(url, task.file, contentType, (progress) =>
+          updateTask(task.index, { progress }),
+        );
       }
       updateTask(task.index, { progress: 100, status: "confirming" });
       await readAts(await atsApi.uploads[":id"].confirm.$post({ param: { id, workspaceId } }));
@@ -161,7 +169,7 @@ export function ResumeUploadDialog({
       <input
         ref={input}
         type="file"
-        accept="application/pdf,.pdf"
+        accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
         multiple
         hidden
         aria-label={m.ats_upload()}

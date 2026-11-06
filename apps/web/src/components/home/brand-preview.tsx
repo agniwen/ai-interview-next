@@ -25,7 +25,8 @@ export function BrandPreview() {
         </span>
       </span>
       <PreviewCardPopup
-        className="w-80 max-w-[calc(100vw-2rem)] flex-col gap-4 text-left"
+        className="w-80 max-w-[calc(100vw-2rem)] text-left"
+        panelClassName="flex flex-col gap-4"
         sideOffset={12}
       >
         <div>

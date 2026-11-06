@@ -16,7 +16,18 @@ export const projectInput = z.strictObject({
   version: z.literal(1),
 });
 
+export const projectDetailsInput = projectInput.extend({
+  description: z.string().trim().max(30_000).optional(),
+});
+
 export const jobInput = projectInput.extend({
+  department: z
+    .string()
+    .trim()
+    .max(200)
+    .nullable()
+    .transform((value) => value || null)
+    .optional(),
   projectId: z.uuid().optional(),
   requirements: z.string().trim().min(1).max(30_000),
 });

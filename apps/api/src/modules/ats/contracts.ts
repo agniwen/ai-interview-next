@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ResumeMediaType } from "../../lib/resume-file";
 
 export const stageMessage = z.strictObject({
   attemptId: z.string(),
@@ -12,10 +13,10 @@ export type WorkflowInput = z.infer<typeof workflowInput>;
 export type ResumeStage = "extract_text" | "structure" | "evaluate";
 
 export interface ResumeObjectStore {
-  signUpload: (objectKey: string) => Promise<string>;
+  signUpload: (objectKey: string, contentType: ResumeMediaType) => Promise<string>;
   head: (objectKey: string) => Promise<{ size: number } | null>;
   read: (objectKey: string) => Promise<Uint8Array>;
-  write: (objectKey: string, bytes: ArrayBuffer) => Promise<void>;
+  write: (objectKey: string, bytes: ArrayBuffer, contentType: ResumeMediaType) => Promise<void>;
 }
 
 export interface ResumeStageQueue {

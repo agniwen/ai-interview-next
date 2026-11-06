@@ -3,6 +3,7 @@
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { IconChevronRight as ChevronRightIcon } from "@tabler/icons-react";
 import type * as React from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export const MenuCreateHandle: typeof MenuPrimitive.createHandle = MenuPrimitive.createHandle;
@@ -60,7 +61,13 @@ export function MenuPopup({
           data-slot="menu-popup"
           {...props}
         >
-          <div className="max-h-(--available-height) w-full overflow-y-auto p-1">{children}</div>
+          <ScrollArea
+            className="h-auto rounded-[inherit]"
+            viewportClassName="max-h-[calc(var(--available-height)-2px)]"
+            overscrollContain
+          >
+            <div className="p-1">{children}</div>
+          </ScrollArea>
         </MenuPrimitive.Popup>
       </MenuPrimitive.Positioner>
     </MenuPortal>

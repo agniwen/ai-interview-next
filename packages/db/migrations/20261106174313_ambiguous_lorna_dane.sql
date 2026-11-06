@@ -1,0 +1,1 @@
+ALTER TABLE `recruitment_project` ADD `description` text DEFAULT '' NOT NULL;

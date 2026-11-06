@@ -75,7 +75,7 @@ export function Hero() {
       >
         <Button
           className="group h-11 sm:h-11 min-w-40 gap-2 rounded-full border-transparent bg-foreground px-6 font-medium text-background text-[15px] shadow-none inset-shadow-none hover:bg-foreground/90 has-[>svg]:px-6 active:inset-shadow-none dark:bg-white dark:text-[#071233] dark:hover:bg-white/90"
-          render={<Link to="/sign-in" />}
+          render={<Link to="/workspaces" search={{ destination: "agent" }} />}
         >
           {messages.home_hero_resume_cta()}
           <IconArrowUpRight
@@ -86,7 +86,7 @@ export function Hero() {
         </Button>
         <Button
           className="h-11 sm:h-11 min-w-40 rounded-full border-white/70 bg-white/55 px-6 font-medium text-[15px] shadow-none backdrop-blur-md hover:bg-white/75 dark:border-white/20 dark:bg-white/10 dark:hover:bg-white/15"
-          render={<Link to="/sign-in" />}
+          render={<Link to="/workspaces" search={{ destination: "hub" }} />}
           variant="outline"
         >
           {messages.home_hero_workbench_cta()}

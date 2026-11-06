@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 import { Streamdown } from "streamdown";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 // 保持插件和组件引用稳定，让 Streamdown 复用已完成的块。
@@ -10,9 +11,9 @@ const plugins = { cjk, code };
 const components = {
   table({ children }: ComponentProps<"table">) {
     return (
-      <div className="my-3 max-w-full overflow-x-auto rounded-lg border border-input">
+      <ScrollArea className="my-3 h-auto max-w-full rounded-lg border border-input">
         <table>{children}</table>
-      </div>
+      </ScrollArea>
     );
   },
 };

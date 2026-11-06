@@ -28,18 +28,23 @@
     "@earendil-works/chord": "1.5.0",
     "@earendil-works/pi-ai": "1.5.0",
     "@earendil-works/pi-durable": "1.5.0",
+    "@embedpdf/pdfium": "2.15.1",
     "@hono/standard-validator": "0.4.1",
     "ai": "7.0.163",
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
     "files-sdk": "3.1.2",
     "hono": "catalog:",
+    "jpeg-js": "0.4.4",
+    "pngjs": "7.0.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@ai-interview/typescript-config": "workspace:*",
     "@cloudflare/workers-types": "catalog:",
+    "@types/emscripten": "1.41.5",
     "@types/node": "catalog:",
+    "@types/pngjs": "6.0.5",
     "@vitest/coverage-v8": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"

@@ -12,6 +12,7 @@ export function CandidateResumesSkeleton() {
               <Skeleton className="h-5 w-3/4 max-w-56" />
               <Skeleton className="h-4 w-24" />
             </div>
+            <Skeleton className="h-8 w-20 shrink-0 rounded-lg sm:h-7" />
           </div>
         ))}
       </div>

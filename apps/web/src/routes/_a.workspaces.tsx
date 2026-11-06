@@ -13,12 +13,20 @@ function WorkspaceSelection() {
 
 export const Route = createFileRoute("/_a/workspaces")({
   pendingComponent: WorkspacesPageSkeleton,
-  validateSearch: z.object({ choose: z.boolean().optional() }),
+  validateSearch: z.object({
+    choose: z.boolean().optional(),
+    destination: z.enum(["agent", "hub"]).optional(),
+  }),
   beforeLoad: ({ context, search }) => {
     const { workspaces, lastWorkspaceId } = context.workspaceSession;
     const last = workspaces.find((workspace) => workspace.id === lastWorkspaceId);
-    if (!search.choose && last) {
-      throw redirect({ to: "/w/$workspaceId/agent", params: { workspaceId: last.id } });
+    const workspace = last ?? (search.destination ? workspaces[0] : undefined);
+    if (!search.choose && workspace) {
+      throw redirect({
+        to:
+          search.destination === "hub" ? "/w/$workspaceId/hub/dashboard" : "/w/$workspaceId/agent",
+        params: { workspaceId: workspace.id },
+      });
     }
   },
   head: () => ({ meta: [{ title: `${m.ws_choose()} — Sainoa` }] }),

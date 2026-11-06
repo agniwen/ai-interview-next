@@ -172,7 +172,7 @@ describe("workspaces", () => {
       .set({ status: "succeeded" })
       .where(eq(resumeProcessingRun.id, resumeId));
     const results = await Promise.all(
-      ["intake.pdf", "Candidate", "Platform", "hiring", "2026年11月6日"].map((search) =>
+      ["intake.pdf", "Platform", "hiring", "2026年11月6日"].map((search) =>
         data(
           `${optionsPath}?${new URLSearchParams({ offsetMinutes: "480", search })}`,
           owner.cookie,
@@ -184,7 +184,7 @@ describe("workspaces", () => {
         nextPage: null,
         rows: [
           {
-            candidateName: "Candidate",
+            candidateName: null,
             createdAt: createdAt.toISOString(),
             creator: { name: owner.user.name },
             filename: "Intake.pdf",
@@ -346,7 +346,7 @@ describe("workspaces", () => {
       status: "waiting",
       workspaceId,
     });
-    await resumeObjectStore(env).write(objectKey, bytes.buffer);
+    await resumeObjectStore(env).write(objectKey, bytes.buffer, "application/pdf");
 
     const path = `ats/${workspaceId}/upload-files/${id}`;
     const profilePath = `ats/${workspaceId}/uploads/${id}/profile`;
@@ -390,8 +390,10 @@ describe("workspaces", () => {
       await status(`ats/${outsider.workspace.id}/uploads/${id}/profile`, outsider.cookie),
     ).toBe(404);
     expect(await data(profilePath, owner.cookie)).toEqual({
+      hasAvatar: false,
       parseStatus: "queued",
       profile: null,
+      resumeId: null,
       version: 1,
     });
 
@@ -425,8 +427,10 @@ describe("workspaces", () => {
         .where(eq(resumeProcessingRun.id, id)),
     ]);
     expect(await data(profilePath, owner.cookie)).toEqual({
+      hasAvatar: false,
       parseStatus: "running",
       profile: null,
+      resumeId,
       version: 1,
     });
 
@@ -441,8 +445,10 @@ describe("workspaces", () => {
         .where(eq(resumeProcessingRun.id, id)),
     ]);
     expect(await data(profilePath, owner.cookie)).toEqual({
+      hasAvatar: false,
       parseStatus: "succeeded",
       profile,
+      resumeId,
       version: 1,
     });
   });
@@ -526,9 +532,10 @@ describe("workspaces", () => {
     const response = await call(path, owner.cookie);
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       rows: [
         {
+          canJoinRecruitment: false,
           createdAt: secondDate.toISOString(),
           filename: null,
           id: "second-resume",

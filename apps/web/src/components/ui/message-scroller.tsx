@@ -9,6 +9,7 @@ import {
 } from "@shadcn/react/message-scroller";
 import { cn } from "@/lib/utils";
 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { IconArrowDown } from "@tabler/icons-react";
 
@@ -36,17 +37,22 @@ function MessageScroller({
 
 function MessageScrollerViewport({
   className,
+  children,
   ...props
 }: React.ComponentProps<typeof MessageScrollerPrimitive.Viewport>) {
   return (
-    <MessageScrollerPrimitive.Viewport
-      data-slot="message-scroller-viewport"
-      className={cn(
-        "size-full min-h-0 min-w-0 [scrollbar-width:thin] [scrollbar-gutter:stable] overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-thumb-transparent data-autoscrolling:scrollbar-track-transparent data-pending-scroll:invisible",
+    <ScrollArea
+      overscrollContain
+      viewportClassName={cn(
+        "size-full min-h-0 min-w-0 contain-content data-pending-scroll:invisible [&>[data-slot=scroll-area-content]]:min-h-full",
         className,
       )}
-      {...props}
-    />
+      viewportProps={{
+        render: <MessageScrollerPrimitive.Viewport data-slot="message-scroller-viewport" {...props} />,
+      }}
+    >
+      {children}
+    </ScrollArea>
   );
 }
 

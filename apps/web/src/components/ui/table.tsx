@@ -3,6 +3,7 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import type React from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export type TableVariant = "default" | "card";
@@ -29,16 +30,20 @@ export function Table({
         {...props}
       />
     ),
-    className: "relative w-full overflow-x-auto",
+    className: "relative w-full",
     "data-slot": "table-container",
     "data-variant": variant,
   };
 
-  return useRender({
-    defaultTagName: "div",
-    props: mergeProps<"div">(defaultProps, {}),
-    render,
-  });
+  return (
+    <ScrollArea className="h-auto">
+      {useRender({
+        defaultTagName: "div",
+        props: mergeProps<"div">(defaultProps, {}),
+        render,
+      })}
+    </ScrollArea>
+  );
 }
 
 export function TableHeader({

@@ -3,6 +3,7 @@
 import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
 import { IconChevronRight as ChevronRightIcon } from "@tabler/icons-react";
 import type * as React from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export const ContextMenu: typeof ContextMenuPrimitive.Root = ContextMenuPrimitive.Root;
@@ -58,7 +59,13 @@ export function ContextMenuPopup({
           data-slot="context-menu-popup"
           {...props}
         >
-          <div className="max-h-(--available-height) w-full overflow-y-auto p-1">{children}</div>
+          <ScrollArea
+            className="h-auto rounded-[inherit]"
+            viewportClassName="max-h-[calc(var(--available-height)-2px)]"
+            overscrollContain
+          >
+            <div className="p-1">{children}</div>
+          </ScrollArea>
         </ContextMenuPrimitive.Popup>
       </ContextMenuPrimitive.Positioner>
     </ContextMenuPortal>

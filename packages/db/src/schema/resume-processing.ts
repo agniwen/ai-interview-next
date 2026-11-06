@@ -93,6 +93,12 @@ export const resumeProcessingAttempt = sqliteTable(
       timeoutMs: number;
       temperature?: number;
       maxTokens?: number;
+      avatar?: {
+        version: 1;
+        model: string;
+        promptVersion: number;
+        timeoutMs: number;
+      };
     }>(),
     providerRequestId: text("providerRequestId"),
     retryAfterAt: time("retryAfterAt"),

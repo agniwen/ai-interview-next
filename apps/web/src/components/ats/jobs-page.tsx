@@ -22,11 +22,12 @@ import { Input } from "@/components/ui/input";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, readAts } from "./client";
+import { atsApi, atsDate, jobDetailsQuery, readAts } from "./client";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { listParams } from "./list-search";
 import type { JobListSearch } from "./list-search";
+import { ProjectPreviewCard } from "./project-preview-card";
 import { ProjectFilter, ProjectSelect } from "./project-select";
 
 const MarkdownEditor = lazy(async () => {
@@ -40,12 +41,19 @@ function JobForm({
   workspaceId,
   onSuccess,
 }: {
-  job?: { id: string; title: string; requirements: string; projectId: string | null };
+  job?: {
+    department: string | null;
+    id: string;
+    title: string;
+    requirements: string;
+    projectId: string | null;
+  };
   workspaceId: string;
   onSuccess: () => void;
 }) {
   const client = useQueryClient();
   const formId = useId();
+  const [department, setDepartment] = useState(job?.department ?? "");
   const [projectId, setProjectId] = useState(job?.projectId ?? null);
   const [title, setTitle] = useState(job?.title ?? "");
   const [requirements, setRequirements] = useState(job?.requirements ?? "");
@@ -53,7 +61,7 @@ function JobForm({
     requirements.trim().length > 0 && requirements.length <= maxJobRequirementsLength;
   const mutation = useMutation({
     mutationFn: async () => {
-      const json = { requirements, title, version: 1 as const };
+      const json = { department, requirements, title, version: 1 as const };
       return readAts(
         job
           ? await atsApi.jobs[":id"].$put({
@@ -69,10 +77,14 @@ function JobForm({
     async onSuccess() {
       await Promise.all([
         client.invalidateQueries({ queryKey: atsKeys.jobs(workspaceId).queryKey }),
+        client.invalidateQueries({ queryKey: atsKeys.projects(workspaceId)._ctx.detail._def }),
         ...(job
           ? [
               client.invalidateQueries({
                 queryKey: atsKeys.applications(workspaceId)._ctx.list._def,
+              }),
+              client.invalidateQueries({
+                queryKey: atsKeys.applications(workspaceId)._ctx.detail._def,
               }),
               client.invalidateQueries({
                 queryKey: atsKeys.resumes(workspaceId)._ctx.list._def,
@@ -111,6 +123,15 @@ function JobForm({
             onChange={(event) => setTitle(event.target.value)}
             maxLength={200}
             required
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`${formId}-department`}>{m.ats_department()}</FieldLabel>
+          <Input
+            id={`${formId}-department`}
+            maxLength={200}
+            onChange={(event) => setDepartment(event.target.value)}
+            value={department}
           />
         </Field>
         <Field>
@@ -157,11 +178,7 @@ function EditJobForm({
   onSuccess: () => void;
   workspaceId: string;
 }) {
-  const { data, isPending } = useQuery({
-    queryFn: async ({ signal }) =>
-      readAts(await atsApi.jobs[":id"].$get({ param: { id, workspaceId } }, { init: { signal } })),
-    queryKey: atsKeys.jobs(workspaceId)._ctx.detail(id).queryKey,
-  });
+  const { data, isPending } = useQuery(jobDetailsQuery(workspaceId, id));
   const phase = useSkeletonPhase(isPending);
   if (phase === "pending") {
     return null;
@@ -225,7 +242,20 @@ export function JobsPage({ workspaceId, query, onQueryChange }: AtsPageProps<Job
             {m.ats_edit()}
           </DialogTrigger>
         ),
-        cells: [row.title, row.projectTitle ?? "—", atsDate(row.createdAt)],
+        cells: [
+          row.title,
+          row.projectId && row.projectTitle ? (
+            <ProjectPreviewCard
+              key="project"
+              id={row.projectId}
+              title={row.projectTitle}
+              workspaceId={workspaceId}
+            />
+          ) : (
+            "—"
+          ),
+          atsDate(row.createdAt),
+        ],
         id: row.id,
       }))}
       empty={m.ats_empty_jobs()}

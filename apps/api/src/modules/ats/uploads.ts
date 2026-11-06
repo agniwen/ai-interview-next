@@ -6,6 +6,7 @@ import {
   resumeUploadItem as item,
 } from "@ai-interview/db/schema";
 import { and, eq } from "drizzle-orm";
+import { resumeMediaType } from "../../lib/resume-file";
 import type { ResumeObjectStore } from "./contracts";
 import { outboxEntry } from "./outbox";
 
@@ -29,7 +30,14 @@ export async function createUploadBatch(
     };
   });
   const uploads = await Promise.all(
-    items.map(async (file) => ({ id: file.id, url: await storage.signUpload(file.objectKey) })),
+    items.map(async (file) => {
+      const contentType = resumeMediaType(file.filename);
+      return {
+        contentType,
+        id: file.id,
+        url: await storage.signUpload(file.objectKey, contentType),
+      };
+    }),
   );
   await db.batch([
     db.insert(batch).values({ createdAt: new Date(), createdBy: userId, id, workspaceId }),
@@ -56,16 +64,17 @@ export async function retryUpload(
   if (!file) {
     return;
   }
+  const contentType = resumeMediaType(file.filename);
   if (file.status === "accepted") {
-    return { id, url: null, version: 1 as const };
+    return { contentType, id, url: null, version: 1 as const };
   }
 
-  const url = await storage.signUpload(file.objectKey);
+  const url = await storage.signUpload(file.objectKey, contentType);
   await db
     .update(item)
     .set({ status: "waiting" })
     .where(and(eq(item.id, id), eq(item.status, "upload_failed")));
-  return { id, url, version: 1 as const };
+  return { contentType, id, url, version: 1 as const };
 }
 
 export async function acceptUpload(

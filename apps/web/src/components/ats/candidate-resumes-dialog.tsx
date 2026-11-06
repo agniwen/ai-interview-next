@@ -22,10 +22,11 @@ import {
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
+import { CreateApplicationDialog } from "./create-application-dialog";
 import { atsKeys } from "./query-keys";
 import { atsApi, atsDate, readAts } from "./client";
 
-const resumeRowClassName = "flex w-full min-w-0 items-center gap-3 px-2 py-3 text-left";
+const resumeRowClassName = "flex min-w-0 flex-1 items-center gap-3 px-2 py-3 text-left";
 
 export function CandidateResumesDialog({
   id,
@@ -37,6 +38,7 @@ export function CandidateResumesDialog({
   workspaceId: string;
 }) {
   const preview = useMemo(() => createDialogHandle<{ filename: string; id: string }>(), []);
+  const recruitment = useMemo(() => createDialogHandle<string>(), []);
   const { data, isError, isPending, refetch } = useQuery({
     queryFn: async () =>
       readAts(await atsApi.candidates[":id"].resumes.$get({ param: { id, workspaceId } })),
@@ -97,12 +99,15 @@ export function CandidateResumesDialog({
                 </>
               );
               return (
-                <li key={row.id}>
+                <li
+                  className="flex items-center gap-2 rounded-md pe-2 transition-colors hover:bg-accent focus-within:bg-accent"
+                  key={row.id}
+                >
                   {row.uploadId ? (
                     <DialogTrigger
                       className={cn(
                         resumeRowClassName,
-                        "cursor-pointer rounded-md transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                        "cursor-pointer rounded-md focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
                       )}
                       handle={preview}
                       payload={{ filename, id: row.uploadId }}
@@ -112,12 +117,22 @@ export function CandidateResumesDialog({
                   ) : (
                     <div className={resumeRowClassName}>{content}</div>
                   )}
+                  {row.canJoinRecruitment && (
+                    <DialogTrigger
+                      handle={recruitment}
+                      payload={row.id}
+                      render={<Button className="shrink-0" size="sm" variant="outline" />}
+                    >
+                      {m.ats_join_recruitment()}
+                    </DialogTrigger>
+                  )}
                 </li>
               );
             })}
           </ul>
         )}
       </DialogPanel>
+      <CreateApplicationDialog handle={recruitment} workspaceId={workspaceId} />
       <Dialog handle={preview}>
         {({ payload }) =>
           payload && (

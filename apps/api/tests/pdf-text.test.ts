@@ -54,4 +54,35 @@ describe("Vercel AI Gateway PDF text extraction", () => {
     await expect(extractPdfText(pdf)).rejects.toThrow("Rate limit exceeded");
     expect(fetchPdf).toHaveBeenCalledTimes(1);
   });
+
+  it("sends an image resume to OCR with its image media type", async () => {
+    const image = Uint8Array.of(0xff, 0xd8, 0xff);
+    const fetchImage = vi.fn<typeof fetch>(async (url, init) => {
+      expect(await new Request(url, init).json()).toMatchObject({
+        prompt: [
+          {
+            content: [
+              {
+                data: { data: "/9j/", type: "data" },
+                mediaType: "image/jpeg",
+                type: "file",
+              },
+              { text: expect.stringContaining("Transcribe all visible text"), type: "text" },
+            ],
+            role: "user",
+          },
+        ],
+      });
+      return Response.json({
+        content: [{ text: "# Resume", type: "text" }],
+        finishReason: { raw: "STOP", unified: "stop" },
+        usage: {
+          inputTokens: { noCache: 10, total: 10 },
+          outputTokens: { text: 8, total: 8 },
+        },
+      });
+    });
+    const extract = createVercelGatewayPdfTextExtractor({ apiKey, fetch: fetchImage });
+    await expect(extract(image, "image/jpeg")).resolves.toEqual({ text: "# Resume" });
+  });
 });

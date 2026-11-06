@@ -2,16 +2,17 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { IconCheck, IconCopy } from "@tabler/icons-react";
 
 const codeBlockVariants = cva(
-  "group/code-block relative flex w-full min-w-0 flex-col overflow-hidden rounded-lg text-sm has-[>[data-slot=code-block-content]:focus-visible]:ring-3 has-[>[data-slot=code-block-content]:focus-visible]:ring-ring/50 data-[size=sm]:text-xs",
+  "group/code-block relative flex w-full min-w-0 flex-col overflow-hidden rounded-lg text-sm has-[[data-slot=code-block-content]:focus-visible]:ring-3 has-[[data-slot=code-block-content]:focus-visible]:ring-ring/50 data-[size=sm]:text-xs",
   {
     variants: {
       variant: {
         default:
-          "border border-input bg-background text-foreground shadow-xs/5 has-[>[data-slot=code-block-content]:focus-visible]:border-ring",
+          "border border-input bg-background text-foreground shadow-xs/5 has-[[data-slot=code-block-content]:focus-visible]:border-ring",
         destructive: "border border-destructive/36 bg-destructive/4 text-destructive-foreground",
       },
     },
@@ -146,31 +147,33 @@ function CodeBlockContent({
   startLine?: number;
 }) {
   return (
-    <pre
-      data-slot="code-block-content"
-      data-wrap={wrap || undefined}
-      data-numbered={lineNumbers || undefined}
-      dir="ltr"
-      tabIndex={0}
-      style={{ counterReset: `line ${startLine - 1}`, ...style }}
-      className={cn(
-        "min-h-0 min-w-0 [scrollbar-width:thin] overflow-auto px-3 py-3 text-start font-mono leading-relaxed outline-none group-has-data-[slot=code-block-footer]/code-block:pb-2 group-has-data-[slot=code-block-header]/code-block:pt-2 group-data-[size=sm]/code-block:px-2.5 group-data-[size=sm]/code-block:py-2.5 group-data-[size=sm]/code-block:group-has-data-[slot=code-block-header]/code-block:pt-1.5 data-wrap:wrap-break-word data-wrap:whitespace-pre-wrap",
-        className,
-      )}
-      {...props}
-    >
-      <code
-        data-slot="code-block-code"
-        className="grid min-h-lh min-w-max content-start in-data-numbered:grid-cols-[auto_1fr] in-data-wrap:min-w-0"
+    <ScrollArea className="h-auto min-w-0">
+      <pre
+        data-slot="code-block-content"
+        data-wrap={wrap || undefined}
+        data-numbered={lineNumbers || undefined}
+        dir="ltr"
+        tabIndex={0}
+        style={{ counterReset: `line ${startLine - 1}`, ...style }}
+        className={cn(
+          "min-h-0 min-w-0 px-3 py-3 text-start font-mono leading-relaxed outline-none group-has-data-[slot=code-block-footer]/code-block:pb-2 group-has-data-[slot=code-block-header]/code-block:pt-2 group-data-[size=sm]/code-block:px-2.5 group-data-[size=sm]/code-block:py-2.5 group-data-[size=sm]/code-block:group-has-data-[slot=code-block-header]/code-block:pt-1.5 data-wrap:wrap-break-word data-wrap:whitespace-pre-wrap",
+          className,
+        )}
+        {...props}
       >
-        {lineNumbers && typeof children === "string"
-          ? children
-              .replace(/\n$/, "")
-              .split("\n")
-              .map((line, index) => <CodeBlockLine key={index}>{line}</CodeBlockLine>)
-          : children}
-      </code>
-    </pre>
+        <code
+          data-slot="code-block-code"
+          className="grid min-h-lh min-w-max content-start in-data-numbered:grid-cols-[auto_1fr] in-data-wrap:min-w-0"
+        >
+          {lineNumbers && typeof children === "string"
+            ? children
+                .replace(/\n$/, "")
+                .split("\n")
+                .map((line, index) => <CodeBlockLine key={index}>{line}</CodeBlockLine>)
+            : children}
+        </code>
+      </pre>
+    </ScrollArea>
   );
 }
 

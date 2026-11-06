@@ -6,15 +6,21 @@ import {
   member,
   recruitmentProject,
   resume,
+  resumeProcessingAttempt,
   resumeProcessingRun,
   resumeSubmission,
   resumeUploadBatch,
   resumeUploadItem,
 } from "@ai-interview/db/schema";
 import { makeSignature } from "better-auth/crypto";
+import { eq } from "drizzle-orm";
+import { PNG } from "pngjs";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { app } from "../src/app";
 import type { ApiBindings } from "../src/env";
+import { cropResumePortrait } from "../src/lib/resume-avatar";
+import { consumeResumeStage } from "../src/modules/ats/stages";
+import { resumeObjectStore } from "../src/modules/ats/storage";
 import { getAuth } from "../src/modules/auth/auth";
 import { createTestDatabase } from "./database";
 
@@ -66,6 +72,94 @@ async function account(email: string) {
   return { ats, call, request, userId: user.id, workspaceId };
 }
 
+it("links a cropped image resume avatar from the OCR stage and serves it only in its workspace", async () => {
+  const owner = await account("resume-avatar@example.com");
+  const outsider = await account("resume-avatar-outsider@example.com");
+  const image = new PNG({ height: 8, width: 8 });
+  image.data.fill(255);
+  const bytes = PNG.sync.write(image);
+  const created = await read(
+    owner.ats("uploads", {
+      files: [{ filename: "resume.png", size: bytes.byteLength }],
+      version: 1,
+    }),
+  );
+  const [upload] = created.uploads;
+  expect(upload.contentType).toBe("image/png");
+  const uploaded = await owner.request(upload.url, {
+    body: new Uint8Array(bytes),
+    headers: { "content-type": upload.contentType },
+    method: "PUT",
+  });
+  expect(uploaded.status).toBe(204);
+  const accepted = await owner.ats(`uploads/${upload.id}/confirm`, {});
+  expect(accepted.status).toBe(202);
+  const { runId } = await accepted.json();
+  const item = await platform.database
+    .select()
+    .from(resumeUploadItem)
+    .where(eq(resumeUploadItem.id, upload.id))
+    .get();
+  const storage = resumeObjectStore(env);
+  expect(await storage.read(item?.objectKey ?? "")).toEqual(new Uint8Array(bytes));
+  const attemptId = `avatar-test-${runId}`;
+  await platform.database.insert(resumeProcessingAttempt).values({
+    createdAt: new Date(),
+    executionId: runId,
+    id: attemptId,
+    ordinal: 1,
+    runId,
+    stage: "extract_text",
+    status: "queued",
+  });
+  const parameters = { model: "test", promptVersion: 1, timeoutMs: 1000 };
+  await consumeResumeStage(
+    platform.database,
+    {
+      avatarParameters: { ...parameters, version: 1 },
+      evaluate: () => Promise.reject(new Error("Unexpected evaluation")),
+      evaluateParameters: parameters,
+      extract: () => (file, mediaType) => {
+        expect(file).toEqual(new Uint8Array(bytes));
+        expect(mediaType).toBe("image/png");
+        return Promise.resolve({ text: "# Resume" });
+      },
+      extractAvatar: (file, mediaType) => {
+        expect(mediaType).toBe("image/png");
+        return Promise.resolve(
+          cropResumePortrait(file, "image/png", {
+            bottom: 0.75,
+            left: 0.5,
+            right: 1,
+            top: 0.25,
+          }),
+        );
+      },
+      extractParameters: parameters,
+      storage,
+      structure: () => () => Promise.reject(new Error("Unexpected structuring")),
+      structureParameters: parameters,
+    },
+    { attemptId, runId, version: 1 },
+  );
+  const record = await platform.database.select().from(resume).where(eq(resume.id, runId)).get();
+  expect(record).toMatchObject({ avatarObjectKey: expect.any(String), markdown: "# Resume" });
+  expect(await read(owner.ats("resumes"))).toMatchObject({
+    rows: [{ candidateAvatarResumeId: runId, id: upload.id }],
+  });
+  expect(await read(owner.ats(`uploads/${upload.id}/profile`))).toMatchObject({
+    hasAvatar: true,
+    resumeId: runId,
+  });
+  const avatar = await owner.ats(`resumes/${runId}/avatar`);
+  expect(avatar.status).toBe(200);
+  expect(avatar.headers.get("content-type")).toBe("image/png");
+  const crop = PNG.sync.read(Buffer.from(await avatar.arrayBuffer()));
+  expect(crop).toMatchObject({ height: 4, width: 4 });
+  const privateAvatar = await outsider.call(`ats/${owner.workspaceId}/resumes/${runId}/avatar`);
+  expect(privateAvatar.status).toBe(404);
+});
+
 it("retries one failed upload in its original batch while other files enter processing", async () => {
   const owner = await account("upload-retry@example.com");
   const outsider = await account("upload-retry-outsider@example.com");
@@ -95,13 +189,19 @@ it("retries one failed upload in its original batch while other files enter proc
   const forbidden = await outsider.call(`ats/${owner.workspaceId}/uploads/${second.id}/retry`, {});
   expect(forbidden.status).toBe(404);
   expect(await read(owner.ats(`uploads/${first.id}/retry`, {}))).toEqual({
+    contentType: "application/pdf",
     id: first.id,
     url: null,
     version: 1,
   });
 
   const retry = await read(owner.ats(`uploads/${second.id}/retry`, {}));
-  expect(retry).toEqual({ id: second.id, url: second.url, version: 1 });
+  expect(retry).toEqual({
+    contentType: "application/pdf",
+    id: second.id,
+    url: second.url,
+    version: 1,
+  });
   const retried = await put(retry.url);
   expect(retried.status).toBe(204);
   const confirmed = await owner.ats(`uploads/${second.id}/confirm`, {});
@@ -205,7 +305,7 @@ it("lists projects by page and filters recruitment records by the job's project"
   ).toMatchObject({ page: 1, pageSize: 1, rows: [{ id: linkedJobId }], total: 1 });
   expect(
     await read(
-      owner.ats(`applications?search=candidate&status=open&pageSize=1&projectId=${projectId}`),
+      owner.ats(`applications?search=engineer&status=open&pageSize=1&projectId=${projectId}`),
     ),
   ).toMatchObject({ rows: [{ id: applicationId }], total: 1 });
   expect(await read(owner.ats("applications?search=engineer&status=closed"))).toMatchObject({
@@ -235,6 +335,7 @@ it("lists projects by page and filters recruitment records by the job's project"
   await platform.database.batch([
     platform.database.insert(resume).values(
       profiles.map(({ name }, index) => ({
+        avatarObjectKey: `avatars/${index}.png`,
         candidateId,
         createdAt: new Date(index),
         id: name,
@@ -255,6 +356,20 @@ it("lists projects by page and filters recruitment records by the job's project"
       })),
     ),
   ]);
+  expect(await read(owner.ats("applications?search=latest"))).toMatchObject({
+    rows: [
+      {
+        candidateAvatarResumeId: "Latest available resume",
+        candidateName: "Latest available resume",
+        id: applicationId,
+      },
+    ],
+    total: 1,
+  });
+  expect(await read(owner.ats("applications?search=candidate"))).toMatchObject({
+    rows: [],
+    total: 0,
+  });
   const detailPath = `applications/${applicationId}`;
   const detail = await owner.ats(detailPath);
   expect(detail.status).toBe(200);
@@ -262,10 +377,11 @@ it("lists projects by page and filters recruitment records by the job's project"
     activity: [],
     application: {
       canDelete: false,
-      candidateName: "Candidate",
+      candidateName: "Latest available resume",
       closedAt: null,
       creator: null,
       id: applicationId,
+      jobId: linkedJobId,
       jobTitle: "Engineer",
       projectTitle: "Graduate hiring",
     },
@@ -319,7 +435,7 @@ it("records the signed-in creator, shows the associated resume, and only allows 
       createdAt,
       id: resumeId,
       parseStatus: "succeeded",
-      parsedProfile: { identity: { name: "Candidate" }, version: 1 },
+      parsedProfile: { identity: { name: "Name on Resume" }, version: 1 },
       pdfObjectKey: resumeId,
       sha256: resumeId,
       workspaceId,
@@ -362,6 +478,12 @@ it("records the signed-in creator, shows the associated resume, and only allows 
   ]);
 
   const applicationInput = { jobId, resumeId, version: 1 };
+  expect(await read(ats(`candidates/${candidateId}/resumes`))).toMatchObject({
+    rows: [{ canJoinRecruitment: true, id: resumeId, uploadId: resumeId }],
+  });
+  expect(await read(ats("applications/resume-options?search=name%20on%20resume"))).toMatchObject({
+    rows: [{ candidateName: "Name on Resume", id: resumeId }],
+  });
   const created = await ats("applications", applicationInput);
   expect(created.status).toBe(201);
   const { applicationId } = await created.json();
@@ -374,7 +496,7 @@ it("records the signed-in creator, shows the associated resume, and only allows 
     activity: [{ action: "created", actorId: userId, actorName: email, actorType: "user" }],
     application: {
       canDelete: true,
-      candidateName: "Candidate",
+      candidateName: "Name on Resume",
       creator: { actorId: userId, actorName: email, actorType: "user" },
     },
     resume: { filename, id: resumeId, uploadId: resumeId },
@@ -414,10 +536,20 @@ it("records the signed-in creator, shows the associated resume, and only allows 
 it("edits projects and jobs within the workspace and can unlink a job", async () => {
   const owner = await account("ats-edit@example.com");
   const other = await account("ats-edit-other@example.com");
-  const projectInput = { title: "First project", version: 1 };
+  const projectInput = {
+    description: "## Goals\n\n- Hire engineers",
+    title: "First project",
+    version: 1,
+  };
   const { id: projectId } = await read(owner.ats("projects", projectInput));
   const { id: otherProjectId } = await read(other.ats("projects", projectInput));
-  const jobInput = { projectId, requirements: "Original JD", title: "Engineer", version: 1 };
+  const jobInput = {
+    department: "Engineering",
+    projectId,
+    requirements: "Original JD",
+    title: "Engineer",
+    version: 1,
+  };
   const { id: jobId } = await read(owner.ats("jobs", jobInput));
   const put = (path: string, body: object) =>
     owner.request(`ats/${owner.workspaceId}/${path}`, {
@@ -428,10 +560,11 @@ it("edits projects and jobs within the workspace and can unlink a job", async ()
 
   const projectPath = `projects/${projectId}`;
   const jobPath = `jobs/${jobId}`;
-  const newProject = { title: "Renamed project", version: 1 };
+  const newProject = { description: "**Updated** project", title: "Renamed project", version: 1 };
   const newJob = {
+    department: " ",
     projectId: null,
-    requirements: "Updated JD",
+    requirements: "## Responsibilities\n\n- Build features",
     title: "Senior engineer",
     version: 1,
   };
@@ -443,7 +576,24 @@ it("edits projects and jobs within the workspace and can unlink a job", async ()
   expect([outsideJob.status, outsideProjectLink.status, outsideProject.status]).toEqual([
     404, 404, 404,
   ]);
-  expect(await read(owner.ats(jobPath))).toEqual({ id: jobId, ...jobInput });
+  expect(await read(owner.ats(jobPath))).toEqual({
+    id: jobId,
+    ...jobInput,
+    projectTitle: projectInput.title,
+  });
+
+  expect(await read(owner.ats(projectPath))).toMatchObject({
+    createdAt: expect.any(String),
+    description: projectInput.description,
+    id: projectId,
+    jobCount: 1,
+    title: projectInput.title,
+    version: 1,
+  });
+  const outsidePreview = await other.ats(projectPath);
+  const missingPreview = await owner.ats("projects/missing-project");
+  expect(outsidePreview.status).toBe(404);
+  expect(missingPreview.status).toBe(404);
 
   const updatedProject = await put(projectPath, newProject);
   expect(updatedProject.status).toBe(200);
@@ -453,10 +603,29 @@ it("edits projects and jobs within the workspace and can unlink a job", async ()
   expect(await read(owner.ats("jobs"))).toMatchObject({
     rows: [{ id: jobId, projectTitle: newProject.title }],
   });
+  expect(await read(owner.ats(jobPath))).toMatchObject({ projectTitle: newProject.title });
+  expect(await read(owner.ats(projectPath))).toMatchObject({
+    description: newProject.description,
+    jobCount: 1,
+    title: newProject.title,
+  });
+
+  await put(projectPath, { title: newProject.title, version: 1 });
+  expect(await read(owner.ats(projectPath))).toMatchObject({ description: newProject.description });
+  const tooLong = await put(projectPath, { ...newProject, description: "x".repeat(30_001) });
+  expect(tooLong.status).toBe(400);
+  await put(projectPath, { ...newProject, description: "" });
+  expect(await read(owner.ats(projectPath))).toMatchObject({ description: "" });
 
   const updatedJob = await put(jobPath, newJob);
   expect(updatedJob.status).toBe(200);
-  expect(await read(owner.ats(jobPath))).toEqual({ id: jobId, ...newJob });
+  expect(await read(owner.ats(jobPath))).toEqual({
+    id: jobId,
+    ...newJob,
+    department: null,
+    projectTitle: null,
+  });
+  expect(await read(owner.ats(projectPath))).toMatchObject({ jobCount: 0 });
   expect(await read(owner.ats(`jobs?projectId=${projectId}`))).toMatchObject({
     rows: [],
     total: 0,
@@ -551,7 +720,13 @@ it("shows and searches the extracted candidate name until identity is confirmed"
     }),
   ]);
   expect(await read(ats("resumes?search=extracted"))).toMatchObject({
-    rows: [{ candidateName: "Extracted Name", identityStatus: "pending_review" }],
+    rows: [
+      {
+        candidateAvatarResumeId: null,
+        candidateName: "Extracted Name",
+        identityStatus: "pending_review",
+      },
+    ],
     total: 1,
   });
   const confirmed = await ats(`submissions/${resumeId}/resolve`, {
@@ -559,8 +734,9 @@ it("shows and searches the extracted candidate name until identity is confirmed"
     version: 1,
   });
   expect(confirmed.status).toBe(200);
-  expect(await read(ats("resumes?search=confirmed"))).toMatchObject({
-    rows: [{ candidateName: "Confirmed Name", identityStatus: "resolved" }],
+  expect(await read(ats("resumes?search=extracted"))).toMatchObject({
+    rows: [{ candidateName: "Extracted Name", identityStatus: "resolved" }],
     total: 1,
   });
+  expect(await read(ats("resumes?search=confirmed"))).toMatchObject({ rows: [], total: 0 });
 });

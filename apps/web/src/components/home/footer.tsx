@@ -38,14 +38,14 @@ export function HomeFooter() {
             <Button
               variant="ghost"
               className="h-auto justify-start p-0"
-              render={<Link to="/sign-in" />}
+              render={<Link to="/workspaces" search={{ destination: "agent" }} />}
             >
               {m.home_hero_resume_cta()}
             </Button>
             <Button
               variant="ghost"
               className="h-auto justify-start p-0"
-              render={<Link to="/sign-in" />}
+              render={<Link to="/workspaces" search={{ destination: "hub" }} />}
             >
               {m.home_hero_workbench_cta()}
             </Button>

@@ -24,6 +24,7 @@ import { MarkdownEditorSkeleton } from "@/components/skeletons/components/markdo
 import { Button } from "@/components/ui/button";
 import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 
@@ -174,12 +175,12 @@ function FormatControls({ editor, disabled }: { editor: Editor; disabled: boolea
 }
 
 const contentClassName = cn(
-  "min-h-44 max-h-80 overflow-y-auto px-3.5 py-3 text-base/7 wrap-anywhere outline-none sm:text-sm/6",
+  "min-h-44 px-3.5 py-3 text-base/7 wrap-anywhere outline-none sm:text-sm/6",
   "[&>*+*]:mt-2 [&>h1]:font-heading [&>h1]:text-xl [&>h2]:font-heading [&>h2]:text-lg [&>h3]:text-base [&>:is(h1,h2,h3)]:font-semibold [&>:is(h1,h2,h3):not(:first-child)]:mt-4",
   "[&_ul]:list-disc [&_ol]:list-decimal [&_:is(ul,ol)]:ps-6 [&_li+li]:mt-0.5 [&_li>:is(ul,ol)]:mt-0.5",
   "[&_blockquote]:border-s-2 [&_blockquote]:border-border [&_blockquote]:ps-3 [&_blockquote]:text-muted-foreground [&_hr]:border-border",
   "[&_a]:underline [&_a]:underline-offset-3 [&_code]:rounded-sm [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em]",
-  "[&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0",
+  "[&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0",
   "[&_.is-editor-empty:first-child]:before:pointer-events-none [&_.is-editor-empty:first-child]:before:float-start [&_.is-editor-empty:first-child]:before:h-0 [&_.is-editor-empty:first-child]:before:text-muted-foreground/75 [&_.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]",
 );
 
@@ -314,24 +315,26 @@ export function MarkdownEditor({
           </SegmentedControlItem>
         </SegmentedControl>
       </div>
-      {source ? (
-        <Textarea
-          unstyled
-          id={editorId}
-          aria-label={label}
-          aria-labelledby={labelledBy}
-          aria-describedby={maxLength === undefined ? undefined : countId}
-          aria-invalid={overLimit}
-          aria-required={required}
-          readOnly={disabled}
-          className="block [&_textarea]:block [&_textarea]:min-h-44 [&_textarea]:max-h-80 [&_textarea]:resize-none [&_textarea]:px-3.5 [&_textarea]:py-3 [&_textarea]:font-mono [&_textarea]:text-base/7 sm:[&_textarea]:text-sm/6"
-          placeholder={placeholder}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      ) : (
-        <EditorContent editor={editor} />
-      )}
+      <ScrollArea className="h-auto" viewportClassName="max-h-80" overscrollContain>
+        {source ? (
+          <Textarea
+            unstyled
+            id={editorId}
+            aria-label={label}
+            aria-labelledby={labelledBy}
+            aria-describedby={maxLength === undefined ? undefined : countId}
+            aria-invalid={overLimit}
+            aria-required={required}
+            readOnly={disabled}
+            className="block [&_textarea]:block [&_textarea]:min-h-44 [&_textarea]:resize-none [&_textarea]:px-3.5 [&_textarea]:py-3 [&_textarea]:font-mono [&_textarea]:text-base/7 sm:[&_textarea]:text-sm/6"
+            placeholder={placeholder}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+          />
+        ) : (
+          <EditorContent editor={editor} />
+        )}
+      </ScrollArea>
       {maxLength !== undefined && (
         <div
           id={countId}
