@@ -2,6 +2,7 @@ import { createClientOnlyFn } from "@tanstack/react-start";
 import { lazy, Suspense, useState } from "react";
 import type { ReactNode } from "react";
 import { atsApi } from "@/components/ats/client";
+import { ReparseResumeButton } from "@/components/ats/reparse-resume-button";
 import { DocumentPreviewSkeleton } from "@/components/skeletons/components/document-preview-skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
@@ -33,7 +34,16 @@ export function ResumePreviewDialog({
   const [zoomTarget, setZoomTarget] = useState<HTMLDivElement | null>(null);
 
   return (
-    <DocumentPreviewDialog actions={actions} downloadUrl={url} filename={filename}>
+    <DocumentPreviewDialog
+      actions={
+        <>
+          <ReparseResumeButton id={id} workspaceId={workspaceId} />
+          {actions}
+        </>
+      }
+      downloadUrl={url}
+      filename={filename}
+    >
       <Tabs
         className="min-h-0 flex-1 gap-0 [--preview-controls-height:--spacing(9)]"
         onValueChange={(value) => setView(String(value))}

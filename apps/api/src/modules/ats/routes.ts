@@ -48,6 +48,7 @@ import {
   acceptUpload,
   createUploadBatch,
   findUploadItem,
+  reparseResume,
   retryResumeRun,
   retryUpload,
 } from "./uploads";
@@ -440,6 +441,15 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     }
     c.executionCtx.waitUntil(flushResumeOutbox(c.env, db, id));
     return c.json({ version: 1 as const }, 202);
+  })
+  .post("/:workspaceId/uploads/:id/reparse", async (c) => {
+    const db = c.get("database");
+    const result = await reparseResume(db, c.get("workspaceId"), c.req.param("id"));
+    if (!result) {
+      return c.json({ error: "RESUME_NOT_REPARSABLE", version: 1 as const }, 409);
+    }
+    c.executionCtx.waitUntil(flushResumeOutbox(c.env, db, result.runId));
+    return c.json(result, 202);
   })
   .post(
     "/:workspaceId/submissions/:id/match",

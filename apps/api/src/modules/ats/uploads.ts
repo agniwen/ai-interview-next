@@ -1,11 +1,12 @@
 import type { Database } from "@ai-interview/db";
 import {
+  resume,
   resumeProcessingOutbox as outbox,
   resumeProcessingRun as run,
   resumeUploadBatch as batch,
   resumeUploadItem as item,
 } from "@ai-interview/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { resumeMediaType } from "../../lib/resume-file";
 import type { ResumeObjectStore } from "./contracts";
 import { outboxEntry } from "./outbox";
@@ -132,4 +133,38 @@ export async function retryResumeRun(db: Database, workspaceId: string, runId: s
     db.insert(outbox).values(outboxEntry("start", runId, executionId)),
   ]);
   return true;
+}
+
+export async function reparseResume(db: Database, workspaceId: string, uploadId: string) {
+  const entry = await db
+    .select({ id: run.id, resumeId: run.resumeId })
+    .from(item)
+    .innerJoin(run, and(eq(run.id, item.runId), eq(run.workspaceId, item.workspaceId)))
+    .where(
+      and(
+        eq(item.workspaceId, workspaceId),
+        eq(item.id, uploadId),
+        eq(item.status, "accepted"),
+        eq(run.kind, "parse"),
+        inArray(run.status, ["succeeded", "failed", "skipped"]),
+      ),
+    )
+    .get();
+  if (!entry) {
+    return null;
+  }
+  const executionId = crypto.randomUUID();
+  await db.batch([
+    db
+      .update(run)
+      .set({ executionId, stage: "extract_text", status: "queued" })
+      .where(eq(run.id, entry.id)),
+    // 重置去重状态，确保本次从原件重新 OCR，旧产物保留至新结果写入。 / Reset deduplication state to rerun OCR from the original, retaining artifacts until replaced.
+    db
+      .update(resume)
+      .set({ parseStatus: "pending" })
+      .where(eq(resume.id, entry.resumeId ?? "")),
+    db.insert(outbox).values(outboxEntry("start", entry.id, executionId)),
+  ]);
+  return { runId: entry.id, version: 1 as const };
 }

@@ -464,5 +464,9 @@
   "markdown_visual": "Visual",
   "markdown_source_hint": "Edit Markdown source",
   "markdown_character_count": "{count} / {max} characters",
-  "markdown_loading": "Loading editor"
+  "markdown_loading": "Loading editor",
+  "resume_reparse": "Reparse",
+  "resume_reparsing": "Parsing",
+  "resume_reparse_started": "Queued for reparsing from OCR",
+  "resume_reparse_error": "Could not reparse. Please try again."
 }

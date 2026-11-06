@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useTransition } from "react";
 import type { ComponentProps, ReactNode } from "react";
+import { Skeleton } from "skullet/react";
 import { IconFolder, IconRefresh } from "@tabler/icons-react";
 import type { Icon } from "@tabler/icons-react";
 import { PageHeader, PageHeaderContent } from "@/components/layout/page-header";
@@ -74,17 +75,22 @@ function renderTableViewport({ children, className, ...props }: ComponentProps<"
   );
 }
 
-function AtsTable({
+export function AtsTable({
   firstColumnClassName,
   hasRowActions,
   headings,
+  loading = false,
   rows,
 }: {
   firstColumnClassName?: string;
   hasRowActions?: boolean;
   headings: string[];
   rows: AtsRows;
+  loading?: boolean;
 }) {
+  // 在单元格内测量，避免表体被识别为整块、固定列遮住覆盖层。 / Measure inside cells so the body is not one block and pinned cells do not cover the overlay.
+  const renderCell = (content: ReactNode) =>
+    loading ? <Skeleton loading>{content}</Skeleton> : content;
   return (
     <Frame className={cn("w-full", tableHeaderSurface)}>
       <ScrollAreaPrimitive.Root
@@ -96,12 +102,12 @@ function AtsTable({
             <TableRow>
               {headings.map((heading, index) => (
                 <TableHead className={index === 0 ? firstColumnClassName : undefined} key={heading}>
-                  {heading}
+                  {renderCell(heading)}
                 </TableHead>
               ))}
               {hasRowActions && (
                 <TableHead className={cn(actionColumnClassName, tableHeaderSurface)} scope="col">
-                  {m.ats_action()}
+                  {renderCell(m.ats_action())}
                 </TableHead>
               )}
             </TableRow>
@@ -110,11 +116,11 @@ function AtsTable({
             {rows.map((row, rowIndex) => (
               <TableRow key={row.id}>
                 {row.cells.map((cell, index) => (
-                  <TableCell key={headings[index]}>{cell}</TableCell>
+                  <TableCell key={headings[index]}>{renderCell(cell)}</TableCell>
                 ))}
                 {hasRowActions && (
                   <TableCell className={cn(actionColumnClassName, "bg-clip-border")}>
-                    {row.action}
+                    {renderCell(row.action)}
                     {rowIndex === 0 && (
                       <span
                         aria-hidden="true"
@@ -264,6 +270,7 @@ export function AtsListPage({
               firstColumnClassName={firstColumnClassName}
               hasRowActions={hasRowActions}
               headings={headings}
+              loading
               rows={Array.from({ length: 5 }, (_, index) => ({
                 action: sampleRowAction,
                 cells: headings,

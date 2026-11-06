@@ -464,5 +464,9 @@
   "markdown_visual": "可视化",
   "markdown_source_hint": "编辑 Markdown 源码",
   "markdown_character_count": "{count} / {max} 字符",
-  "markdown_loading": "正在加载编辑器"
+  "markdown_loading": "正在加载编辑器",
+  "resume_reparse": "重新解析",
+  "resume_reparsing": "解析中",
+  "resume_reparse_started": "已加入解析队列，将从 OCR 开始重新解析",
+  "resume_reparse_error": "无法重新解析，请稍后重试"
 }

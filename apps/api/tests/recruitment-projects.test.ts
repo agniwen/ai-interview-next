@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import {
   application,
   applicationResume,
@@ -6,159 +5,14 @@ import {
   member,
   recruitmentProject,
   resume,
-  resumeProcessingAttempt,
   resumeProcessingRun,
   resumeSubmission,
   resumeUploadBatch,
   resumeUploadItem,
 } from "@ai-interview/db/schema";
-import { makeSignature } from "better-auth/crypto";
-import { eq } from "drizzle-orm";
-import { PNG } from "pngjs";
-import { afterAll, beforeAll, expect, it } from "vitest";
-import { app } from "../src/app";
-import type { ApiBindings } from "../src/env";
-import { cropResumePortrait } from "../src/lib/resume-avatar";
-import { consumeResumeStage } from "../src/modules/ats/stages";
-import { resumeObjectStore } from "../src/modules/ats/storage";
-import { getAuth } from "../src/modules/auth/auth";
-import { createTestDatabase } from "./database";
 
-const origin = "https://sainoa.example";
-const secret = randomBytes(32).toString("hex");
-let platform: Awaited<ReturnType<typeof createTestDatabase>>;
-let env: ApiBindings;
-
-beforeAll(async () => {
-  platform = await createTestDatabase();
-  env = {
-    ...platform.env,
-    BETTER_AUTH_SECRET: secret,
-    BETTER_AUTH_URL: origin,
-    GOOGLE_CLIENT_ID: "test.apps.googleusercontent.com",
-    GOOGLE_CLIENT_SECRET: "test-secret",
-  };
-});
-
-afterAll(() => platform.dispose());
-
-async function read(request: Promise<Response> | Response) {
-  const response = await request;
-  return response.json();
-}
-
-async function account(email: string) {
-  const context = await getAuth(env).$context;
-  const user = await context.internalAdapter.createUser(
-    { email, emailVerified: true, name: email },
-    { method: "oauth" },
-  );
-  const session = await context.internalAdapter.createSession(user.id, false);
-  const cookie = `${context.authCookies.sessionToken.name}=${encodeURIComponent(`${session.token}.${await makeSignature(session.token, secret)}`)}`;
-  const request = (path: string, init: RequestInit) => {
-    const headers = new Headers(init.headers);
-    headers.set("cookie", cookie);
-    headers.set("origin", origin);
-    return app.request(new URL(path, `${origin}/api/`), { ...init, headers }, env, platform.ctx);
-  };
-  const call = (path: string, body?: object) =>
-    request(path, {
-      body: body ? JSON.stringify(body) : undefined,
-      headers: { "content-type": "application/json" },
-      method: body ? "POST" : "GET",
-    });
-  const { lastWorkspaceId: workspaceId } = await read(call("workspaces"));
-  const ats = (path: string, body?: object) => call(`ats/${workspaceId}/${path}`, body);
-  return { ats, call, request, userId: user.id, workspaceId };
-}
-
-it("links a cropped image resume avatar from the OCR stage and serves it only in its workspace", async () => {
-  const owner = await account("resume-avatar@example.com");
-  const outsider = await account("resume-avatar-outsider@example.com");
-  const image = new PNG({ height: 8, width: 8 });
-  image.data.fill(255);
-  const bytes = PNG.sync.write(image);
-  const created = await read(
-    owner.ats("uploads", {
-      files: [{ filename: "resume.png", size: bytes.byteLength }],
-      version: 1,
-    }),
-  );
-  const [upload] = created.uploads;
-  expect(upload.contentType).toBe("image/png");
-  const uploaded = await owner.request(upload.url, {
-    body: new Uint8Array(bytes),
-    headers: { "content-type": upload.contentType },
-    method: "PUT",
-  });
-  expect(uploaded.status).toBe(204);
-  const accepted = await owner.ats(`uploads/${upload.id}/confirm`, {});
-  expect(accepted.status).toBe(202);
-  const { runId } = await accepted.json();
-  const item = await platform.database
-    .select()
-    .from(resumeUploadItem)
-    .where(eq(resumeUploadItem.id, upload.id))
-    .get();
-  const storage = resumeObjectStore(env);
-  expect(await storage.read(item?.objectKey ?? "")).toEqual(new Uint8Array(bytes));
-  const attemptId = `avatar-test-${runId}`;
-  await platform.database.insert(resumeProcessingAttempt).values({
-    createdAt: new Date(),
-    executionId: runId,
-    id: attemptId,
-    ordinal: 1,
-    runId,
-    stage: "extract_text",
-    status: "queued",
-  });
-  const parameters = { model: "test", promptVersion: 1, timeoutMs: 1000 };
-  await consumeResumeStage(
-    platform.database,
-    {
-      avatarParameters: { ...parameters, version: 1 },
-      evaluate: () => Promise.reject(new Error("Unexpected evaluation")),
-      evaluateParameters: parameters,
-      extract: () => (file, mediaType) => {
-        expect(file).toEqual(new Uint8Array(bytes));
-        expect(mediaType).toBe("image/png");
-        return Promise.resolve({ text: "# Resume" });
-      },
-      extractAvatar: (file, mediaType) => {
-        expect(mediaType).toBe("image/png");
-        return Promise.resolve(
-          cropResumePortrait(file, "image/png", {
-            bottom: 0.75,
-            left: 0.5,
-            right: 1,
-            top: 0.25,
-          }),
-        );
-      },
-      extractParameters: parameters,
-      storage,
-      structure: () => () => Promise.reject(new Error("Unexpected structuring")),
-      structureParameters: parameters,
-    },
-    { attemptId, runId, version: 1 },
-  );
-  const record = await platform.database.select().from(resume).where(eq(resume.id, runId)).get();
-  expect(record).toMatchObject({ avatarObjectKey: expect.any(String), markdown: "# Resume" });
-  expect(await read(owner.ats("resumes"))).toMatchObject({
-    rows: [{ candidateAvatarResumeId: runId, id: upload.id }],
-  });
-  expect(await read(owner.ats(`uploads/${upload.id}/profile`))).toMatchObject({
-    hasAvatar: true,
-    resumeId: runId,
-  });
-  const avatar = await owner.ats(`resumes/${runId}/avatar`);
-  expect(avatar.status).toBe(200);
-  expect(avatar.headers.get("content-type")).toBe("image/png");
-  const crop = PNG.sync.read(Buffer.from(await avatar.arrayBuffer()));
-  expect(crop).toMatchObject({ height: 4, width: 4 });
-  const privateAvatar = await outsider.call(`ats/${owner.workspaceId}/resumes/${runId}/avatar`);
-  expect(privateAvatar.status).toBe(404);
-});
+import { expect, it } from "vitest";
+import { account, atsTest, read } from "./ats-fixture";
 
 it("retries one failed upload in its original batch while other files enter processing", async () => {
   const owner = await account("upload-retry@example.com");
@@ -249,8 +103,8 @@ it("lists projects by page and filters recruitment records by the job's project"
   const candidateId = crypto.randomUUID();
   const applicationId = crypto.randomUUID();
   const createdAt = new Date(0);
-  await platform.database.batch([
-    platform.database.insert(candidate).values({
+  await atsTest.platform.database.batch([
+    atsTest.platform.database.insert(candidate).values({
       createdAt,
       creationSource: "manual",
       email: "candidate@example.com",
@@ -258,7 +112,7 @@ it("lists projects by page and filters recruitment records by the job's project"
       name: "Candidate",
       workspaceId,
     }),
-    platform.database.insert(application).values([
+    atsTest.platform.database.insert(application).values([
       {
         candidateId,
         createdAt,
@@ -277,7 +131,7 @@ it("lists projects by page and filters recruitment records by the job's project"
         workspaceId,
       },
     ]),
-    platform.database.insert(recruitmentProject).values(
+    atsTest.platform.database.insert(recruitmentProject).values(
       Array.from({ length: 20 }, (_, index) => ({
         createdAt,
         id: crypto.randomUUID(),
@@ -332,8 +186,8 @@ it("lists projects by page and filters recruitment records by the job's project"
     { name: "Removed resume", status: "removed" },
     { name: "Unconfirmed resume", status: "pending_confirmation" },
   ] as const;
-  await platform.database.batch([
-    platform.database.insert(resume).values(
+  await atsTest.platform.database.batch([
+    atsTest.platform.database.insert(resume).values(
       profiles.map(({ name }, index) => ({
         avatarObjectKey: `avatars/${index}.png`,
         candidateId,
@@ -345,7 +199,7 @@ it("lists projects by page and filters recruitment records by the job's project"
         workspaceId,
       })),
     ),
-    platform.database.insert(applicationResume).values(
+    atsTest.platform.database.insert(applicationResume).values(
       profiles.map(({ name, status }, index) => ({
         applicationId,
         createdAt: new Date(index),
@@ -408,7 +262,7 @@ it("records the signed-in creator, shows the associated resume, and only allows 
   const email = "application-creator@example.com";
   const { ats, request, userId, workspaceId } = await account(email);
   const admin = await account("application-admin@example.com");
-  await platform.database.insert(member).values({
+  await atsTest.platform.database.insert(member).values({
     createdAt: new Date(),
     id: crypto.randomUUID(),
     organizationId: workspaceId,
@@ -422,15 +276,15 @@ it("records the signed-in creator, shows the associated resume, and only allows 
   const resumeId = crypto.randomUUID();
   const createdAt = new Date(0);
   const filename = "candidate.pdf";
-  await platform.database.batch([
-    platform.database.insert(candidate).values({
+  await atsTest.platform.database.batch([
+    atsTest.platform.database.insert(candidate).values({
       createdAt,
       creationSource: "manual",
       id: candidateId,
       name: "Candidate",
       workspaceId,
     }),
-    platform.database.insert(resume).values({
+    atsTest.platform.database.insert(resume).values({
       candidateId,
       createdAt,
       id: resumeId,
@@ -440,7 +294,7 @@ it("records the signed-in creator, shows the associated resume, and only allows 
       sha256: resumeId,
       workspaceId,
     }),
-    platform.database.insert(resumeProcessingRun).values({
+    atsTest.platform.database.insert(resumeProcessingRun).values({
       createdAt,
       executionId: resumeId,
       id: resumeId,
@@ -450,7 +304,7 @@ it("records the signed-in creator, shows the associated resume, and only allows 
       status: "succeeded",
       workspaceId,
     }),
-    platform.database.insert(resumeSubmission).values({
+    atsTest.platform.database.insert(resumeSubmission).values({
       createdAt,
       id: resumeId,
       identityStatus: "resolved",
@@ -459,13 +313,13 @@ it("records the signed-in creator, shows the associated resume, and only allows 
       resumeId,
       workspaceId,
     }),
-    platform.database.insert(resumeUploadBatch).values({
+    atsTest.platform.database.insert(resumeUploadBatch).values({
       createdAt,
       createdBy: userId,
       id: resumeId,
       workspaceId,
     }),
-    platform.database.insert(resumeUploadItem).values({
+    atsTest.platform.database.insert(resumeUploadItem).values({
       batchId: resumeId,
       filename,
       id: resumeId,
@@ -642,11 +496,11 @@ it("filters resume files before pagination and keeps full upload batch totals", 
     { filename: "second.pdf", runId, status: "accepted" },
     { filename: "third.pdf", status: "waiting" },
   ] as const;
-  await platform.database.batch([
-    platform.database
+  await atsTest.platform.database.batch([
+    atsTest.platform.database
       .insert(resumeUploadBatch)
       .values({ createdAt, createdBy: userId, id: batchId, workspaceId }),
-    platform.database.insert(resumeUploadItem).values(
+    atsTest.platform.database.insert(resumeUploadItem).values(
       files.map((file) => ({
         ...file,
         batchId,
@@ -656,7 +510,7 @@ it("filters resume files before pagination and keeps full upload batch totals", 
         workspaceId,
       })),
     ),
-    platform.database.insert(resumeProcessingRun).values({
+    atsTest.platform.database.insert(resumeProcessingRun).values({
       createdAt,
       executionId: runId,
       id: runId,
@@ -687,11 +541,11 @@ it("shows and searches the extracted candidate name until identity is confirmed"
   const resumeId = crypto.randomUUID();
   const filename = "intake.pdf";
   const createdAt = new Date(0);
-  await platform.database.batch([
-    platform.database
+  await atsTest.platform.database.batch([
+    atsTest.platform.database
       .insert(resumeUploadBatch)
       .values({ createdAt, createdBy: userId, id: batchId, workspaceId }),
-    platform.database.insert(resume).values({
+    atsTest.platform.database.insert(resume).values({
       createdAt,
       id: resumeId,
       parseStatus: "succeeded",
@@ -700,7 +554,7 @@ it("shows and searches the extracted candidate name until identity is confirmed"
       sha256: resumeId,
       workspaceId,
     }),
-    platform.database.insert(resumeSubmission).values({
+    atsTest.platform.database.insert(resumeSubmission).values({
       createdAt,
       id: resumeId,
       identityStatus: "pending_review",
@@ -708,7 +562,7 @@ it("shows and searches the extracted candidate name until identity is confirmed"
       resumeId,
       workspaceId,
     }),
-    platform.database.insert(resumeUploadItem).values({
+    atsTest.platform.database.insert(resumeUploadItem).values({
       batchId,
       filename,
       id: resumeId,

@@ -28,8 +28,8 @@ Page skeletons can compose component skeletons, base Skeleton elements, or both.
 5. 验证首次加载、缓存返回、后台刷新和窄屏布局。错误与空状态分别使用各自的界面，操作中的 Spinner 保留。
    Verify initial loading, cached returns, background refreshes, and narrow layouts. Errors and empty results use their own UI; actions retain their progress indicators.
 
-工作台分页表格用 Skullet 测量与真实表格共用布局的样例行。样例使用静态占位数据，无需保存测量结果。
-Workbench lists use Skullet to measure sample rows that share the real table layout. Samples use static placeholder data and measurements are not persisted.
+工作台分页表格用 Skullet 在各单元格内部测量与真实表格共用布局的样例内容，固定操作列也在其自身层级内绘制。不要用一个测量覆盖层包裹整张表格，否则带阴影的表体会被识别为大色块，固定列也会遮挡覆盖层。样例使用静态占位数据，无需保存测量结果。
+Workbench lists use Skullet inside each cell to measure sample content sharing the real table layout; pinned actions draw within their own stacking context. Do not wrap the whole table in one measurement overlay: the shadowed body becomes one block, and pinned cells cover that overlay. Samples use static placeholder data and measurements are not persisted.
 
 ## 当前接入 / Current coverage
 

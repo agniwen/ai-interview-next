@@ -17,7 +17,7 @@ export function ResumeProfilePanel({ id, workspaceId }: { id: string; workspaceI
     queryFn: () => readResumeProfile({ id, workspaceId }),
     queryKey: atsKeys.resumes(workspaceId)._ctx.profile(id).queryKey,
     refetchInterval: ({ state: { data: result } }) =>
-      !result?.profile && isParsing(result?.parseStatus) ? 5000 : false,
+      isParsing(result?.parseStatus) ? 5000 : false,
   });
 
   const phase = useSkeletonPhase(isPending);
