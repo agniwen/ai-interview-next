@@ -1,5 +1,6 @@
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { useQuery } from "@tanstack/react-query";
+import { atsKeys } from "@/components/ats/query-keys";
 import { readResumeProfile } from "@/components/ats/client";
 import { ResumeProfileSkeleton } from "@/components/skeletons/components/resume-profile-skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -14,7 +15,7 @@ function isParsing(status: string | null | undefined) {
 export function ResumeProfilePanel({ id, workspaceId }: { id: string; workspaceId: string }) {
   const { data, isError, isPending, refetch } = useQuery({
     queryFn: () => readResumeProfile({ id, workspaceId }),
-    queryKey: ["ats", workspaceId, "resume-profile", id],
+    queryKey: atsKeys.resumes(workspaceId)._ctx.profile(id).queryKey,
     refetchInterval: ({ state: { data: result } }) =>
       !result?.profile && isParsing(result?.parseStatus) ? 5000 : false,
   });

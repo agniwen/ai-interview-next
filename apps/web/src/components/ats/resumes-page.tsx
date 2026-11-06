@@ -1,3 +1,4 @@
+import { TableFilterSelect } from "@/components/layout/table-filters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { IconFileCv, IconUpload } from "@tabler/icons-react";
@@ -32,10 +33,13 @@ import {
 } from "@/components/ui/select";
 import { UserColumn } from "@/components/user-column";
 import * as m from "@/paraglide/messages";
+import { atsKeys } from "./query-keys";
 import { atsApi, atsDate, atsStatus, readAts } from "./client";
 import { CreateApplicationDialog } from "./create-application-dialog";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
+import { listParams, resumeStatuses } from "./list-search";
+import type { ResumeListSearch } from "./list-search";
 
 async function uploadResumeFile(workspaceId: string, id: string, url: string, file: File) {
   const param = { id, workspaceId };
@@ -74,7 +78,7 @@ function ResumeCandidateDialog({
       const { rows } = await readAts(await atsApi.candidates.$get({ param, query: { page: "1" } }));
       return rows.map((candidate) => ({ id: candidate.id, label: candidate.name }));
     },
-    queryKey: ["ats", workspaceId, "options", "resolve"],
+    queryKey: atsKeys.candidates(workspaceId)._ctx.resolveOptions.queryKey,
   });
   const mutation = useMutation({
     async mutationFn() {
@@ -145,24 +149,25 @@ function ResumeCandidateDialog({
   );
 }
 
-export function ResumesPage({ workspaceId, page, onPage }: AtsPageProps) {
+export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<ResumeListSearch>) {
   const input = useRef<HTMLInputElement>(null);
   const client = useQueryClient();
   const param = { workspaceId };
-  const refresh = () => client.invalidateQueries({ queryKey: ["ats", workspaceId] });
-  const refreshApplications = () =>
-    client.invalidateQueries({ queryKey: ["ats", workspaceId, "applications"] });
+  async function refresh() {
+    await Promise.all([
+      client.invalidateQueries({ queryKey: atsKeys.resumes(workspaceId).queryKey }),
+      client.invalidateQueries({ queryKey: atsKeys.candidates(workspaceId).queryKey }),
+    ]);
+  }
   const candidateDialog = useMemo(() => createDialogHandle<string>(), []);
   const recruitmentDialog = useMemo(() => createDialogHandle<string>(), []);
   const previewDialog = useMemo(() => createDialogHandle<{ filename: string; id: string }>(), []);
-  const { data, isError } = useQuery({
-    queryFn: async () =>
-      readAts(await atsApi.resumes.$get({ param, query: { page: String(page) } })),
-    queryKey: ["ats", workspaceId, "resumes", page],
-    refetchInterval: (query) =>
-      query.state.data?.rows.some(
-        (row) => row.parseStatus === "queued" || row.parseStatus === "running",
-      )
+  const { data, isError, refetch } = useQuery({
+    queryFn: async ({ signal }) =>
+      readAts(await atsApi.resumes.$get({ param, query: listParams(query) }, { init: { signal } })),
+    queryKey: atsKeys.resumes(workspaceId)._ctx.list(query).queryKey,
+    refetchInterval: ({ state }) =>
+      state.data?.rows.some((row) => row.parseStatus === "queued" || row.parseStatus === "running")
         ? 5000
         : false,
   });
@@ -202,76 +207,33 @@ export function ResumesPage({ workspaceId, page, onPage }: AtsPageProps) {
     <AtsListPage
       title={m.ats_resumes()}
       icon={IconFileCv}
-      toolbar={
-        <>
-          {(uploads.isError || retry.isError) && (
-            <Alert variant="error">
-              <AlertDescription>{m.ats_error()}</AlertDescription>
-            </Alert>
-          )}
-          <input
-            ref={input}
-            type="file"
-            accept="application/pdf,.pdf"
-            multiple
-            hidden
-            aria-label={m.ats_upload()}
-            onChange={(event) => {
-              const files = [...(event.currentTarget.files ?? [])];
-              event.currentTarget.value = "";
-              if (files.length) {
-                uploads.mutate(files);
-              }
-            }}
-          />
-          <Button onClick={() => input.current?.click()} disabled={uploads.isPending}>
-            <IconUpload />
-            {uploads.isPending ? m.ats_uploading() : m.ats_upload()}
-          </Button>
-          <Dialog handle={candidateDialog}>
-            {({ payload }) =>
-              payload && (
-                <ResumeCandidateDialog
-                  key={payload}
-                  submissionId={payload}
-                  workspaceId={workspaceId}
-                  onClose={() => candidateDialog.close()}
-                  onSuccess={refresh}
-                />
-              )
-            }
-          </Dialog>
-          <CreateApplicationDialog
-            handle={recruitmentDialog}
-            onSuccess={refreshApplications}
-            workspaceId={workspaceId}
-          />
-          <Dialog handle={previewDialog}>
-            {({ payload }) => {
-              if (!payload) {
-                return null;
-              }
-              const resumeId = recruitmentResumes.get(payload.id);
-              return (
-                <ResumePreviewDialog
-                  actions={
-                    resumeId && (
-                      <CreateApplicationDialog
-                        onSuccess={refreshApplications}
-                        resumeId={resumeId}
-                        workspaceId={workspaceId}
-                      />
-                    )
-                  }
-                  key={`${workspaceId}/${payload.id}`}
-                  filename={payload.filename}
-                  id={payload.id}
-                  workspaceId={workspaceId}
-                />
-              );
-            }}
-          </Dialog>
-        </>
+      action={
+        <Button
+          onClick={() => input.current?.click()}
+          disabled={uploads.isPending}
+          variant="outline"
+        >
+          <IconUpload />
+          {uploads.isPending ? m.ats_uploading() : m.ats_upload()}
+        </Button>
+      }
+      filters={
+        <TableFilterSelect
+          label={m.ats_status()}
+          onChange={(status) => onQueryChange({ page: 1, status: status || undefined })}
+          options={[
+            { label: m.ats_all_statuses(), value: "" },
+            ...resumeStatuses.map((status) => ({ label: atsStatus(status), value: status })),
+          ]}
+          value={query.status ?? ""}
+        />
+      }
+      feedback={
+        (uploads.isError || retry.isError) && (
+          <Alert variant="error">
+            <AlertDescription>{m.ats_error()}</AlertDescription>
+          </Alert>
+        )
       }
       firstColumnClassName="w-120 min-w-40"
       headings={[
@@ -377,10 +339,62 @@ export function ResumesPage({ workspaceId, page, onPage }: AtsPageProps) {
       })}
       empty={m.ats_empty_resumes()}
       error={isError}
-      page={page}
-      pageSize={data?.pageSize ?? 20}
+      query={query}
+      searchPlaceholder={m.ats_search_resumes()}
       total={data?.total ?? 0}
-      onPage={onPage}
-    />
+      onQueryChange={onQueryChange}
+      onRefresh={refetch}
+    >
+      <input
+        ref={input}
+        type="file"
+        accept="application/pdf,.pdf"
+        multiple
+        hidden
+        aria-label={m.ats_upload()}
+        onChange={(event) => {
+          const files = [...(event.currentTarget.files ?? [])];
+          event.currentTarget.value = "";
+          if (files.length) {
+            uploads.mutate(files);
+          }
+        }}
+      />
+      <Dialog handle={candidateDialog}>
+        {({ payload }) =>
+          payload && (
+            <ResumeCandidateDialog
+              key={payload}
+              submissionId={payload}
+              workspaceId={workspaceId}
+              onClose={() => candidateDialog.close()}
+              onSuccess={refresh}
+            />
+          )
+        }
+      </Dialog>
+      <CreateApplicationDialog handle={recruitmentDialog} workspaceId={workspaceId} />
+      <Dialog handle={previewDialog}>
+        {({ payload }) => {
+          if (!payload) {
+            return null;
+          }
+          const resumeId = recruitmentResumes.get(payload.id);
+          return (
+            <ResumePreviewDialog
+              actions={
+                resumeId && (
+                  <CreateApplicationDialog resumeId={resumeId} workspaceId={workspaceId} />
+                )
+              }
+              key={`${workspaceId}/${payload.id}`}
+              filename={payload.filename}
+              id={payload.id}
+              workspaceId={workspaceId}
+            />
+          );
+        }}
+      </Dialog>
+    </AtsListPage>
   );
 }

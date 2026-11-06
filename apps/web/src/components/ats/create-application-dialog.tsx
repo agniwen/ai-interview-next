@@ -1,4 +1,5 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ApplicationOptionsSkeleton } from "@/components/skeletons/components/application-options-skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,6 +28,7 @@ import { toastManager } from "@/components/ui/toast";
 import * as m from "@/paraglide/messages";
 import { ApplicationResumeField } from "./application-resume-field";
 import type { ApplicationResumeOption } from "./application-resume-field";
+import { atsKeys } from "./query-keys";
 import { atsApi, readAts } from "./client";
 
 function ApplicationOptionField({
@@ -65,15 +67,14 @@ function ApplicationOptionField({
 
 function ApplicationForm({
   onClose,
-  onSuccess,
   resumeId: fixedResumeId,
   workspaceId,
 }: {
   onClose: () => void;
-  onSuccess: () => Promise<void>;
   resumeId?: string;
   workspaceId: string;
 }) {
+  const client = useQueryClient();
   const [resume, setResume] = useState<ApplicationResumeOption | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const resumeId = fixedResumeId ?? resume?.id;
@@ -81,8 +82,9 @@ function ApplicationForm({
   const param = { workspaceId };
   const options = useQuery({
     queryFn: async () => readAts(await atsApi.applications.options.$get({ param })),
-    queryKey: ["ats", workspaceId, "application-options"],
+    queryKey: atsKeys.jobs(workspaceId)._ctx.options.queryKey,
   });
+  const phase = useSkeletonPhase(options.isPending);
   const mutation = useMutation({
     async mutationFn(input: { jobId: string; resumeId: string }) {
       const response = await atsApi.applications.$post({ json: { ...input, version: 1 }, param });
@@ -95,7 +97,7 @@ function ApplicationForm({
       return readAts(response);
     },
     async onSuccess() {
-      await onSuccess();
+      await client.invalidateQueries({ queryKey: atsKeys.applications(workspaceId).queryKey });
       onClose();
       if (fixedResumeId) {
         toastManager.add({ title: m.ats_joined_recruitment(), type: "success" });
@@ -113,8 +115,8 @@ function ApplicationForm({
         </DialogDescription>
       </DialogHeader>
       <DialogPanel className="flex flex-col gap-4">
-        {options.isPending && <ApplicationOptionsSkeleton jobOnly={Boolean(fixedResumeId)} />}
-        {options.isError && (
+        {phase === "skeleton" && <ApplicationOptionsSkeleton jobOnly={Boolean(fixedResumeId)} />}
+        {phase === "ready" && options.isError && (
           <Alert variant="error">
             <AlertDescription>{m.ats_error()}</AlertDescription>
           </Alert>
@@ -124,7 +126,7 @@ function ApplicationForm({
             <AlertDescription>{mutation.error.message}</AlertDescription>
           </Alert>
         )}
-        {options.data && (
+        {phase === "ready" && options.data && (
           <>
             {!fixedResumeId && (
               <ApplicationResumeField
@@ -162,12 +164,10 @@ function ApplicationForm({
 
 export function CreateApplicationDialog({
   handle,
-  onSuccess,
   resumeId,
   workspaceId,
 }: {
   handle?: ReturnType<typeof createDialogHandle<string>>;
-  onSuccess: () => Promise<void>;
   resumeId?: string;
   workspaceId: string;
 }) {
@@ -186,7 +186,6 @@ export function CreateApplicationDialog({
             <ApplicationForm
               key={payload ?? resumeId}
               onClose={() => dialog.close()}
-              onSuccess={onSuccess}
               resumeId={payload ?? resumeId}
               workspaceId={workspaceId}
             />

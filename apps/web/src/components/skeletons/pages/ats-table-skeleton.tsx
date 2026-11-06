@@ -1,20 +1,15 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import type { ReactNode } from "react";
+import { Skeleton } from "skullet/react";
 import * as m from "@/paraglide/messages";
 
-export function AtsTableSkeleton() {
+export function AtsTableSkeleton({ children }: { children: ReactNode }) {
   return (
-    <div aria-busy="true" aria-label={m.ats_loading()} className="rounded-lg border">
-      {Array.from({ length: 6 }, (_, index) => (
-        <div
-          key={index}
-          aria-hidden="true"
-          className="grid h-12 grid-cols-3 items-center gap-5 border-b px-4 last:border-b-0"
-        >
-          <Skeleton className="h-3 w-3/4" />
-          <Skeleton className="h-3 w-2/3" />
-          <Skeleton className="h-3 w-1/2" />
-        </div>
-      ))}
-    </div>
+    <Skeleton
+      className="[--skullet-base:var(--color-muted)] [--skullet-highlight:rgb(255_255_255/0.6)] dark:[--skullet-highlight:rgb(255_255_255/0.04)]"
+      label={m.ats_loading()}
+      loading
+    >
+      {children}
+    </Skeleton>
   );
 }

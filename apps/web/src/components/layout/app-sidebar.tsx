@@ -3,6 +3,7 @@ import {
   IconBriefcase,
   IconChartBar,
   IconFileCv,
+  IconFolders,
   IconListDetails,
   IconUsers,
   IconSparkle,
@@ -137,6 +138,11 @@ export function AppSidebar({
                       to: "/w/$workspaceId/hub/applications",
                     },
                     { icon: IconBriefcase, label: m.ats_job(), to: "/w/$workspaceId/hub/jobs" },
+                    {
+                      icon: IconFolders,
+                      label: m.ats_projects(),
+                      to: "/w/$workspaceId/hub/projects",
+                    },
                   ] as const
                 ).map(({ icon: Icon, label, to }) => (
                   <SidebarMenuItem key={to}>

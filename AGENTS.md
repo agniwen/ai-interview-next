@@ -42,6 +42,13 @@ Define every project-owned JSON structure as an object with a required, non-null
 - Web list routes keep the page, page size, and filters in the URL. Include those values and the workspace in the query key. Changing a filter or page size resets to page 1. Paging and refreshing retain the current filters.
   Web 列表将页码、每页条数和筛选保存在 URL，并连同工作区纳入查询缓存键。更改筛选或每页条数回到第 1 页，翻页和刷新保留当前筛选。
 
+## Query keys and mutations / 查询键与写入
+
+- Define every TanStack Query key with `@lukemorales/query-key-factory` in its feature module. Reuse generated keys for fetching, cache updates and invalidation. Include the workspace and any parameters that change the response. Keep paginated lists, details and pickers under the appropriate resource prefix.
+  所有 TanStack Query 的键都在所属模块用 `@lukemorales/query-key-factory` 定义。查询、缓存更新和失效操作复用生成的键。将工作区和影响结果的参数纳入键，分页列表、详情和选择器归入对应资源前缀。
+- After a successful create mutation, await invalidation of the affected resource queries, including related lists, counts and picker options. Use the narrowest generated prefix that covers the affected data. Keep invalidation with the mutation so every entry point refreshes the same data.
+  创建操作成功后，等待受影响的资源查询失效，包括相关列表、总数和下拉选项。使用能覆盖受影响数据的最小前缀，把失效逻辑放在对应 mutation 中，让各入口刷新同一组数据。
+
 ## File uploads
 
 Use [Files SDK](https://files-sdk.dev/) for R2 and S3 uploads, including presigning and writes through the API.

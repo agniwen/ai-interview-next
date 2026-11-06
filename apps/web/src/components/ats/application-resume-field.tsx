@@ -14,6 +14,7 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { UserColumn } from "@/components/user-column";
 import * as m from "@/paraglide/messages";
+import { atsKeys } from "./query-keys";
 import { atsApi, atsDate, readAts } from "./client";
 
 async function readResumeOptions(
@@ -86,6 +87,7 @@ export function ApplicationResumeField({
     return () => clearTimeout(timer);
   }, [search]);
 
+  const [offsetMinutes, setOffsetMinutes] = useState(0);
   const query = useInfiniteQuery({
     enabled: open,
     getNextPageParam: (lastPage: ApplicationResumeOptions) => lastPage.nextPage ?? undefined,
@@ -94,13 +96,13 @@ export function ApplicationResumeField({
       readResumeOptions(
         workspaceId,
         {
-          offsetMinutes: String(-new Date().getTimezoneOffset()),
+          offsetMinutes: String(offsetMinutes),
           page: String(pageParam),
           search: debouncedSearch,
         },
         signal,
       ),
-    queryKey: ["ats", workspaceId, "application-resume-options", debouncedSearch],
+    queryKey: atsKeys.resumes(workspaceId)._ctx.options(debouncedSearch, offsetMinutes).queryKey,
   });
   const pending = search !== debouncedSearch || query.isPending;
   const rows = pending ? [] : (query.data?.pages.flatMap((page) => page.rows) ?? []);
@@ -121,7 +123,9 @@ export function ApplicationResumeField({
         }}
         onOpenChange={(isOpen) => {
           setOpen(isOpen);
-          if (!isOpen) {
+          if (isOpen) {
+            setOffsetMinutes(-new Date().getTimezoneOffset());
+          } else {
             setSearch("");
           }
         }}

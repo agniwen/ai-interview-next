@@ -22,6 +22,7 @@ import {
 import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
+import { atsKeys } from "./query-keys";
 import { atsApi, atsDate, readAts } from "./client";
 
 const resumeRowClassName = "flex w-full min-w-0 items-center gap-3 px-2 py-3 text-left";
@@ -39,7 +40,7 @@ export function CandidateResumesDialog({
   const { data, isError, isPending, refetch } = useQuery({
     queryFn: async () =>
       readAts(await atsApi.candidates[":id"].resumes.$get({ param: { id, workspaceId } })),
-    queryKey: ["ats", workspaceId, "candidates", id, "resumes"],
+    queryKey: atsKeys.candidates(workspaceId)._ctx.resumes(id).queryKey,
   });
 
   const phase = useSkeletonPhase(isPending);

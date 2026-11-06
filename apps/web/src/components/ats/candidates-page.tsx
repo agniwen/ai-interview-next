@@ -9,18 +9,23 @@ import {
 } from "@/components/ui/dialog";
 import * as m from "@/paraglide/messages";
 import { CandidateResumesDialog } from "./candidate-resumes-dialog";
+import { atsKeys } from "./query-keys";
 import { atsApi, atsDate, readAts } from "./client";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
+import { listParams } from "./list-search";
 
-export function CandidatesPage({ workspaceId, page, onPage }: AtsPageProps) {
+export function CandidatesPage({ workspaceId, query, onQueryChange }: AtsPageProps) {
   const resumesDialog = useMemo(() => createDialogHandle<{ id: string; name: string }>(), []);
-  const { data, isError } = useQuery({
-    queryFn: async () =>
+  const { data, isError, refetch } = useQuery({
+    queryFn: async ({ signal }) =>
       readAts(
-        await atsApi.candidates.$get({ param: { workspaceId }, query: { page: String(page) } }),
+        await atsApi.candidates.$get(
+          { param: { workspaceId }, query: listParams(query) },
+          { init: { signal } },
+        ),
       ),
-    queryKey: ["ats", workspaceId, "candidates", page],
+    queryKey: atsKeys.candidates(workspaceId)._ctx.list(query).queryKey,
   });
   return (
     <>
@@ -47,10 +52,11 @@ export function CandidatesPage({ workspaceId, page, onPage }: AtsPageProps) {
         }))}
         empty={m.ats_empty_candidates()}
         error={isError}
-        page={page}
-        pageSize={data?.pageSize ?? 20}
+        query={query}
+        searchPlaceholder={m.ats_search_candidates()}
         total={data?.total ?? 0}
-        onPage={onPage}
+        onQueryChange={onQueryChange}
+        onRefresh={refetch}
       />
       <Dialog handle={resumesDialog}>
         {({ payload }) =>

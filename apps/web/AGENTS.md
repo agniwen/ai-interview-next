@@ -1,3 +1,16 @@
+# List page headers / 列表页页头
+
+- Use the shared `PageHeader` for the title and optional description. In `TableFilters` above the table, lay out the filter groups from left to right, with the action group immediately after the last filter. Allow the groups to wrap together.
+  列表页使用共用的 `PageHeader` 展示标题和可选说明。表格上方使用 `TableFilters`，筛选组从左向右排列，操作组紧跟最后一个筛选项，空间不足时按顺序换行。
+- Apply keyword changes on blur. Apply select and date filters as soon as the user commits a selection.
+  关键词输入失焦时应用修改，下拉框和日期筛选在选定后立即生效。
+- Use Coss `Group` to join related controls, with `GroupSeparator` between them and `GroupText` for inline labels. Page action buttons use `outline`. Primary actions such as Create and Upload may have a text label. Secondary actions such as Refresh must be icon-only, with an accessible name and a tooltip.
+  相关控件用 Coss `Group` 组合，以 `GroupSeparator` 分隔，行内标签用 `GroupText`。页面操作按钮使用带边框的 `outline` 样式。创建、上传等主操作可以带文字。刷新等次要操作只展示图标，并提供可访问名称和 Tooltip。
+- Keep the header and filter bar mounted while the list loads, refreshes, fails, or is empty. Keep list empty states focused on the empty-state content.
+  列表加载、刷新、报错或为空时，保持页头和筛选栏的位置。列表空状态只展示空状态内容。
+- Compose numbered pagination from the existing Coss `Pagination` in the shared list layout. Page links update the page in the URL and preserve filters and page size.
+  页码分页直接在共用列表布局中组合现有的 Coss `Pagination`。翻页链接更新 URL 中的页码，并保留筛选条件和每页条数。
+
 # Page loading states / 页面加载状态
 
 When creating or changing a page with asynchronous data or lazy content, read [the skeleton conventions](src/components/skeletons/README.md) and implement its initial loading state in the same change. Static pages and redirect-only routes do not require skeletons.

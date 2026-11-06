@@ -1,11 +1,13 @@
+import { SkeletonSuspense } from "@/components/skeletons/skeleton-suspense";
 import { IconBriefcase } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense, useState } from "react";
+import { lazy, useMemo, useState } from "react";
 import { MarkdownEditorSkeleton } from "@/components/skeletons/components/markdown-editor-skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogCreateHandle as createDialogHandle,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -17,9 +19,13 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import * as m from "@/paraglide/messages";
+import { atsKeys } from "./query-keys";
 import { atsApi, atsDate, readAts } from "./client";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
+import { listParams } from "./list-search";
+import type { JobListSearch } from "./list-search";
+import { ProjectFilter, ProjectSelect } from "./project-select";
 
 const MarkdownEditor = lazy(async () => {
   const { MarkdownEditor: Editor } = await import("@/components/ui/markdown-editor");
@@ -28,13 +34,16 @@ const MarkdownEditor = lazy(async () => {
 const maxJobRequirementsLength = 30_000;
 
 function JobForm({
+  handle,
   workspaceId,
   onSuccess,
 }: {
+  handle: ReturnType<typeof createDialogHandle>;
   workspaceId: string;
-  onSuccess: () => Promise<void>;
+  onSuccess: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const client = useQueryClient();
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [requirements, setRequirements] = useState("");
   const validRequirements =
@@ -43,28 +52,28 @@ function JobForm({
     mutationFn: async () =>
       readAts(
         await atsApi.jobs.$post({
-          json: { requirements, title, version: 1 },
+          json: { projectId: projectId ?? undefined, requirements, title, version: 1 },
           param: { workspaceId },
         }),
       ),
     async onSuccess() {
-      await onSuccess();
-      setOpen(false);
+      await client.invalidateQueries({ queryKey: atsKeys.jobs(workspaceId).queryKey });
+      handle.close();
+      onSuccess();
     },
   });
   return (
     <Dialog
-      open={open}
-      onOpenChange={setOpen}
+      handle={handle}
       onOpenChangeComplete={(isOpen) => {
         if (!isOpen) {
+          setProjectId(null);
           setTitle("");
           setRequirements("");
           mutation.reset();
         }
       }}
     >
-      <DialogTrigger render={<Button />}>{m.ats_create_job()}</DialogTrigger>
       <DialogPopup className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{m.ats_create_job()}</DialogTitle>
@@ -87,10 +96,14 @@ function JobForm({
               />
             </Field>
             <Field>
+              <FieldLabel>{m.ats_project()}</FieldLabel>
+              <ProjectSelect onChange={setProjectId} value={projectId} workspaceId={workspaceId} />
+            </Field>
+            <Field>
               <FieldLabel id="ats-job-requirements-label" htmlFor="ats-job-requirements">
                 {m.ats_requirements()}
               </FieldLabel>
-              <Suspense fallback={<MarkdownEditorSkeleton />}>
+              <SkeletonSuspense fallback={<MarkdownEditorSkeleton />}>
                 <MarkdownEditor
                   id="ats-job-requirements"
                   aria-labelledby="ats-job-requirements-label"
@@ -100,7 +113,7 @@ function JobForm({
                   placeholder={m.ats_requirements_placeholder()}
                   maxLength={maxJobRequirementsLength}
                 />
-              </Suspense>
+              </SkeletonSuspense>
             </Field>
           </div>
         </DialogPanel>
@@ -117,39 +130,56 @@ function JobForm({
   );
 }
 
-export function JobsPage({ workspaceId, page, onPage }: AtsPageProps) {
-  const client = useQueryClient();
-  const { data, isError } = useQuery({
-    queryFn: async () =>
-      readAts(await atsApi.jobs.$get({ param: { workspaceId }, query: { page: String(page) } })),
-    queryKey: ["ats", workspaceId, "jobs", page],
+export function JobsPage({ workspaceId, query, onQueryChange }: AtsPageProps<JobListSearch>) {
+  const createDialog = useMemo(() => createDialogHandle(), []);
+  const { data, isError, refetch } = useQuery({
+    queryFn: async ({ signal }) =>
+      readAts(
+        await atsApi.jobs.$get(
+          { param: { workspaceId }, query: listParams(query) },
+          { init: { signal } },
+        ),
+      ),
+    queryKey: atsKeys.jobs(workspaceId)._ctx.list(query).queryKey,
   });
   return (
     <AtsListPage
       title={m.ats_job()}
       icon={IconBriefcase}
-      toolbar={
-        <JobForm
+      action={
+        <DialogTrigger handle={createDialog} render={<Button variant="outline" />}>
+          {m.ats_create_job()}
+        </DialogTrigger>
+      }
+      filters={
+        <ProjectFilter
+          onChange={(projectId) => onQueryChange({ page: 1, projectId: projectId ?? undefined })}
+          value={query.projectId ?? null}
           workspaceId={workspaceId}
-          onSuccess={async () => {
-            await client.invalidateQueries({ queryKey: ["ats", workspaceId] });
-            if (page !== 1) {
-              onPage(1);
-            }
-          }}
         />
       }
-      headings={[m.ats_job(), m.ats_date()]}
+      headings={[m.ats_job(), m.ats_project(), m.ats_date()]}
       rows={data?.rows.map((row) => ({
-        cells: [row.title, atsDate(row.createdAt)],
+        cells: [row.title, row.projectTitle ?? "—", atsDate(row.createdAt)],
         id: row.id,
       }))}
       empty={m.ats_empty_jobs()}
       error={isError}
-      page={page}
-      pageSize={data?.pageSize ?? 20}
+      query={query}
+      searchPlaceholder={m.ats_search_jobs()}
       total={data?.total ?? 0}
-      onPage={onPage}
-    />
+      onQueryChange={onQueryChange}
+      onRefresh={refetch}
+    >
+      <JobForm
+        handle={createDialog}
+        workspaceId={workspaceId}
+        onSuccess={() => {
+          if (query.page !== 1) {
+            onQueryChange({ page: 1 });
+          }
+        }}
+      />
+    </AtsListPage>
   );
 }

@@ -52,15 +52,7 @@ export function PaginationLink({
 }: PaginationLinkProps): React.ReactElement {
   const defaultProps = {
     "aria-current": isActive ? ("page" as const) : undefined,
-    className: render
-      ? className
-      : cn(
-          buttonVariants({
-            size,
-            variant: isActive ? "outline" : "ghost",
-          }),
-          className,
-        ),
+    className: cn(buttonVariants({ size, variant: isActive ? "outline" : "ghost" }), className),
     "data-active": isActive,
     "data-slot": "pagination-link",
   };
@@ -74,34 +66,36 @@ export function PaginationLink({
 
 export function PaginationPrevious({
   className,
+  label = "Previous",
   ...props
-}: React.ComponentProps<typeof PaginationLink>): React.ReactElement {
+}: PaginationLinkProps & { label?: string }): React.ReactElement {
   return (
     <PaginationLink
-      aria-label="Go to previous page"
+      aria-label={label}
       className={cn("max-sm:aspect-square max-sm:p-0", className)}
       size="default"
       {...props}
     >
-      <ChevronLeftIcon className="sm:-ms-1" />
-      <span className="max-sm:hidden">Previous</span>
+      <ChevronLeftIcon aria-hidden="true" className="sm:-ms-1" />
+      <span className="max-sm:hidden">{label}</span>
     </PaginationLink>
   );
 }
 
 export function PaginationNext({
   className,
+  label = "Next",
   ...props
-}: React.ComponentProps<typeof PaginationLink>): React.ReactElement {
+}: PaginationLinkProps & { label?: string }): React.ReactElement {
   return (
     <PaginationLink
-      aria-label="Go to next page"
+      aria-label={label}
       className={cn("max-sm:aspect-square max-sm:p-0", className)}
       size="default"
       {...props}
     >
-      <span className="max-sm:hidden">Next</span>
-      <ChevronRightIcon className="sm:-me-1" />
+      <span className="max-sm:hidden">{label}</span>
+      <ChevronRightIcon aria-hidden="true" className="sm:-me-1" />
     </PaginationLink>
   );
 }
