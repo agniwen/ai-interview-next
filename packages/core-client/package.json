@@ -14,11 +14,11 @@
   },
   "dependencies": {
     "@ai-interview/api": "workspace:*",
-    "hono": "4.13.16"
+    "hono": "catalog:"
   },
   "devDependencies": {
     "@ai-interview/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "5.0.5",
-    "vitest": "5.0.5"
+    "@vitest/coverage-v8": "catalog:",
+    "vitest": "catalog:"
   }
 }

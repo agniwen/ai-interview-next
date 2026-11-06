@@ -90,6 +90,8 @@ Web 应用的源码、Vite、路由、shadcn 和 Cloudflare 配置都在 `apps/w
 bun add <dependency> --filter @ai-interview/web
 ```
 
+多个 workspace 共用的外部依赖在根 `package.json` 的 `catalog` 中统一定义版本，各 workspace 用 `catalog:` 声明所需依赖。升级时修改根目录的版本并运行 `bun install` 更新锁文件。
+
 Ultracite 和 Lefthook 配置保留在根目录。`build` 缓存 `dist/` 和 Cloudflare 的 `.wrangler/deploy/` 元数据；`dev`、路由生成和部署不缓存。环境文件按应用归属存放；API 使用 `.env` 做本地开发、`.env.production` 做生产发布，真实值不提交，只提交 `.example` 模板。环境文件变更会影响构建缓存；新增通过进程注入的构建环境变量时，在 `turbo.json` 的任务 `env` 中声明。
 
 ## 测试

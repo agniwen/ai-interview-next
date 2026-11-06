@@ -10,7 +10,7 @@
     "typecheck": "tsrs --noEmit"
   },
   "dependencies": {
-    "zod": "^4.6.7"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@ai-interview/typescript-config": "workspace:*"

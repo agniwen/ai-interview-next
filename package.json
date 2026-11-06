@@ -32,6 +32,17 @@
     "ultracite": "8.1.0"
   },
   "packageManager": "bun@1.4.2",
+  "catalog": {
+    "@cloudflare/workers-types": "^5.20261102.1",
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "5.0.5",
+    "better-auth": "1.7.15",
+    "drizzle-orm": "0.45.4",
+    "hono": "4.13.16",
+    "vitest": "5.0.5",
+    "wrangler": "^4.156.0",
+    "zod": "^4.6.7"
+  },
   "intent": {
     "skills": [
       "@tanstack/devtools",

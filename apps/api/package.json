@@ -29,18 +29,18 @@
     "@earendil-works/pi-durable": "1.5.0",
     "@hono/standard-validator": "0.4.1",
     "ai": "7.0.163",
-    "better-auth": "1.7.15",
-    "drizzle-orm": "0.45.4",
+    "better-auth": "catalog:",
+    "drizzle-orm": "catalog:",
     "files-sdk": "3.1.2",
-    "hono": "4.13.16",
-    "zod": "^4.6.7"
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@ai-interview/typescript-config": "workspace:*",
-    "@cloudflare/workers-types": "^5.20261102.1",
-    "@types/node": "^26.6.6",
-    "@vitest/coverage-v8": "5.0.5",
-    "vitest": "5.0.5",
-    "wrangler": "^4.156.0"
+    "@cloudflare/workers-types": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "vitest": "catalog:",
+    "wrangler": "catalog:"
   }
 }
