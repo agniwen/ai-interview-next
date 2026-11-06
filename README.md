@@ -41,7 +41,7 @@ Web 应用运行在 `http://localhost:3000`，API 运行在 `http://localhost:87
 | ------------------------- | -------------------------------------------------- |
 | `bun run dev`             | 启动应用开发服务                                   |
 | `bun run build`           | 按依赖顺序构建，缓存构建产物                       |
-| `bun run typecheck`       | 生成路由并执行 TypeScript 检查                     |
+| `bun run typecheck`       | 生成路由并用 tsrs 检查 TypeScript 类型             |
 | `bun run check`           | 对整个仓库执行 Ultracite 格式和 lint 检查          |
 | `bun run fix`             | 对整个仓库执行 Ultracite 自动修复                  |
 | `bun run generate-routes` | 重新生成应用路由                                   |

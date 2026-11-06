@@ -13,7 +13,7 @@
     "dev": "CLOUDFLARE_DEV_REGISTRY_PATH=../../.wrangler/registry wrangler dev --config wrangler.jsonc --port 8787",
     "build": "WRANGLER_NO_SKILLS_UPDATE_PROMPTS=true wrangler deploy --config wrangler.jsonc --dry-run --outdir dist",
     "deploy": "WRANGLER_NO_SKILLS_UPDATE_PROMPTS=true wrangler deploy --config wrangler.jsonc --env-file .env.production --secrets-file .env.production",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsrs --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

@@ -15,7 +15,7 @@ help:
 	  'make test        运行测试' \
 	  'make test-watch  监听并运行测试' \
 	  'make coverage    生成测试覆盖率报告' \
-	  'make typecheck   检查 TypeScript 类型' \
+	  'make typecheck   用 tsrs 检查 TypeScript 类型' \
 	  'make check       检查代码格式和 lint' \
 	  'make fix         自动修复代码格式和 lint' \
 	  'make deploy      构建并部署到 Cloudflare' \
