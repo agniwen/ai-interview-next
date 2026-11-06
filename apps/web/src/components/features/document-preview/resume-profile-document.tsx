@@ -1,7 +1,9 @@
 import { IconLink, IconMail, IconMapPin, IconPhone } from "@tabler/icons-react";
+import type { ReactNode } from "react";
 import type { readResumeProfile } from "@/components/ats/client";
 import { Badge } from "@/components/ui/badge";
 import type { BadgeProps } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 
 type ResumeProfile = NonNullable<Awaited<ReturnType<typeof readResumeProfile>>["profile"]>;
@@ -180,7 +182,7 @@ function contactDetail(contact: Contact) {
     .join(" · ");
 }
 
-function ResumeBadgeList({ labels, size }: { labels: string[]; size?: BadgeProps["size"] }) {
+export function ResumeBadgeList({ labels, size }: { labels: string[]; size?: BadgeProps["size"] }) {
   return (
     <ul className="flex flex-wrap gap-2">
       {labels.map((label, index) => (
@@ -204,42 +206,43 @@ function ResumeEntryBody({ entry }: { entry: ResumeEntry }) {
     const text = items?.filter((item) => item?.trim()) ?? [];
     return text.length ? [{ label, text }] : [];
   });
+  const stages = entry.stages?.filter(hasEntryContent) ?? [];
 
   return (
-    <div className="flex min-w-0 flex-col gap-2.5">
+    <div className="flex min-w-0 flex-col gap-3">
       {(entry.title?.trim() || entry.subtitle?.trim() || entry.time) && (
-        <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-baseline sm:gap-5">
-          <div className="min-w-0 break-words">
-            {entry.title?.trim() && <h3 className="text-base font-semibold">{entry.title}</h3>}
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+          <div className="min-w-0 wrap-anywhere">
+            {entry.title?.trim() && (
+              <h3 className="text-[0.9375rem] leading-6 font-semibold">{entry.title}</h3>
+            )}
             {entry.subtitle?.trim() && (
-              <p className={entry.title?.trim() ? "mt-0.5 text-card-foreground/85" : undefined}>
-                {entry.subtitle}
-              </p>
+              <p className="text-sm leading-6 text-muted-foreground">{entry.subtitle}</p>
             )}
           </div>
           {entry.time && (
-            <p className="shrink-0 text-xs font-medium tabular-nums text-card-foreground/80">
+            <p className="w-full text-xs leading-6 text-muted-foreground tabular-nums sm:ms-auto sm:w-auto">
               {entry.time}
             </p>
           )}
         </div>
       )}
       {facts.length > 0 && (
-        <dl className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-card-foreground/80">
+        <dl className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm leading-6">
           {facts.map(([label, value]) => (
-            <div className="flex min-w-0 gap-1.5" key={label}>
-              <dt className="shrink-0 font-medium text-card-foreground">{label}</dt>
-              <dd className="min-w-0 break-words">{value}</dd>
+            <div className="flex min-w-0 items-baseline gap-1.5" key={label}>
+              <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
+              <dd className="min-w-0 wrap-anywhere">{value}</dd>
             </div>
           ))}
         </dl>
       )}
       {lists?.map(({ label, text }) => (
-        <div className="flex flex-col gap-1" key={label}>
-          <p className="text-sm font-medium text-card-foreground/85">{label}</p>
-          <ul className="flex list-disc flex-col gap-2 ps-4 leading-relaxed marker:text-card-foreground/75">
+        <div className="flex flex-col gap-1.5" key={label}>
+          <p className="text-xs font-medium text-muted-foreground">{label}</p>
+          <ul className="flex list-disc flex-col gap-1.5 ps-5 leading-6 marker:text-muted-foreground/70">
             {text.map((item, index) => (
-              <li className="whitespace-pre-line break-words" key={`${item}-${index}`}>
+              <li className="wrap-anywhere whitespace-pre-line" key={`${item}-${index}`}>
                 {item}
               </li>
             ))}
@@ -247,109 +250,156 @@ function ResumeEntryBody({ entry }: { entry: ResumeEntry }) {
         </div>
       ))}
       {entry.badges && <ResumeBadgeList labels={entry.badges} />}
-      {entry.stages?.filter(hasEntryContent).map((stage, index) => (
-        <div
-          className="mt-1 border-s-2 border-card-foreground/15 ps-3"
-          key={`${stage.title}-${stage.time}-${index}`}
-        >
-          <ResumeEntryBody entry={stage} />
-        </div>
-      ))}
+      {stages.length > 0 && (
+        <ul className="mt-1 flex flex-col gap-5 border-s border-border ps-4">
+          {stages.map((stage, index) => (
+            <li key={`${stage.title}-${stage.time}-${index}`}>
+              <ResumeEntryBody entry={stage} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
 
 function profileContacts(identity: ResumeProfile["identity"]) {
   return [
-    { detail: "", icon: IconMapPin, value: identity?.currentCity },
+    { detail: "", icon: IconMapPin, label: m.resume_profile_city(), value: identity?.currentCity },
     ...(identity?.phones ?? []).map((contact) => ({
       detail: contactDetail(contact),
       icon: IconPhone,
+      label: m.resume_profile_phone(),
       value: contact.value,
     })),
     ...(identity?.emails ?? []).map((contact) => ({
       detail: contactDetail(contact),
       icon: IconMail,
+      label: m.resume_profile_email(),
       value: contact.value,
     })),
-    ...(identity?.links ?? []).map((value) => ({ detail: "", icon: IconLink, value })),
+    ...(identity?.links ?? []).map((value) => ({
+      detail: "",
+      icon: IconLink,
+      label: m.resume_profile_link(),
+      value,
+    })),
   ].filter(({ value }) => value?.trim());
 }
 
-export function ResumeProfileDocument({ profile }: { profile: ResumeProfile }) {
-  const { identity } = profile;
-  const targetRoles =
-    profile.targetRoles?.flatMap(({ text }) => (text?.trim() ? [text] : [])) ?? [];
+export function getResumeProfileBasics(profile: ResumeProfile) {
+  return {
+    contacts: profileContacts(profile.identity),
+    targetRoles: profile.targetRoles?.flatMap(({ text }) => (text?.trim() ? [text] : [])) ?? [],
+  };
+}
+
+function ResumeProfileBasics({ contacts, targetRoles }: ReturnType<typeof getResumeProfileBasics>) {
+  if (!targetRoles.length && !contacts.length) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col gap-3 text-sm">
+      {targetRoles.length > 0 && (
+        <dl className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:gap-3">
+          <dt className="shrink-0 font-semibold">{m.resume_profile_target_roles()}</dt>
+          <dd className="min-w-0">
+            <ResumeBadgeList labels={targetRoles} size="lg" />
+          </dd>
+        </dl>
+      )}
+      {contacts.length > 0 && (
+        <dl className="flex flex-wrap gap-x-4 gap-y-2.5 text-card-foreground/80">
+          {contacts.map(({ detail, icon: Icon, label, value }, index) => (
+            <div className="min-w-0" key={`${value}-${index}`}>
+              <dt className="sr-only">{label}</dt>
+              <dd className="flex items-start gap-1.5">
+                <Icon aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+                <span className="min-w-0 wrap-anywhere">
+                  {value}
+                  {detail && <span className="ms-1.5">({detail})</span>}
+                </span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
+}
+
+function ResumeSection({ children, title }: { children: ReactNode; title: string }) {
+  return (
+    <section className="flex min-w-0 flex-col gap-4 border-t border-border/70 pt-5 first:border-t-0 first:pt-0 sm:pt-6">
+      <h2 className="text-base leading-6 font-semibold">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+export function ResumeProfileDocument({
+  profile,
+  layout = "preview",
+}: {
+  profile: ResumeProfile;
+  layout?: "inline" | "preview";
+}) {
+  const basics = layout === "preview" ? getResumeProfileBasics(profile) : null;
+  const name = profile.identity?.name?.trim();
   const summary =
     profile.professionalSummary?.flatMap(({ text }) => (text?.trim() ? [text] : [])) ?? [];
-  const contacts = profileContacts(identity);
   const sections = profileSections(profile)
     .map(({ entries, title }) => ({ entries: entries.filter(hasEntryContent), title }))
     .filter(({ entries }) => entries.length > 0);
-  const name = identity?.name?.trim();
 
-  if (!(name || targetRoles.length || contacts.length || summary.length || sections.length)) {
+  if (
+    !summary.length &&
+    !sections.length &&
+    !(basics && (name || basics.targetRoles.length || basics.contacts.length))
+  ) {
     return (
       <p className="p-6 text-center text-sm text-muted-foreground">{m.resume_profile_empty()}</p>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-3 sm:p-6">
-      <article className="flex select-text flex-col gap-6 p-5 text-sm sm:gap-8 sm:p-10">
+    <article
+      className={cn(
+        "flex max-w-4xl select-text flex-col gap-5 text-sm sm:gap-6",
+        layout === "preview" ? "mx-auto p-8 sm:p-16" : "pt-2 pb-6",
+      )}
+    >
+      {basics && (
         <header className="flex flex-col gap-3">
           <h2 className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">
             {name || m.resume_preview_standard()}
           </h2>
-          {targetRoles.length > 0 && (
-            <dl className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:gap-3">
-              <dt className="shrink-0 font-semibold">{m.resume_profile_target_roles()}</dt>
-              <dd className="min-w-0">
-                <ResumeBadgeList labels={targetRoles} size="lg" />
-              </dd>
-            </dl>
-          )}
-          {contacts.length > 0 && (
-            <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-card-foreground/80">
-              {contacts.map(({ detail, icon: Icon, value }, index) => (
-                <li className="flex min-w-0 items-start gap-1.5" key={`${value}-${index}`}>
-                  <Icon aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-                  <span className="min-w-0 wrap-anywhere">
-                    {value}
-                    {detail && <span className="ms-1.5">({detail})</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <ResumeProfileBasics {...basics} />
         </header>
-        {summary.length > 0 && (
-          <section className="flex flex-col gap-3.5">
-            <h2 className="border-b border-card-foreground/15 pb-2 text-lg font-semibold">
-              {m.resume_profile_summary()}
-            </h2>
-            <div className="flex flex-col gap-2 leading-relaxed">
-              {summary.map((text, index) => (
-                <p className="whitespace-pre-line break-words" key={`${text}-${index}`}>
-                  {text}
-                </p>
-              ))}
-            </div>
-          </section>
-        )}
-        {sections.map(({ entries, title }) => (
-          <section className="flex flex-col gap-3.5" key={title}>
-            <h2 className="border-b border-card-foreground/15 pb-2 text-lg font-semibold">
-              {title}
-            </h2>
-            <div className="flex flex-col gap-6">
-              {entries.map((entry, index) => (
-                <ResumeEntryBody entry={entry} key={`${entry.title}-${entry.time}-${index}`} />
-              ))}
-            </div>
-          </section>
-        ))}
-      </article>
-    </div>
+      )}
+      {summary.length > 0 && (
+        <ResumeSection title={m.resume_profile_summary()}>
+          <div className="flex flex-col gap-2.5 leading-7">
+            {summary.map((text, index) => (
+              <p className="wrap-anywhere whitespace-pre-line" key={`${text}-${index}`}>
+                {text}
+              </p>
+            ))}
+          </div>
+        </ResumeSection>
+      )}
+      {sections.map(({ entries, title }) => (
+        <ResumeSection key={title} title={title}>
+          <ul className="flex flex-col gap-6 sm:gap-7">
+            {entries.map((entry, index) => (
+              <li key={`${entry.title}-${entry.time}-${index}`}>
+                <ResumeEntryBody entry={entry} />
+              </li>
+            ))}
+          </ul>
+        </ResumeSection>
+      ))}
+    </article>
   );
 }

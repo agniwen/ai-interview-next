@@ -13,6 +13,43 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { outboxEntry } from "./outbox";
 import { completedResumeFilter } from "./queries";
 
+interface ApplicationActor {
+  id: string;
+  type: "user" | "system";
+}
+
+function applicationCreationStatements(
+  db: Database,
+  input: Pick<
+    typeof application.$inferInsert,
+    "id" | "candidateId" | "createdAt" | "jobId" | "workspaceId"
+  >,
+  actor: ApplicationActor,
+) {
+  return [
+    db.insert(application).values({
+      ...input,
+      createdBy: actor.id,
+      createdByType: actor.type,
+      stage: "screening",
+    }),
+    db.insert(applicationActivity).values({
+      action: "created",
+      actorId: actor.id,
+      actorType: actor.type,
+      applicationId: input.id,
+      id: `created-${input.id}`,
+      occurredAt: input.createdAt,
+      result: {
+        outcome: "created",
+        reason: actor.type === "system" ? "job_matched" : "manual",
+        version: 1,
+      },
+      workspaceId: input.workspaceId,
+    }),
+  ] as const;
+}
+
 function evaluationStatements(
   db: Database,
   runId: string,
@@ -41,6 +78,7 @@ export async function createApplication(
   db: Database,
   workspaceId: string,
   input: { jobId: string; resumeId: string },
+  actorId: string,
 ) {
   const { jobId, resumeId } = input;
   const [pdf, target] = await Promise.all([
@@ -78,6 +116,7 @@ export async function createApplication(
         eq(application.jobId, jobId),
         eq(application.candidateId, candidateId),
         isNull(application.closedAt),
+        isNull(application.deletedAt),
       ),
     )
     .get();
@@ -108,14 +147,11 @@ export async function createApplication(
     existing
       ? actions
       : [
-          db.insert(application).values({
-            candidateId,
-            createdAt,
-            id: applicationId,
-            jobId,
-            stage: "screening",
-            workspaceId,
-          }),
+          ...applicationCreationStatements(
+            db,
+            { candidateId, createdAt, id: applicationId, jobId, workspaceId },
+            { id: actorId, type: "user" },
+          ),
           ...actions,
         ],
   );
@@ -127,7 +163,7 @@ export async function matchSubmissionJob(
   workspaceId: string,
   id: string,
   jobId: string,
-  actor: { id: string; type: "user" | "system" },
+  actor: ApplicationActor,
 ) {
   const [[entry], [target]] = await Promise.all([
     db
@@ -157,6 +193,7 @@ export async function matchSubmissionJob(
         eq(application.jobId, jobId),
         eq(application.candidateId, record.resolvedCandidateId),
         isNull(application.closedAt),
+        isNull(application.deletedAt),
       ),
     );
   if (existing && existing.id === record.applicationId) {
@@ -197,21 +234,24 @@ export async function matchSubmissionJob(
   const queries = existing
     ? actions
     : ([
-        db.insert(application).values({
-          candidateId: record.resolvedCandidateId,
-          createdAt,
-          id: applicationId,
-          jobId,
-          stage: "screening",
-          workspaceId,
-        }),
+        ...applicationCreationStatements(
+          db,
+          {
+            candidateId: record.resolvedCandidateId,
+            createdAt,
+            id: applicationId,
+            jobId,
+            workspaceId,
+          },
+          actor,
+        ),
         ...actions,
       ] as const);
   if (record.applicationId) {
     const [previous] = await db
       .select({ closedAt: application.closedAt })
       .from(application)
-      .where(eq(application.id, record.applicationId));
+      .where(and(eq(application.id, record.applicationId), isNull(application.deletedAt)));
     if (previous && !previous.closedAt) {
       await db.batch([
         ...queries,
@@ -256,6 +296,7 @@ export async function closeApplication(
     eq(application.id, id),
     eq(application.workspaceId, workspaceId),
     isNull(application.closedAt),
+    isNull(application.deletedAt),
   );
   const [, changed] = await db.batch([
     db.insert(applicationActivity).select(
@@ -282,4 +323,27 @@ export async function closeApplication(
     }),
   ]);
   return changed.length > 0;
+}
+
+export async function deleteApplication(
+  db: Database,
+  workspaceId: string,
+  id: string,
+  userId: string,
+) {
+  const deleted = await db
+    .update(application)
+    .set({ deletedAt: new Date() })
+    .where(
+      and(
+        eq(application.workspaceId, workspaceId),
+        eq(application.id, id),
+        eq(application.createdBy, userId),
+        eq(application.createdByType, "user"),
+        isNull(application.deletedAt),
+      ),
+    )
+    .returning({ id: application.id })
+    .get();
+  return Boolean(deleted);
 }

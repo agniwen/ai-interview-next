@@ -11,6 +11,18 @@ export const listQuery = paginationQuery.extend({
 
 export const jobListQuery = listQuery.extend({ projectId: z.uuid().optional() });
 
+export const projectInput = z.strictObject({
+  title: z.string().trim().min(1).max(200),
+  version: z.literal(1),
+});
+
+export const jobInput = projectInput.extend({
+  projectId: z.uuid().optional(),
+  requirements: z.string().trim().min(1).max(30_000),
+});
+
+export const updateJobInput = jobInput.extend({ projectId: z.uuid().nullable() });
+
 export const applicationListQuery = jobListQuery.extend({
   status: z.enum(["open", "closed"]).optional(),
 });

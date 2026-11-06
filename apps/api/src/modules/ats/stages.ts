@@ -255,10 +255,10 @@ export async function consumeResumeStage(
     }
 
     const [applicationRow] = await db
-      .select({ closedAt: application.closedAt })
+      .select({ closedAt: application.closedAt, deletedAt: application.deletedAt })
       .from(application)
       .where(eq(application.id, entry!.applicationId!));
-    if (applicationRow!.closedAt) {
+    if (applicationRow!.closedAt || applicationRow!.deletedAt) {
       await db.batch([
         db
           .update(run)

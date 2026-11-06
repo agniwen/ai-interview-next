@@ -132,7 +132,7 @@ export const resumeProcessingOutbox = sqliteTable(
 export const applicationActivity = sqliteTable(
   "application_activity",
   {
-    action: text("action", { enum: ["closed"] }).notNull(),
+    action: text("action", { enum: ["created", "closed"] }).notNull(),
     actorId: text("actorId").notNull(),
     actorType: text("actorType", { enum: ["user", "system"] }).notNull(),
     applicationId: text("applicationId").notNull(),

@@ -23,23 +23,47 @@ import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { listParams } from "./list-search";
 
-function ProjectForm({ onSuccess, workspaceId }: { onSuccess: () => void; workspaceId: string }) {
+interface EditableProject {
+  id: string;
+  title: string;
+}
+
+function ProjectForm({
+  onSuccess,
+  project,
+  workspaceId,
+}: {
+  onSuccess: () => void;
+  project?: EditableProject;
+  workspaceId: string;
+}) {
   const client = useQueryClient();
   const formId = useId();
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(project?.title ?? "");
   const mutation = useMutation({
-    mutationFn: async () =>
-      readAts(await atsApi.projects.$post({ json: { title, version: 1 }, param: { workspaceId } })),
+    mutationFn: async () => {
+      const json = { title, version: 1 as const };
+      return readAts(
+        project
+          ? await atsApi.projects[":id"].$put({ json, param: { id: project.id, workspaceId } })
+          : await atsApi.projects.$post({ json, param: { workspaceId } }),
+      );
+    },
     async onSuccess() {
-      await client.invalidateQueries({ queryKey: atsKeys.projects(workspaceId).queryKey });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: atsKeys.projects(workspaceId).queryKey }),
+        ...(project
+          ? [client.invalidateQueries({ queryKey: atsKeys.jobs(workspaceId)._ctx.list._def })]
+          : []),
+      ]);
       onSuccess();
     },
   });
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{m.ats_create_project()}</DialogTitle>
-        <DialogDescription>{m.ats_create_project_help()}</DialogDescription>
+        <DialogTitle>{project ? m.ats_edit_project() : m.ats_create_project()}</DialogTitle>
+        {!project && <DialogDescription>{m.ats_create_project_help()}</DialogDescription>}
       </DialogHeader>
       <DialogPanel
         render={
@@ -58,9 +82,9 @@ function ProjectForm({ onSuccess, workspaceId }: { onSuccess: () => void; worksp
           </Alert>
         )}
         <Field>
-          <FieldLabel htmlFor="ats-project-title">{m.ats_project_name()}</FieldLabel>
+          <FieldLabel htmlFor={`${formId}-title`}>{m.ats_project_name()}</FieldLabel>
           <Input
-            id="ats-project-title"
+            id={`${formId}-title`}
             maxLength={200}
             onChange={(event) => setTitle(event.target.value)}
             required
@@ -78,7 +102,7 @@ function ProjectForm({ onSuccess, workspaceId }: { onSuccess: () => void; worksp
 }
 
 export function ProjectsPage({ workspaceId, query, onQueryChange }: AtsPageProps) {
-  const createDialog = useMemo(() => createDialogHandle(), []);
+  const dialog = useMemo(() => createDialogHandle<EditableProject>(), []);
   const { data, isError, refetch } = useQuery({
     queryFn: async ({ signal }) =>
       readAts(
@@ -92,14 +116,24 @@ export function ProjectsPage({ workspaceId, query, onQueryChange }: AtsPageProps
   return (
     <AtsListPage
       action={
-        <DialogTrigger handle={createDialog} render={<Button variant="outline" />}>
+        <DialogTrigger handle={dialog} render={<Button variant="outline" />}>
           {m.ats_create_project()}
         </DialogTrigger>
       }
       title={m.ats_projects()}
       icon={IconFolders}
+      hasRowActions
       headings={[m.ats_project_name(), m.ats_date()]}
       rows={data?.rows.map((row) => ({
+        action: (
+          <DialogTrigger
+            handle={dialog}
+            payload={{ id: row.id, title: row.title }}
+            render={<Button size="sm" variant="outline" />}
+          >
+            {m.ats_edit()}
+          </DialogTrigger>
+        ),
         cells: [row.title, atsDate(row.createdAt)],
         id: row.id,
       }))}
@@ -111,18 +145,22 @@ export function ProjectsPage({ workspaceId, query, onQueryChange }: AtsPageProps
       onQueryChange={onQueryChange}
       onRefresh={refetch}
     >
-      <Dialog handle={createDialog}>
-        <DialogPopup>
-          <ProjectForm
-            workspaceId={workspaceId}
-            onSuccess={() => {
-              createDialog.close();
-              if (query.page !== 1) {
-                onQueryChange({ page: 1 });
-              }
-            }}
-          />
-        </DialogPopup>
+      <Dialog handle={dialog}>
+        {({ payload }) => (
+          <DialogPopup>
+            <ProjectForm
+              key={payload?.id}
+              project={payload}
+              workspaceId={workspaceId}
+              onSuccess={() => {
+                dialog.close();
+                if (!payload && query.page !== 1) {
+                  onQueryChange({ page: 1 });
+                }
+              }}
+            />
+          </DialogPopup>
+        )}
       </Dialog>
     </AtsListPage>
   );

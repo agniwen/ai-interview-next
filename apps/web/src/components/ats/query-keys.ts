@@ -9,7 +9,7 @@ import type {
 export const atsKeys = createQueryKeys("ats", {
   applications: (workspaceId: string) => ({
     contextQueries: {
-      history: (id: string) => [id],
+      detail: (id: string) => [id],
       list: (query: ApplicationListSearch) => [query],
     },
     queryKey: [workspaceId],
@@ -24,6 +24,7 @@ export const atsKeys = createQueryKeys("ats", {
   }),
   jobs: (workspaceId: string) => ({
     contextQueries: {
+      detail: (id: string) => [id],
       list: (query: JobListSearch) => [query],
       options: null,
     },

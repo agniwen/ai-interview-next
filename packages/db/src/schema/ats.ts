@@ -153,6 +153,12 @@ export const application = sqliteTable(
     closedAt: integer("closedAt", { mode: "timestamp_ms" }),
     /** 应聘记录建立时间。 / Application creation time. */
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+    /** 发起者 ID，历史记录缺少发起者时为空。 / Creator ID. Null for historical records without a recorded creator. */
+    createdBy: text("createdBy"),
+    /** 发起者是用户还是系统。 / Whether the creator is a user or the system. */
+    createdByType: text("createdByType", { enum: ["user", "system"] }),
+    /** 流程被创建人删除的时间。 / Time when the creator deleted the application. */
+    deletedAt: integer("deletedAt", { mode: "timestamp_ms" }),
     /** 应聘记录 ID。 / Application ID. */
     id: text("id").primaryKey(),
     /** 该次招聘流程的岗位。 / Job in this hiring process. */
@@ -168,7 +174,7 @@ export const application = sqliteTable(
     uniqueIndex("application_workspace_id_uq").on(table.workspaceId, table.id),
     uniqueIndex("application_open_candidate_job_uq")
       .on(table.workspaceId, table.candidateId, table.jobId)
-      .where(sql`${table.closedAt} is null`),
+      .where(sql`${table.closedAt} is null and ${table.deletedAt} is null`),
     foreignKey({
       columns: [table.workspaceId, table.candidateId],
       foreignColumns: [candidate.workspaceId, candidate.id],

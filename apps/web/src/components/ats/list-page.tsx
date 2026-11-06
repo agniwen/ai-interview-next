@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useTransition } from "react";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { IconFolder, IconRefresh } from "@tabler/icons-react";
 import type { Icon } from "@tabler/icons-react";
 import { PageHeader, PageHeaderContent } from "@/components/layout/page-header";
@@ -26,6 +26,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { ScrollAreaPrimitive, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
+import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 
 import { AtsListSearchField } from "./list-search-field";
@@ -47,39 +49,98 @@ export interface AtsPageProps<Query extends ListSearch = ListSearch> {
   onQueryChange: (changes: Partial<Query>) => void;
 }
 
-type AtsRows = { id: string; cells: ReactNode[] }[];
+type AtsRows = { id: string; cells: ReactNode[]; action?: ReactNode }[];
+
+const tableHeaderSurface = "bg-background bg-linear-to-b from-muted/72 to-muted/72";
+const actionColumnClassName =
+  "sticky right-0 z-10 w-px text-right in-data-overflow-x-end:before:pointer-events-none in-data-overflow-x-end:before:absolute in-data-overflow-x-end:before:inset-y-0 in-data-overflow-x-end:before:left-0 in-data-overflow-x-end:before:w-px in-data-overflow-x-end:before:bg-border";
+// 用表框底色遮住圆角外侧露出的滚动内容。 / Cover scrolling content outside the rounded corners with the frame surface.
+const actionCornerMask = cn(
+  tableHeaderSurface,
+  "pointer-events-none absolute -right-px hidden size-[var(--radius-xl)] in-data-overflow-x-end:block",
+);
+
+function renderTableViewport({ children, className, ...props }: ComponentProps<"div">) {
+  return (
+    <ScrollAreaPrimitive.Viewport
+      className={cn(
+        "rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        className,
+      )}
+      {...props}
+    >
+      <ScrollAreaPrimitive.Content>{children}</ScrollAreaPrimitive.Content>
+    </ScrollAreaPrimitive.Viewport>
+  );
+}
 
 function AtsTable({
   firstColumnClassName,
+  hasRowActions,
   headings,
   rows,
 }: {
   firstColumnClassName?: string;
+  hasRowActions?: boolean;
   headings: string[];
   rows: AtsRows;
 }) {
   return (
-    <Frame className="w-full">
-      <Table variant="card">
-        <TableHeader>
-          <TableRow>
-            {headings.map((heading, index) => (
-              <TableHead className={index === 0 ? firstColumnClassName : undefined} key={heading}>
-                {heading}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.cells.map((cell, index) => (
-                <TableCell key={headings[index]}>{cell}</TableCell>
+    <Frame className={cn("w-full", tableHeaderSurface)}>
+      <ScrollAreaPrimitive.Root
+        className="min-w-0 data-has-overflow-x:pb-3.5"
+        overflowEdgeThreshold={1}
+      >
+        <Table render={renderTableViewport} variant="card">
+          <TableHeader>
+            <TableRow>
+              {headings.map((heading, index) => (
+                <TableHead className={index === 0 ? firstColumnClassName : undefined} key={heading}>
+                  {heading}
+                </TableHead>
               ))}
+              {hasRowActions && (
+                <TableHead className={cn(actionColumnClassName, tableHeaderSurface)} scope="col">
+                  {m.ats_action()}
+                </TableHead>
+              )}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row, rowIndex) => (
+              <TableRow key={row.id}>
+                {row.cells.map((cell, index) => (
+                  <TableCell key={headings[index]}>{cell}</TableCell>
+                ))}
+                {hasRowActions && (
+                  <TableCell className={cn(actionColumnClassName, "bg-clip-border")}>
+                    {row.action}
+                    {rowIndex === 0 && (
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          actionCornerMask,
+                          "-top-px [mask-image:radial-gradient(circle_at_bottom_left,transparent_calc(var(--radius-xl)-0.5px),black_var(--radius-xl))]",
+                        )}
+                      />
+                    )}
+                    {rowIndex === rows.length - 1 && (
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          actionCornerMask,
+                          "-bottom-px [mask-image:radial-gradient(circle_at_top_left,transparent_calc(var(--radius-xl)-0.5px),black_var(--radius-xl))]",
+                        )}
+                      />
+                    )}
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <ScrollBar orientation="horizontal" />
+      </ScrollAreaPrimitive.Root>
     </Frame>
   );
 }
@@ -112,6 +173,7 @@ export function AtsListPage({
   icon: Icon,
   filters,
   feedback,
+  hasRowActions,
   headings,
   firstColumnClassName,
   rows,
@@ -130,6 +192,7 @@ export function AtsListPage({
   icon: Icon;
   filters?: ReactNode;
   feedback?: ReactNode;
+  hasRowActions?: boolean;
   headings: string[];
   firstColumnClassName?: string;
   rows?: AtsRows;
@@ -145,6 +208,9 @@ export function AtsListPage({
   const { page, pageSize, search } = query;
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const phase = useSkeletonPhase(!error && !rows);
+  const sampleRowAction = (
+    <span className="inline-flex h-8 items-center sm:h-7">{m.ats_action()}</span>
+  );
   return (
     <>
       <PageHeaderContent>
@@ -196,8 +262,10 @@ export function AtsListPage({
           <AtsTableSkeleton>
             <AtsTable
               firstColumnClassName={firstColumnClassName}
+              hasRowActions={hasRowActions}
               headings={headings}
               rows={Array.from({ length: 5 }, (_, index) => ({
+                action: sampleRowAction,
                 cells: headings,
                 id: String(index),
               }))}
@@ -219,6 +287,7 @@ export function AtsListPage({
             ) : (
               <AtsTable
                 firstColumnClassName={firstColumnClassName}
+                hasRowActions={hasRowActions}
                 headings={headings}
                 rows={rows}
               />

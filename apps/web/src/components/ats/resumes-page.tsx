@@ -275,13 +275,13 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
         )
       }
       firstColumnClassName="w-120 min-w-40"
+      hasRowActions
       headings={[
         m.ats_filename(),
         m.ats_candidate(),
         m.ats_status(),
         m.ats_creator(),
         m.ats_date(),
-        m.ats_action(),
       ]}
       rows={data?.rows.map((row) => {
         const { runId } = row;
@@ -306,6 +306,38 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
           </>
         );
         return {
+          action: (
+            <div className="flex justify-end gap-1">
+              {runId && row.parseStatus === "failed" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={retry.isPending}
+                  onClick={() => retry.mutate(runId)}
+                >
+                  {m.ats_retry()}
+                </Button>
+              )}
+              {row.status === "accepted" && (
+                <DialogTrigger
+                  handle={previewDialog}
+                  payload={previewPayload}
+                  render={<Button variant="outline" size="sm" />}
+                >
+                  {m.ats_view_resume()}
+                </DialogTrigger>
+              )}
+              {recruitmentResumeId && (
+                <DialogTrigger
+                  handle={recruitmentDialog}
+                  payload={recruitmentResumeId}
+                  render={<Button variant="outline" size="sm" />}
+                >
+                  {m.ats_join_recruitment()}
+                </DialogTrigger>
+              )}
+            </div>
+          ),
           cells: [
             <div className="contain-inline-size" key="name">
               {row.status === "accepted" ? (
@@ -346,36 +378,6 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
             />,
             <UserColumn key="creator" user={row.creator} />,
             atsDate(row.createdAt),
-            <div key="actions" className="flex gap-1">
-              {runId && row.parseStatus === "failed" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={retry.isPending}
-                  onClick={() => retry.mutate(runId)}
-                >
-                  {m.ats_retry()}
-                </Button>
-              )}
-              {row.status === "accepted" && (
-                <DialogTrigger
-                  handle={previewDialog}
-                  payload={previewPayload}
-                  render={<Button variant="outline" size="sm" />}
-                >
-                  {m.ats_view_resume()}
-                </DialogTrigger>
-              )}
-              {recruitmentResumeId && (
-                <DialogTrigger
-                  handle={recruitmentDialog}
-                  payload={recruitmentResumeId}
-                  render={<Button variant="outline" size="sm" />}
-                >
-                  {m.ats_join_recruitment()}
-                </DialogTrigger>
-              )}
-            </div>,
           ],
           id: row.id,
         };
