@@ -30,9 +30,10 @@
       "database_name": "sainoa-auth",
       "database_id": "f8dc4135-b75c-46a9-9e32-91acbedaadde",
       "migrations_dir": "../../packages/db/migrations",
+      "remote": true,
     },
   ],
-  "r2_buckets": [{ "binding": "RESUME_FILES", "bucket_name": "sainoa-resumes" }],
+  "r2_buckets": [{ "binding": "RESUME_FILES", "bucket_name": "sainoa-resumes", "remote": true }],
   "queues": {
     "producers": [
       { "binding": "RESUME_EXTRACT_QUEUE", "queue": "sainoa-resume-extract" },

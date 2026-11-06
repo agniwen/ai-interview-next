@@ -35,11 +35,16 @@ bun run dev
 
 Web 应用运行在 `http://localhost:3000`，API 运行在 `http://localhost:8787`。`make dev` 同时启动二者；语音服务仍单独启动。
 
+需要使用生产数据开发时，先在 `apps/api` 执行 `bunx --no-install wrangler login` 登录 Cloudflare，再从仓库根目录运行 `bun run dev:remote` 或 `make dev-remote`。Web 和 API 仍在上述本地端口运行，登录沿用 `apps/api/.env` 中的 localhost 配置。此模式连接生产 D1 和 R2，写入会直接修改生产数据。详见 [Cloudflare Remote Bindings](https://developers.cloudflare.com/workers/local-development/#remote-bindings)。
+
+队列、Workflow 和 Durable Objects 在本地运行，并使用独立于普通开发的本地状态。简历处理和重试会通过共享的生产 D1 写入任务状态，验证这些流程时使用 `make dev`。直接运行 Wrangler 做纯本地开发时，使用 `wrangler dev --local`。
+
 也可以使用根目录的 Makefile：首次执行 `make install` 安装依赖，之后运行 `make dev` 启动。执行 `make` 或 `make help` 查看所有快捷命令。Makefile 直接调用现有 Bun 脚本，保留 Turbo 的编译依赖和缓存流程。
 
 | 命令                      | 用途                                               |
 | ------------------------- | -------------------------------------------------- |
 | `bun run dev`             | 启动应用开发服务                                   |
+| `bun run dev:remote`      | 本地启动 Web 和 API，连接生产 D1 和 R2             |
 | `bun run build`           | 按依赖顺序构建，缓存构建产物                       |
 | `bun run typecheck`       | 生成路由并用 tsrs 检查 TypeScript 类型             |
 | `bun run check`           | 对整个仓库执行 Ultracite 格式和 lint 检查          |

@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:remote": "turbo run dev:remote",
     "generate-routes": "turbo run generate-routes",
     "build": "turbo run build",
     "preview": "turbo run preview",

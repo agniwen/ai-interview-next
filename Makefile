@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: api-dev api-build voice-install voice-download voice-console voice-dev voice-start voice-deploy voice-status voice-logs help install dev build preview test test-watch coverage typecheck check fix deploy db-generate db-migrate db-migrate-remote
+.PHONY: api-dev api-build voice-install voice-download voice-console voice-dev voice-start voice-deploy voice-status voice-logs help install dev dev-remote build preview test test-watch coverage typecheck check fix deploy db-generate db-migrate db-migrate-remote
 
 help:
 	@printf '%s\n' \
@@ -10,6 +10,7 @@ help:
 	  'make api-dev / api-build  单独启动 API / 验证 API 构建' \
 	  'make install     安装依赖' \
 	  'make dev         启动 Web（3000）和 API（8787）' \
+	  'make dev-remote  本地启动 Web 和 API，连接生产 D1 和 R2' \
 	  'make build       构建生产产物' \
 	  'make preview     构建并预览生产版本' \
 	  'make test        运行测试' \
@@ -28,6 +29,9 @@ install:
 
 dev:
 	bun run dev
+
+dev-remote:
+	bun run dev:remote
 
 build:
 	bun run build

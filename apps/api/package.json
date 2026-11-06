@@ -10,7 +10,8 @@
     }
   },
   "scripts": {
-    "dev": "CLOUDFLARE_DEV_REGISTRY_PATH=../../.wrangler/registry wrangler dev --config wrangler.jsonc --port 8787",
+    "dev": "CLOUDFLARE_DEV_REGISTRY_PATH=../../.wrangler/registry wrangler dev --config wrangler.jsonc --port 8787 --local",
+    "dev:remote": "CLOUDFLARE_DEV_REGISTRY_PATH=../../.wrangler/registry wrangler dev --config wrangler.jsonc --port 8787 --persist-to .wrangler/state-remote",
     "build": "WRANGLER_NO_SKILLS_UPDATE_PROMPTS=true wrangler deploy --config wrangler.jsonc --dry-run --outdir dist",
     "deploy": "WRANGLER_NO_SKILLS_UPDATE_PROMPTS=true wrangler deploy --config wrangler.jsonc --env-file .env.production --secrets-file .env.production",
     "typecheck": "tsrs --noEmit",

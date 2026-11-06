@@ -11,6 +11,12 @@
       "persistent": true,
       "dependsOn": ["i18n:compile"]
     },
+    "dev:remote": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["i18n:compile"],
+      "passThroughEnv": ["CLOUDFLARE_*", "*_PROXY", "*_proxy"]
+    },
     "generate-routes": {
       "cache": false
     },
