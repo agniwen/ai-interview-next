@@ -1,7 +1,7 @@
 import { TableFilterSelect } from "@/components/layout/table-filters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useMemo, useState } from "react";
-import { IconFileCv } from "@tabler/icons-react";
+import { IconAlertCircle, IconFileCv } from "@tabler/icons-react";
 import { ResumePreviewDialog } from "@/components/features/document-preview/resume-preview-dialog";
 import {
   getResumeDocumentFileIconKind,
@@ -33,7 +33,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserColumn } from "@/components/user-column";
+import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
 import { atsApi, atsDate, atsStatus, readAts } from "./client";
@@ -107,21 +111,24 @@ function ResumeCandidateDialog({
   onClose: () => void;
   onSuccess: () => Promise<void>;
 }) {
-  const [value, setValue] = useState("");
+  const [mode, setMode] = useState("existing");
+  const [candidateId, setCandidateId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const param = { workspaceId };
-  const { data, isError } = useQuery({
+  const { data, isError, isPending } = useQuery({
+    enabled: mode === "existing",
     queryFn: async () => {
       const { rows } = await readAts(await atsApi.candidates.$get({ param, query: { page: "1" } }));
-      return rows.map((candidate) => ({ id: candidate.id, label: candidate.name }));
+      return rows.map((candidate) => ({ label: candidate.name, value: candidate.id }));
     },
     queryKey: atsKeys.candidates(workspaceId)._ctx.resolveOptions.queryKey,
   });
+  const phase = useSkeletonPhase(mode === "existing" && isPending);
   const mutation = useMutation({
-    async mutationFn() {
+    async mutationFn(selection: { candidateId: string } | { name: string }) {
       await readAts(
         await atsApi.submissions[":id"].resolve.$post({
-          json: value ? { candidateId: value, version: 1 } : { name, version: 1 },
+          json: { ...selection, version: 1 },
           param: { ...param, id: submissionId },
         }),
       );
@@ -132,6 +139,9 @@ function ResumeCandidateDialog({
     },
   });
   const title = m.ats_review();
+  const trimmedName = name.trim();
+  const selection =
+    mode === "existing" ? candidateId && { candidateId } : trimmedName && { name: trimmedName };
   return (
     <DialogPopup>
       <DialogHeader>
@@ -139,45 +149,67 @@ function ResumeCandidateDialog({
         <DialogDescription>{m.ats_review_help()}</DialogDescription>
       </DialogHeader>
       <DialogPanel>
-        <div className="flex flex-col gap-4">
-          {(isError || mutation.isError) && (
+        <Tabs className="gap-4" onValueChange={(next) => setMode(String(next))} value={mode}>
+          <TabsList aria-label={title} className="w-full">
+            <TabsTab value="existing">{m.ats_link_existing_candidate()}</TabsTab>
+            <TabsTab value="new">{m.ats_new_candidate()}</TabsTab>
+          </TabsList>
+          {mutation.isError && (
             <Alert variant="error">
               <AlertDescription>{m.ats_error()}</AlertDescription>
             </Alert>
           )}
-          <Field>
-            <FieldLabel>{m.ats_candidate()}</FieldLabel>
-            <Select
-              value={value}
-              onValueChange={(next) => setValue(next ?? "")}
-              items={data?.map((entry) => ({ label: entry.label, value: entry.id }))}
-            >
-              <SelectTrigger aria-label={m.ats_candidate()}>
-                <SelectValue placeholder={title} />
-              </SelectTrigger>
-              <SelectPopup>
-                <SelectGroup>
-                  {data?.map((entry) => (
-                    <SelectItem key={entry.id} value={entry.id}>
-                      {entry.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectPopup>
-            </Select>
-          </Field>
-          {!value && (
+          <TabsPanel value="existing">
+            {isError ? (
+              <Alert variant="error">
+                <AlertDescription>{m.ats_error()}</AlertDescription>
+              </Alert>
+            ) : (
+              <Field>
+                <FieldLabel>{m.ats_candidate()}</FieldLabel>
+                {phase === "skeleton" ? (
+                  <Skeleton aria-busy="true" aria-label={m.ats_loading()} className="h-9 sm:h-8" />
+                ) : (
+                  <Select
+                    disabled={!data?.length}
+                    items={data}
+                    onValueChange={setCandidateId}
+                    value={candidateId}
+                  >
+                    <SelectTrigger aria-label={m.ats_candidate()}>
+                      <SelectValue
+                        placeholder={
+                          data?.length === 0 ? m.ats_empty_candidates() : m.ats_select_candidate()
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      <SelectGroup>
+                        {data?.map(({ label, value }) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectPopup>
+                  </Select>
+                )}
+              </Field>
+            )}
+          </TabsPanel>
+          <TabsPanel value="new">
             <Field>
               <FieldLabel>{m.ats_name()}</FieldLabel>
               <Input value={name} onChange={(event) => setName(event.target.value)} />
             </Field>
-          )}
-        </div>
+          </TabsPanel>
+        </Tabs>
       </DialogPanel>
       <DialogFooter>
         <Button
-          onClick={() => mutation.mutate()}
-          disabled={mutation.isPending || (!value && !name.trim())}
+          onClick={() => selection && mutation.mutate(selection)}
+          disabled={!selection}
+          loading={mutation.isPending}
         >
           {m.ats_save()}
         </Button>
@@ -252,7 +284,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
         m.ats_action(),
       ]}
       rows={data?.rows.map((row) => {
-        const { runId, submissionId } = row;
+        const { runId } = row;
         const recruitmentResumeId = recruitmentResumes.get(row.id);
         const previewPayload = { filename: row.filename, id: row.id };
         const batch = data.batches.find((entry) => entry.id === row.batchId);
@@ -291,7 +323,21 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
                 </span>
               )}
             </div>,
-            row.candidateName ?? (row.identityStatus === "pending_review" ? m.ats_review() : "—"),
+            row.identityStatus === "pending_review" ? (
+              <Tooltip key="candidate">
+                <TooltipTrigger
+                  className="inline-flex items-center gap-1.5 rounded-sm text-warning-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                  render={<span />}
+                  tabIndex={0}
+                >
+                  {row.candidateName ?? m.ats_candidate_pending_review()}
+                  <IconAlertCircle aria-hidden="true" className="size-4 shrink-0" />
+                </TooltipTrigger>
+                <TooltipPopup>{m.ats_review_in_resume_details()}</TooltipPopup>
+              </Tooltip>
+            ) : (
+              (row.candidateName ?? "—")
+            ),
             <ResumeStatusBadge
               error={row.parseStatus === "failed" ? row.error : undefined}
               key="status"
@@ -329,15 +375,6 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
                   {m.ats_join_recruitment()}
                 </DialogTrigger>
               )}
-              {submissionId && row.identityStatus === "pending_review" && (
-                <DialogTrigger
-                  handle={candidateDialog}
-                  payload={submissionId}
-                  render={<Button variant="outline" size="sm" />}
-                >
-                  {m.ats_review()}
-                </DialogTrigger>
-              )}
             </div>,
           ],
           id: row.id,
@@ -351,19 +388,6 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
       onQueryChange={onQueryChange}
       onRefresh={refetch}
     >
-      <Dialog handle={candidateDialog}>
-        {({ payload }) =>
-          payload && (
-            <ResumeCandidateDialog
-              key={payload}
-              submissionId={payload}
-              workspaceId={workspaceId}
-              onClose={() => candidateDialog.close()}
-              onSuccess={refresh}
-            />
-          )
-        }
-      </Dialog>
       <CreateApplicationDialog handle={recruitmentDialog} workspaceId={workspaceId} />
       <Dialog handle={previewDialog}>
         {({ payload }) => {
@@ -371,12 +395,39 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
             return null;
           }
           const resumeId = recruitmentResumes.get(payload.id);
+          const row = data?.rows.find(({ id }) => id === payload.id);
+          const reviewId = row?.identityStatus === "pending_review" ? row.submissionId : null;
           return (
             <ResumePreviewDialog
               actions={
-                resumeId && (
-                  <CreateApplicationDialog resumeId={resumeId} workspaceId={workspaceId} />
-                )
+                <>
+                  <Dialog handle={candidateDialog}>
+                    {({ payload: submissionId }) => (
+                      <>
+                        {reviewId && (
+                          <DialogTrigger
+                            payload={reviewId}
+                            render={<Button variant="outline" size="sm" />}
+                          >
+                            {m.ats_review()}
+                          </DialogTrigger>
+                        )}
+                        {submissionId && (
+                          <ResumeCandidateDialog
+                            key={submissionId}
+                            submissionId={submissionId}
+                            workspaceId={workspaceId}
+                            onClose={() => candidateDialog.close()}
+                            onSuccess={refresh}
+                          />
+                        )}
+                      </>
+                    )}
+                  </Dialog>
+                  {resumeId && (
+                    <CreateApplicationDialog resumeId={resumeId} workspaceId={workspaceId} />
+                  )}
+                </>
               }
               key={`${workspaceId}/${payload.id}`}
               filename={payload.filename}
