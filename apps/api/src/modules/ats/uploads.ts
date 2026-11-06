@@ -46,6 +46,28 @@ export async function findUploadItem(db: Database, workspaceId: string, id: stri
   return file;
 }
 
+export async function retryUpload(
+  db: Database,
+  storage: ResumeObjectStore,
+  workspaceId: string,
+  id: string,
+) {
+  const file = await findUploadItem(db, workspaceId, id);
+  if (!file) {
+    return;
+  }
+  if (file.status === "accepted") {
+    return { id, url: null, version: 1 as const };
+  }
+
+  const url = await storage.signUpload(file.objectKey);
+  await db
+    .update(item)
+    .set({ status: "waiting" })
+    .where(and(eq(item.id, id), eq(item.status, "upload_failed")));
+  return { id, url, version: 1 as const };
+}
+
 export async function acceptUpload(
   db: Database,
   storage: ResumeObjectStore,

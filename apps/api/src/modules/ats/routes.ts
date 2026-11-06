@@ -34,7 +34,13 @@ import {
 } from "./queries";
 import { flushResumeOutbox } from "./runtime";
 import { resumeFiles, resumeObjectStore } from "./storage";
-import { acceptUpload, createUploadBatch, findUploadItem, retryResumeRun } from "./uploads";
+import {
+  acceptUpload,
+  createUploadBatch,
+  findUploadItem,
+  retryResumeRun,
+  retryUpload,
+} from "./uploads";
 
 const paginatedList = sValidator("query", listQuery);
 const version = z.literal(1);
@@ -301,6 +307,15 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
         ),
       );
     return c.json({ version: 1 as const }, 200);
+  })
+  .post("/:workspaceId/uploads/:id/retry", async (c) => {
+    const workspaceId = c.get("workspaceId");
+    const storage = resumeObjectStore(c.env, `/api/ats/${workspaceId}/upload-files`);
+    const upload = await retryUpload(c.get("database"), storage, workspaceId, c.req.param("id"));
+    if (!upload) {
+      return c.json({ error: "UPLOAD_NOT_AVAILABLE", version: 1 as const }, 404);
+    }
+    return c.json(upload, 200);
   })
   .post("/:workspaceId/runs/:id/retry", async (c) => {
     const db = c.get("database");

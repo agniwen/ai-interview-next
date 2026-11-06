@@ -45,21 +45,72 @@ async function account(email: string) {
   );
   const session = await context.internalAdapter.createSession(user.id, false);
   const cookie = `${context.authCookies.sessionToken.name}=${encodeURIComponent(`${session.token}.${await makeSignature(session.token, secret)}`)}`;
+  const request = (path: string, init: RequestInit) => {
+    const headers = new Headers(init.headers);
+    headers.set("cookie", cookie);
+    headers.set("origin", origin);
+    return app.request(new URL(path, `${origin}/api/`), { ...init, headers }, env, platform.ctx);
+  };
   const call = (path: string, body?: object) =>
-    app.request(
-      `${origin}/api/${path}`,
-      {
-        body: body ? JSON.stringify(body) : undefined,
-        headers: { "content-type": "application/json", cookie, origin },
-        method: body ? "POST" : "GET",
-      },
-      env,
-      platform.ctx,
-    );
+    request(path, {
+      body: body ? JSON.stringify(body) : undefined,
+      headers: { "content-type": "application/json" },
+      method: body ? "POST" : "GET",
+    });
   const { lastWorkspaceId: workspaceId } = await read(call("workspaces"));
   const ats = (path: string, body?: object) => call(`ats/${workspaceId}/${path}`, body);
-  return { ats, call, userId: user.id, workspaceId };
+  return { ats, call, request, userId: user.id, workspaceId };
 }
+
+it("retries one failed upload in its original batch while other files enter processing", async () => {
+  const owner = await account("upload-retry@example.com");
+  const outsider = await account("upload-retry-outsider@example.com");
+  const bytes = new TextEncoder().encode("%PDF-1.7\n%%EOF");
+  const batch = await read(
+    owner.ats("uploads", {
+      files: ["first.pdf", "second.pdf"].map((filename) => ({ filename, size: bytes.length })),
+      version: 1,
+    }),
+  );
+  const [first, second] = batch.uploads;
+  const put = (url: string) =>
+    owner.request(url, {
+      body: bytes,
+      headers: { "content-type": "application/pdf" },
+      method: "PUT",
+    });
+
+  const uploaded = await put(first.url);
+  expect(uploaded.status).toBe(204);
+  const accepted = await owner.ats(`uploads/${first.id}/confirm`, {});
+  expect(accepted.status).toBe(202);
+  const failed = await owner.ats(`uploads/${second.id}/failed`, {});
+  expect(failed.status).toBe(200);
+  const blocked = await put(second.url);
+  expect(blocked.status).toBe(404);
+  const forbidden = await outsider.call(`ats/${owner.workspaceId}/uploads/${second.id}/retry`, {});
+  expect(forbidden.status).toBe(404);
+  expect(await read(owner.ats(`uploads/${first.id}/retry`, {}))).toEqual({
+    id: first.id,
+    url: null,
+    version: 1,
+  });
+
+  const retry = await read(owner.ats(`uploads/${second.id}/retry`, {}));
+  expect(retry).toEqual({ id: second.id, url: second.url, version: 1 });
+  const retried = await put(retry.url);
+  expect(retried.status).toBe(204);
+  const confirmed = await owner.ats(`uploads/${second.id}/confirm`, {});
+  expect(confirmed.status).toBe(202);
+  expect(await read(owner.ats("resumes"))).toMatchObject({
+    batches: [{ failed: 0, id: batch.id, total: 2 }],
+    rows: expect.arrayContaining([
+      expect.objectContaining({ id: first.id, runId: first.id, status: "accepted" }),
+      expect.objectContaining({ id: second.id, runId: second.id, status: "accepted" }),
+    ]),
+    total: 2,
+  });
+});
 
 it("lists projects by page and filters recruitment records by the job's project", async () => {
   const owner = await account("project-owner@example.com");

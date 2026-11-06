@@ -1,7 +1,7 @@
 import { TableFilterSelect } from "@/components/layout/table-filters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId, useMemo, useRef, useState } from "react";
-import { IconFileCv, IconUpload } from "@tabler/icons-react";
+import { useId, useMemo, useState } from "react";
+import { IconFileCv } from "@tabler/icons-react";
 import { ResumePreviewDialog } from "@/components/features/document-preview/resume-preview-dialog";
 import {
   getResumeDocumentFileIconKind,
@@ -42,6 +42,7 @@ import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { listParams, resumeStatuses } from "./list-search";
 import type { ResumeListSearch } from "./list-search";
+import { ResumeUploadDialog } from "./resume-upload-dialog";
 
 const statusVariants: Partial<Record<string, BadgeProps["variant"]>> = {
   failed: "error",
@@ -93,24 +94,6 @@ function ResumeStatusBadge({
       </PreviewCardPopup>
     </PreviewCard>
   );
-}
-
-async function uploadResumeFile(workspaceId: string, id: string, url: string, file: File) {
-  const param = { id, workspaceId };
-  try {
-    const response = await fetch(url, {
-      body: file,
-      headers: { "Content-Type": "application/pdf" },
-      method: "PUT",
-    });
-    if (!response.ok) {
-      throw new Error(m.ats_error());
-    }
-    await readAts(await atsApi.uploads[":id"].confirm.$post({ param }));
-  } catch (error) {
-    await atsApi.uploads[":id"].failed.$post({ param });
-    throw error;
-  }
 }
 
 function ResumeCandidateDialog({
@@ -204,7 +187,6 @@ function ResumeCandidateDialog({
 }
 
 export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<ResumeListSearch>) {
-  const input = useRef<HTMLInputElement>(null);
   const client = useQueryClient();
   const param = { workspaceId };
   async function refresh() {
@@ -225,28 +207,6 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
         ? 5000
         : false,
   });
-  const uploads = useMutation({
-    async mutationFn(files: File[]) {
-      const batch = await readAts(
-        await atsApi.uploads.$post({
-          json: {
-            files: files.map((file) => ({ filename: file.name, size: file.size })),
-            version: 1,
-          },
-          param,
-        }),
-      );
-      const results = await Promise.allSettled(
-        batch.uploads.map(({ id, url }, index) =>
-          uploadResumeFile(workspaceId, id, url, files[index]),
-        ),
-      );
-      if (results.some((result) => result.status === "rejected")) {
-        throw new Error(m.ats_error());
-      }
-    },
-    onSettled: refresh,
-  });
   const retry = useMutation({
     mutationFn: async (id: string) =>
       readAts(await atsApi.runs[":id"].retry.$post({ param: { ...param, id } })),
@@ -262,14 +222,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
       title={m.ats_resumes()}
       icon={IconFileCv}
       action={
-        <Button
-          onClick={() => input.current?.click()}
-          disabled={uploads.isPending}
-          variant="outline"
-        >
-          <IconUpload />
-          {uploads.isPending ? m.ats_uploading() : m.ats_upload()}
-        </Button>
+        <ResumeUploadDialog key={workspaceId} workspaceId={workspaceId} onSettled={refresh} />
       }
       filters={
         <TableFilterSelect
@@ -283,7 +236,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
         />
       }
       feedback={
-        (uploads.isError || retry.isError) && (
+        retry.isError && (
           <Alert variant="error">
             <AlertDescription>{m.ats_error()}</AlertDescription>
           </Alert>
@@ -398,21 +351,6 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
       onQueryChange={onQueryChange}
       onRefresh={refetch}
     >
-      <input
-        ref={input}
-        type="file"
-        accept="application/pdf,.pdf"
-        multiple
-        hidden
-        aria-label={m.ats_upload()}
-        onChange={(event) => {
-          const files = [...(event.currentTarget.files ?? [])];
-          event.currentTarget.value = "";
-          if (files.length) {
-            uploads.mutate(files);
-          }
-        }}
-      />
       <Dialog handle={candidateDialog}>
         {({ payload }) =>
           payload && (
