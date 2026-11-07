@@ -33,7 +33,9 @@ export function CandidateInterviewEntry({ token }: { token: string }) {
           </p>
         </div>
       )}
-      {phase === "ready" && query.data && <InterviewPreparation interview={query.data} />}
+      {phase === "ready" && query.data && (
+        <InterviewPreparation key={token} interview={query.data} token={token} />
+      )}
     </InterviewEntryShell>
   );
 }

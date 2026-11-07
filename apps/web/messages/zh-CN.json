@@ -678,5 +678,17 @@
   "candidate_ready_camera": "摄像头可按个人意愿开启，不影响语音面试。",
   "candidate_ready_environment": "选择安静的环境，建议佩戴耳机以减少回声。",
   "candidate_interview_next": "下一步",
-  "candidate_interview_back": "返回介绍"
+  "candidate_interview_back": "返回介绍",
+  "candidate_form_question_number": "第 {number} 题",
+  "candidate_form_required": "必填",
+  "candidate_form_progress": "已完成 {completed} / {total} 题",
+  "candidate_form_saving": "正在保存…",
+  "candidate_form_saved": "所有修改已保存",
+  "candidate_form_autosave": "填写时会自动保存答案。",
+  "candidate_form_save_failed": "保存失败，当前答案仍保留在页面中，请重试。",
+  "candidate_form_submit": "提交并继续",
+  "candidate_form_edit": "修改答案",
+  "candidate_form_locked": "沟通已开始，无法再修改答案。",
+  "candidate_form_select": "请选择",
+  "candidate_form_incomplete": "请先完善第 {number} 题，再继续。"
 }

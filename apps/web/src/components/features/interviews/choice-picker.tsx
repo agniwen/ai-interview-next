@@ -21,8 +21,6 @@ import * as m from "@/paraglide/messages";
 import { choicesQuery } from "./client";
 import type { Choice, ChoiceKind } from "./client";
 
-const noExcluded: string[] = [];
-
 function ChoiceInput({
   id,
   kind,
@@ -44,7 +42,16 @@ function ChoiceInput({
           className="max-w-full"
           removeProps={{ "aria-label": `${m.interviews_remove()} ${row.name}` }}
         >
-          {kind === "member" ? <UserColumn user={row} className="max-w-48" /> : row.name}
+          {kind === "member" ? (
+            <UserColumn user={row} className="max-w-48" />
+          ) : (
+            <span className="min-w-0 truncate">{row.name}</span>
+          )}
+          {row.questionCount !== undefined && (
+            <span className="ml-2 shrink-0 text-muted-foreground">
+              {m.question_sets_question_count({ count: row.questionCount })}
+            </span>
+          )}
         </ComboboxChip>
       ))}
       <ComboboxChipsInput
@@ -87,7 +94,6 @@ export function ChoicePicker<Multiple extends boolean = false>({
   onChange,
   disabled,
   multiple,
-  excluded = noExcluded,
 }: {
   id: string;
   workspaceId: string;
@@ -96,7 +102,6 @@ export function ChoicePicker<Multiple extends boolean = false>({
   onChange: ComboboxPrimitive.Root.Props<Choice, Multiple>["onValueChange"];
   multiple?: Multiple;
   disabled?: boolean;
-  excluded?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -110,10 +115,7 @@ export function ChoicePicker<Multiple extends boolean = false>({
     enabled: open,
   });
   const pending = search !== debouncedSearch || query.isPending;
-  const rows = pending
-    ? []
-    : (query.data?.pages.flatMap((page) => page.rows).filter((row) => !excluded.includes(row.id)) ??
-      []);
+  const rows = pending ? [] : (query.data?.pages.flatMap((page) => page.rows) ?? []);
   const selected: readonly Choice[] = value && "id" in value ? [value] : (value ?? []);
   const items = [
     ...rows,

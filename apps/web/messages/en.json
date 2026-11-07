@@ -678,5 +678,17 @@
   "candidate_ready_camera": "You can choose whether to turn on your camera. It is not required for the voice interview.",
   "candidate_ready_environment": "Find a quiet place. Headphones are recommended to reduce echo.",
   "candidate_interview_next": "Next",
-  "candidate_interview_back": "Back to introduction"
+  "candidate_interview_back": "Back to introduction",
+  "candidate_form_question_number": "Question {number}",
+  "candidate_form_required": "Required",
+  "candidate_form_progress": "{completed} of {total} answered",
+  "candidate_form_saving": "Saving…",
+  "candidate_form_saved": "All changes saved",
+  "candidate_form_autosave": "Your answers are saved automatically as you type.",
+  "candidate_form_save_failed": "Unable to save. Your answers are still on this page. Please retry.",
+  "candidate_form_submit": "Submit and continue",
+  "candidate_form_edit": "Edit answers",
+  "candidate_form_locked": "The conversation has started. Answers can no longer be changed.",
+  "candidate_form_select": "Select an option",
+  "candidate_form_incomplete": "Please complete question {number} before continuing."
 }

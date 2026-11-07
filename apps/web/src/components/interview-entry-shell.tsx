@@ -20,7 +20,7 @@ export function InterviewEntryShell({ children }: { children: ReactNode }) {
       </header>
       <main
         id="main-content"
-        className="relative mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center px-5 py-24 text-center"
+        className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-5 py-24 text-center"
       >
         {children}
       </main>

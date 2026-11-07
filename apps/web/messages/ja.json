@@ -678,5 +678,17 @@
   "candidate_ready_camera": "カメラの使用は任意です。音声面接に必須ではありません。",
   "candidate_ready_environment": "静かな場所を選び、エコーを抑えるためイヤホンの使用をおすすめします。",
   "candidate_interview_next": "次へ",
-  "candidate_interview_back": "ご案内に戻る"
+  "candidate_interview_back": "ご案内に戻る",
+  "candidate_form_question_number": "質問 {number}",
+  "candidate_form_required": "必須",
+  "candidate_form_progress": "{total} 問中 {completed} 問回答済み",
+  "candidate_form_saving": "保存中…",
+  "candidate_form_saved": "すべての変更を保存しました",
+  "candidate_form_autosave": "回答は入力中に自動保存されます。",
+  "candidate_form_save_failed": "保存できませんでした。回答はこのページに保持されています。再試行してください。",
+  "candidate_form_submit": "送信して次へ",
+  "candidate_form_edit": "回答を編集",
+  "candidate_form_locked": "面談が開始されたため、回答は変更できません。",
+  "candidate_form_select": "選択してください",
+  "candidate_form_incomplete": "続行する前に質問 {number} に回答してください。"
 }

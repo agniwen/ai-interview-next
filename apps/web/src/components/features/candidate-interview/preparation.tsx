@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { IconMicrophone, IconVideo, IconVolume } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,6 +8,8 @@ import type { CandidateInterview } from "./client";
 import { InterviewDetails } from "./interview-details";
 import { InterviewFlowProgress, interviewPreparationSteps } from "./flow-progress";
 import type { PreparationStep } from "./flow-progress";
+import { CandidateFormStage } from "./form-stage";
+import { initialPreparationStep } from "./form-progress";
 
 function focusHeading(element: HTMLHeadingElement | null) {
   element?.focus({ preventScroll: true });
@@ -34,13 +37,16 @@ export function PreparationStage({
   step,
   onContinue,
   onBack,
+  children,
 }: {
   interview: CandidateInterview;
   step: PreparationStep;
   onContinue: () => void;
   onBack: () => void;
+  children?: ReactNode;
 }) {
-  const hasForms = (interview.questions?.form.length ?? 0) > 0;
+  const questions = interview.questions?.form ?? [];
+  const hasForms = questions.length > 0;
   const titles = {
     forms: m.candidate_form_heading(),
     intro: m.candidate_interview_welcome(),
@@ -65,88 +71,104 @@ export function PreparationStage({
       >
         {titles[step]}
       </h1>
-      <p className="mt-4 text-pretty text-sm leading-6 text-muted-foreground sm:text-base">
+      <p className="mt-4 max-w-xl text-pretty text-sm leading-6 text-muted-foreground sm:text-base">
         {descriptions[step]}
       </p>
       <p className="mt-2 text-xs text-muted-foreground wrap-anywhere">
         {m.interviews_round({ number: interview.sequence })}
         {interview.label ? ` · ${interview.label}` : ""}
       </p>
-      <div className="mt-8 flex w-full max-w-sm flex-col items-center">
-        {step === "intro" && (
-          <>
-            <InterviewDetails interview={interview} />
-            <InterviewNotice />
-          </>
-        )}
-        {step === "forms" && (
-          <section
-            aria-label={m.candidate_form_heading()}
-            className="w-full rounded-xl bg-card p-5 text-left text-sm leading-6 shadow-default"
-          >
-            <p>{m.candidate_form_requirements()}</p>
-          </section>
-        )}
-        {step === "ready" && (
-          <Card
-            render={<section />}
-            aria-label={m.candidate_ready_heading()}
-            className="w-full p-5 text-left"
-          >
-            <ul className="flex flex-col gap-4 text-sm leading-6">
-              <li className="flex items-start gap-3">
-                <IconMicrophone
-                  aria-hidden="true"
-                  className="mt-1 size-4 shrink-0 text-muted-foreground"
-                />
-                <span>{m.candidate_ready_microphone()}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <IconVideo
-                  aria-hidden="true"
-                  className="mt-1 size-4 shrink-0 text-muted-foreground"
-                />
-                <span>{m.candidate_ready_camera()}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <IconVolume
-                  aria-hidden="true"
-                  className="mt-1 size-4 shrink-0 text-muted-foreground"
-                />
-                <span>{m.candidate_ready_environment()}</span>
-              </li>
-            </ul>
-          </Card>
-        )}
-        <div className="mt-8 flex w-full justify-center gap-2">
-          {step === "intro" ? (
-            <Button variant="outline" className="w-full sm:w-auto sm:min-w-32" onClick={onContinue}>
-              {m.candidate_interview_next()}
-            </Button>
-          ) : (
-            <Button variant="outline" className="w-full sm:w-auto sm:min-w-32" onClick={onBack}>
-              {m.candidate_interview_back()}
-            </Button>
+      {step === "forms" && children}
+      {step !== "forms" && (
+        <div className="mt-8 flex w-full max-w-sm flex-col items-center">
+          {step === "intro" && (
+            <>
+              <InterviewDetails interview={interview} />
+              <InterviewNotice />
+            </>
           )}
+          {step === "ready" && (
+            <Card
+              render={<section />}
+              aria-label={m.candidate_ready_heading()}
+              className="w-full p-5 text-left"
+            >
+              <ul className="flex flex-col gap-4 text-sm leading-6">
+                <li className="flex items-start gap-3">
+                  <IconMicrophone
+                    aria-hidden="true"
+                    className="mt-1 size-4 shrink-0 text-muted-foreground"
+                  />
+                  <span>{m.candidate_ready_microphone()}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <IconVideo
+                    aria-hidden="true"
+                    className="mt-1 size-4 shrink-0 text-muted-foreground"
+                  />
+                  <span>{m.candidate_ready_camera()}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <IconVolume
+                    aria-hidden="true"
+                    className="mt-1 size-4 shrink-0 text-muted-foreground"
+                  />
+                  <span>{m.candidate_ready_environment()}</span>
+                </li>
+              </ul>
+            </Card>
+          )}
+          <div className="mt-8 flex w-full justify-center gap-2">
+            {step === "intro" ? (
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto sm:min-w-32"
+                onClick={onContinue}
+              >
+                {m.candidate_interview_next()}
+              </Button>
+            ) : (
+              <Button variant="outline" className="w-full sm:w-auto sm:min-w-32" onClick={onBack}>
+                {hasForms ? m.candidate_form_edit() : m.candidate_interview_back()}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
 
 /**
- * 持有准备步骤，有表单时先进入表单占位，否则进入沟通准备；表单保存和设备检查尚未接入。
- * Owns preparation steps, entering the form placeholder when present or readiness otherwise; form persistence and device checks are not yet connected.
+ * 从已保存草稿或提交状态恢复准备步骤，连接介绍、作答与沟通准备页面。
+ * Restores preparation from saved drafts or submission state and connects introduction, answers and conversation readiness.
  */
-export function InterviewPreparation({ interview }: { interview: CandidateInterview }) {
-  const [stepIndex, setStepIndex] = useState(0);
-  const steps = interviewPreparationSteps((interview.questions?.form.length ?? 0) > 0);
+export function InterviewPreparation({
+  interview,
+  token,
+}: {
+  interview: CandidateInterview;
+  token: string;
+}) {
+  const [step, setStep] = useState(() => initialPreparationStep(interview));
+  const questions = interview.questions?.form ?? [];
+  const hasForms = questions.length > 0;
   return (
     <PreparationStage
       interview={interview}
-      step={steps[stepIndex]}
-      onContinue={() => setStepIndex(1)}
-      onBack={() => setStepIndex(0)}
-    />
+      step={step}
+      onContinue={() => setStep(hasForms ? "forms" : "ready")}
+      onBack={() => setStep(hasForms ? "forms" : "intro")}
+    >
+      {step === "forms" && (
+        <CandidateFormStage
+          questions={questions}
+          interview={interview}
+          token={token}
+          onSubmitted={() => setStep("ready")}
+          onBack={() => setStep("intro")}
+        />
+      )}
+    </PreparationStage>
   );
 }

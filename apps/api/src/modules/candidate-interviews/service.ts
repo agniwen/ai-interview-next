@@ -2,6 +2,7 @@ import type { Database } from "@ai-interview/db";
 import {
   application,
   interviewInvitation,
+  interviewFormResponse,
   interviewQuestionSnapshot,
   interviewRound,
   job,
@@ -9,6 +10,7 @@ import {
   questionSet,
 } from "@ai-interview/db/schema";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import type { CandidateFormInput } from "./input";
 
 function candidateInterview(db: Database, token: string) {
   return db
@@ -89,6 +91,19 @@ async function bindQuestions(db: Database, round: typeof interviewRound.$inferSe
   return snapshot;
 }
 
+async function readFormResponse(db: Database, roundId: string) {
+  const form = await db
+    .select({
+      content: interviewFormResponse.content,
+      submittedAt: interviewFormResponse.submittedAt,
+      updatedAt: interviewFormResponse.updatedAt,
+    })
+    .from(interviewFormResponse)
+    .where(eq(interviewFormResponse.interviewRoundId, roundId))
+    .get();
+  return form ? { ...form, version: 1 as const } : null;
+}
+
 export async function enterCandidateInterview(db: Database, token: string) {
   const result = await candidateInterview(db, token);
   if (!result) {
@@ -96,8 +111,10 @@ export async function enterCandidateInterview(db: Database, token: string) {
   }
   const { round, jobTitle, workspaceName } = result;
   const snapshot = round.kind === "ai" ? await bindQuestions(db, round) : null;
+  const form = snapshot ? await readFormResponse(db, round.id) : null;
   return {
     admissionDeadline: round.admissionDeadline,
+    form: form ?? null,
     jobTitle,
     kind: round.kind,
     label: round.label,
@@ -117,4 +134,84 @@ export async function enterCandidateInterview(db: Database, token: string) {
     version: 1 as const,
     workspaceName,
   };
+}
+
+function formAnswerError(
+  questions: typeof interviewQuestionSnapshot.$inferSelect.content.form,
+  input: CandidateFormInput,
+  submit: boolean,
+) {
+  const byId = new Map(questions.map(({ id, question }) => [id, question]));
+  for (const [id, value] of Object.entries(input.answers)) {
+    const question = byId.get(id);
+    if (!question) {
+      return "INTERVIEW_FORM_INVALID" as const;
+    }
+    if (value === null) {
+      continue;
+    }
+    let valid: boolean;
+    if (question.type === "text") {
+      valid = typeof value === "string";
+    } else if (question.type === "single_choice") {
+      valid = typeof value === "number" && value < question.options.length;
+    } else {
+      valid = Array.isArray(value) && value.every((index) => index < question.options.length);
+    }
+    if (!valid) {
+      return "INTERVIEW_FORM_INVALID" as const;
+    }
+  }
+  if (
+    submit &&
+    questions.some(({ id }) => {
+      const value = input.answers[id];
+      return (
+        value === null ||
+        value === undefined ||
+        (typeof value === "string" && value.trim().length === 0) ||
+        (Array.isArray(value) && value.length === 0)
+      );
+    })
+  ) {
+    return "INTERVIEW_FORM_INCOMPLETE" as const;
+  }
+}
+
+export async function saveCandidateForm(
+  db: Database,
+  token: string,
+  input: CandidateFormInput,
+  submit: boolean,
+) {
+  const entry = await candidateInterview(db, token);
+  if (!entry) {
+    return { error: "INTERVIEW_UNAVAILABLE" as const, status: 404 as const };
+  }
+  if (entry.round.status !== "scheduled") {
+    return { error: "INTERVIEW_FORM_LOCKED" as const, status: 409 as const };
+  }
+  const snapshot = await db
+    .select()
+    .from(interviewQuestionSnapshot)
+    .where(eq(interviewQuestionSnapshot.interviewRoundId, entry.round.id))
+    .get();
+  if (entry.round.kind !== "ai" || !snapshot?.content.form.length) {
+    return { error: "INTERVIEW_FORM_UNAVAILABLE" as const, status: 409 as const };
+  }
+  const error = formAnswerError(snapshot.content.form, input, submit);
+  if (error) {
+    return { error, status: 400 as const };
+  }
+  const now = new Date();
+  const form = { content: input, submittedAt: submit ? now : null, updatedAt: now };
+  await db
+    .insert(interviewFormResponse)
+    .values({
+      ...form,
+      interviewRoundId: entry.round.id,
+      workspaceId: entry.round.workspaceId,
+    })
+    .onConflictDoUpdate({ set: form, target: interviewFormResponse.interviewRoundId });
+  return { form: { ...form, version: 1 as const } };
 }
