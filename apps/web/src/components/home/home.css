@@ -24,11 +24,16 @@
 }
 .home-hero-background {
   position: absolute;
-  inset: -5rem 0 0;
+  inset: -7rem 0 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
   mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+}
+@media (min-width: 40rem) {
+  .home-hero-background {
+    inset-block-start: -5rem;
+  }
 }
 .home-hero-background::after {
   content: "";
