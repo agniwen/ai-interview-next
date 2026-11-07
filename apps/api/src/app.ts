@@ -7,6 +7,7 @@ import { z } from "zod";
 import { atsRoutes } from "./modules/ats/routes";
 import { agentRoutes } from "./modules/agent/routes";
 import { authRoutes } from "./modules/auth/routes";
+import { interviewerAgentRoutes } from "./modules/interviewer-agents/routes";
 import { workspaceRoutes } from "./modules/workspaces/routes";
 import type { ApiBindings } from "./env";
 
@@ -15,6 +16,7 @@ const protectedApi = new Hono<AuthenticatedEnv>()
   .use(requireSession)
   .route("/agent", agentRoutes)
   .route("/ats", atsRoutes)
+  .route("/interviewer-agents", interviewerAgentRoutes)
   .route("/workspaces", workspaceRoutes);
 
 export const app = new Hono<{ Bindings: ApiBindings }>()

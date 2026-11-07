@@ -133,6 +133,13 @@
       "when": 1794029573846,
       "tag": "20261107053253_remove_legacy_application_evaluations",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1794036562672,
+      "tag": "20261107072922_interviewer_agents",
+      "breakpoints": true
     }
   ],
   "version": "7"

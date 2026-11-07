@@ -19,6 +19,10 @@ src/
     workspaces/
       routes.ts
       service.ts
+    interviewer-agents/
+      input.ts
+      routes.ts
+      service.ts
 tests/
   auth.test.ts
   examples.test.ts
@@ -54,6 +58,10 @@ wrangler.jsonc
 - `GET /health` 返回 `{"status":"ok"}`；额外查询参数返回 400。此端点不访问数据库或认证配置。
 - `GET`、`POST /api/auth/*` 由 Better Auth 处理。Web 通过 Service Binding 转发原始请求，浏览器 Cookie 和 Google 回调使用 Web 来源。
 - `GET /api/workspaces` 列出当前用户所属的工作区和最后激活的工作区；`POST /api/workspaces/:workspaceId/activate` 在验证成员关系后持久记录最后激活的工作区。匿名请求返回 401，不可访问的激活目标返回 404。
+
+- `GET /api/interviewer-agents/:workspaceId` 使用 `page`、`pageSize`、`search` 返回 `{ version: 1, rows, page, pageSize, total }`。按名称和说明搜索，按创建时间、ID 倒序排列；列表不携带提示词，`GET /api/interviewer-agents/:workspaceId/:id` 返回完整配置。
+- `POST /api/interviewer-agents/:workspaceId` 与 `PUT /api/interviewer-agents/:workspaceId/:id` 接受 `{ version: 1, name, description?, prompt }`。名称去除首尾空白后为 1–200 字符，提示词为 1–30,000 字符，说明最多 30,000 字符；创建时省略说明则为空，编辑时省略保留原值，空字符串可清空。创建返回 `{ version: 1, id }`（201），编辑返回同格式（200）。创建人来自当前会话，编辑保留创建人并更新修改时间。
+- 面试官配置供当前工作区成员共同管理。上述接口沿用登录与工作区成员校验；配置不存在或属于其他工作区时返回 `{ version: 1, error: "INTERVIEWER_AGENT_UNAVAILABLE" }`（404），输入校验失败返回 `{ version: 1, error: "INVALID_INPUT" }`（400）。本阶段只管理可复用配置，尚未接入面试轮次或启动访谈。
 
 - `GET /api/ats/:workspaceId/projects/:id` 返回项目预览详情 `{ version: 1, id, title, description, createdAt, jobCount }`，仅限所属工作区成员访问；不存在或不属于当前工作区的项目返回 404。列表不携带长篇说明，Web 在打开项目预览卡或编辑弹窗时加载详情。
 - `POST /api/ats/:workspaceId/projects` 与 `PUT /api/ats/:workspaceId/projects/:id` 接受可选的 Markdown `description`（去除首尾空白，最多 30,000 字符）；创建时省略则保存为空字符串，编辑时省略则保留原说明，提交空字符串可清空说明。

@@ -16,6 +16,7 @@ export {
   resumeSubmission,
 } from "./ats";
 export { account, rateLimit, session, user, verification } from "./auth";
+export { interviewerAgent } from "./interviewer-agents";
 export { invitation, member, organization } from "./organization";
 export {
   applicationActivity,
