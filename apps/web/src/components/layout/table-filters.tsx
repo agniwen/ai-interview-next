@@ -10,6 +10,10 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
+/**
+ * 列表筛选工具栏及带标签的筛选控件，统一筛选区与右侧操作区的布局。
+ * List filter toolbar and labeled controls sharing the layout of filters and trailing actions.
+ */
 export function TableFilters({ children, actions }: { children?: ReactNode; actions?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-2" data-slot="table-filters">

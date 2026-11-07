@@ -195,6 +195,10 @@ function PptxDocumentIcon(props: Omit<ResumeDocumentFileIconProps, "kind">) {
   );
 }
 
+/**
+ * 简历附件类型图标及类型判断工具，统一 PDF、Office、图片和 HTML 文件的展示。
+ * Resume attachment icons and type detection for consistent PDF, Office, image and HTML presentation.
+ */
 export function ResumeDocumentFileIcon({ kind, ...props }: ResumeDocumentFileIconProps) {
   if (kind === "doc" || kind === "docx") {
     return <DocxDocumentIcon {...props} />;

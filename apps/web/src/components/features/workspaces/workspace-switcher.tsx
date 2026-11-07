@@ -11,6 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 已登录工作区间的快速切换菜单，同时提供当前工作区设置入口。
+ * Quick workspace switcher for signed-in users, with access to current workspace settings.
+ */
 export function WorkspaceSwitcher({
   workspaceId,
   workspaces,

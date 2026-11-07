@@ -1,5 +1,3 @@
-// 用途：统一长落地页各分区的纵向节奏与排版
-// Purpose: consistent vertical rhythm + typography for landing sections.
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +7,10 @@ interface SectionProps {
   id?: string;
 }
 
-/** 内容板块统一 1440 容器、左右 64px 留白（与首屏 1680 容器区分）。 */
+/**
+ * 统一首页分区的纵向节奏与内容宽度，使用 1440px 最大宽度和响应式左右留白。
+ * Shares homepage section rhythm and content width with a 1440px maximum and responsive side padding.
+ */
 export function Section({ children, className, id }: SectionProps) {
   return (
     <section

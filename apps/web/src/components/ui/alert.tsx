@@ -20,6 +20,10 @@ const alertVariants = cva(
   },
 );
 
+/**
+ * 页面内的状态或错误提示块，组合标题、说明与操作，不自行触发通知。
+ * Inline status/error callout with title, description and actions; does not dispatch notifications.
+ */
 export function Alert({
   className,
   variant,

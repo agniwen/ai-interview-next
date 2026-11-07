@@ -40,6 +40,10 @@ export interface BadgeProps extends useRender.ComponentProps<"span"> {
   size?: VariantProps<typeof badgeVariants>["size"];
 }
 
+/**
+ * 语义状态徽标，集中维护状态配色、尺寸和可组合渲染方式。
+ * Semantic status badge centralizing colors, sizes and composable rendering.
+ */
 export function Badge({
   className,
   variant,

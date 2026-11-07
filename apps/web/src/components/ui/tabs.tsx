@@ -15,6 +15,10 @@ type TabsSize = SegmentedControlSize;
 
 const TabsListContext: React.Context<TabsSize> = React.createContext<TabsSize>("default");
 
+/**
+ * 页签和内容面板组件，复用分段指示器并支持内容切换动效。
+ * Tabs and panels reusing the segmented indicator and supporting content-transition animation.
+ */
 export function Tabs({ className, ...props }: TabsPrimitive.Root.Props): React.ReactElement {
   return (
     <TabsPrimitive.Root

@@ -27,6 +27,10 @@ const textFields = [
   { key: "evaluationCriteria", label: m.question_sets_evaluation_criteria, maxLength: 2000 },
 ] as const;
 
+/**
+ * 单道沟通题的难度、题干及评价说明字段，变更通过回调更新外层草稿。
+ * Difficulty, prompt and evaluation-guidance fields for one conversation question, updating the parent draft through callbacks.
+ */
 export function ConversationFields({
   question,
   disabled,

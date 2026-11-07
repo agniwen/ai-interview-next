@@ -27,6 +27,10 @@ function RevealGate({ until }: { until: Promise<null> | null }) {
   return null;
 }
 
+/**
+ * 延迟加载组件的 Suspense 边界，从骨架实际挂载时保证最短展示时间，避免快速加载时闪烁。
+ * Suspense boundary for lazy content, enforcing a minimum fallback duration from actual mount to avoid flashing.
+ */
 export function SkeletonSuspense({
   children,
   fallback,

@@ -16,6 +16,10 @@ import * as m from "@/paraglide/messages";
 import { atsApi, readAts } from "./client";
 import { atsKeys } from "./query-keys";
 
+/**
+ * 招聘记录的人工反馈输入框，提交文本后刷新该记录的评价与反馈数据。
+ * Human feedback composer for an application; refreshes its evaluation and feedback data after submission.
+ */
 export function ApplicationEvaluationComposer({
   applicationId,
   workspaceId,

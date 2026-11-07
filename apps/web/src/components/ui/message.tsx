@@ -11,6 +11,10 @@ function MessageGroup({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
+/**
+ * 消息的外层结构，排列作者头像、元信息、正文与尾部；气泡外观由 Bubble 提供。
+ * Message structure arranging avatar, metadata, body and footer; Bubble supplies the message surface.
+ */
 function Message({
   className,
   align = "start",

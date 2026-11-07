@@ -18,10 +18,6 @@ import {
   IconAlertTriangle,
   IconUpload,
 } from "@tabler/icons-react";
-// 用途：landing 用「Studio › 招聘台」简化版 UI。对齐真实组件：
-// - PageHeader: <h1 class="text-2xl">
-// - ResumeLibraryCardList: Toolbar + 当前候选人卡片结构
-// Purpose: simplified Studio resume library mock, mirroring the real components 1:1.
 
 import { lazy } from "react";
 import { DemoPanelSkeleton } from "@/components/skeletons/components/demo-panel-skeleton";
@@ -640,6 +636,10 @@ function ResumesContent() {
   );
 }
 
+/**
+ * 首页招聘台演示入口，在本地演示 Provider 内组合候选人列表、详情与面试场景。
+ * Homepage recruiting-desk demo entry composing candidates, details and interview scenes inside a local demo provider.
+ */
 export function ResumesScreen({ className }: { className?: string }) {
   const breadcrumb: BreadcrumbCrumb[] = [
     { label: "Studio" },

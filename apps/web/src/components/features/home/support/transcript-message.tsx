@@ -7,6 +7,10 @@ export type MessageProps = HTMLAttributes<HTMLDivElement> & {
   from: "user" | "assistant" | "system";
 };
 
+/**
+ * 首页语音转录演示的消息布局，根据说话方排列正文，并复用演示 Markdown 渲染。
+ * Homepage voice-transcript message layout aligning content by speaker and reusing demo Markdown rendering.
+ */
 export function Message({ className, from, ...props }: MessageProps) {
   return (
     <div

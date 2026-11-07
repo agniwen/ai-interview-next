@@ -27,6 +27,10 @@ export const toggleVariants = cva(
   },
 );
 
+/**
+ * 可保持按压状态的按钮，适合格式工具和开关式操作。
+ * Stateful pressed button for formatting controls and toggle actions.
+ */
 export function Toggle({
   className,
   variant,

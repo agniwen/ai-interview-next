@@ -45,6 +45,10 @@ function ProjectPreviewContent({ id, workspaceId }: { id: string; workspaceId: s
   );
 }
 
+/**
+ * 在关联项目名称上按需加载项目说明，复用记录预览浮层。
+ * Lazily loads project details from an associated project name using the shared record preview popup.
+ */
 export function ProjectPreviewCard({
   id,
   title,

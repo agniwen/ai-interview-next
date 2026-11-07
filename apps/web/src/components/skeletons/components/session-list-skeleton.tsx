@@ -1,6 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * Agent 侧栏会话列表的局部占位，不包含聊天正文区域。
+ * Local Agent sidebar session-list placeholder, excluding transcript content.
+ */
 export function SessionListSkeleton() {
   return (
     <output

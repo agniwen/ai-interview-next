@@ -219,6 +219,10 @@ function OfferInterview() {
   );
 }
 
+/**
+ * 首页候选人演示的 AI 面试、真人面试和 Offer 页签内容，展示模拟记录与结果。
+ * AI interview, human interview and offer tabs for the homepage candidate demo, displaying simulated records and results.
+ */
 export default function DemoInterviewPanels({ tab }: { tab: string }) {
   if (tab === "evaluation") {
     return (

@@ -110,6 +110,10 @@ interface DataFieldSharedProps {
 
 export type DataFieldProps = DataFieldSharedProps & DataFieldValue;
 
+/**
+ * 首页演示的单个资料字段，按文本、数值或时间类型格式化，并统一空值展示。
+ * Single homepage-demo data field formatting text, numbers or times and presenting empty values consistently.
+ */
 export function DataField(props: DataFieldProps) {
   const { className, emptyValue = "—", label, numberFormat, span = 1, valueClassName } = props;
   return (

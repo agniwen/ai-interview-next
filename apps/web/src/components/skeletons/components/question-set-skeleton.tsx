@@ -2,6 +2,10 @@ import { MarkdownEditorSkeleton } from "@/components/skeletons/components/markdo
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 题套编辑内容的骨架，保留元数据、默认岗位、题目区与保存入口的空间。
+ * Question-set editor skeleton retaining metadata, default-job, question and save-control space.
+ */
 export function QuestionSetSkeleton() {
   return (
     <div aria-busy="true" aria-label={m.ats_loading()} className="flex min-w-0 flex-col gap-6">

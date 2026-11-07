@@ -162,6 +162,10 @@ function ApplicationForm({
   );
 }
 
+/**
+ * 创建招聘记录的弹窗和表单，既支持预选简历，也支持在表单内选择简历与岗位。
+ * Application creation dialog and form, accepting a preset resume or letting users choose a resume and job.
+ */
 export function CreateApplicationDialog({
   handle,
   resumeId,

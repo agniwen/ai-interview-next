@@ -2,6 +2,10 @@ import { JobFormSkeleton } from "@/components/skeletons/components/job-form-skel
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 岗位编辑页面的整体占位，组合页面返回区与 JobFormSkeleton。
+ * Full job-editor placeholder combining return navigation and JobFormSkeleton.
+ */
 export function JobEditorPageSkeleton() {
   return (
     <div

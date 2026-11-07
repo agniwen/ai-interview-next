@@ -20,6 +20,10 @@ const config: QuestionEditorConfig<ConversationSetContent, ConversationQuestionD
   toInput: conversationSetInput,
 };
 
+/**
+ * 沟通题套编辑器适配层，把沟通题草稿和字段配置接入共用 QuestionSetEditor。
+ * Conversation-set adapter connecting conversation drafts and field configuration to QuestionSetEditor.
+ */
 export function ConversationSetEditor(props: QuestionSetEditorProps<ConversationSetContent>) {
   return <QuestionSetEditor {...props} config={config} />;
 }

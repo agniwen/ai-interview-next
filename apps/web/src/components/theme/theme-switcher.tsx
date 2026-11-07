@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Menu, MenuTrigger, MenuPopup, MenuRadioGroup, MenuRadioItem } from "@/components/ui/menu";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 浅色、深色和跟随系统的主题菜单，通过主题 Provider 更新选择。
+ * Light, dark and system theme menu updating the selection through the theme provider.
+ */
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
   const hydrated = useHydrated();

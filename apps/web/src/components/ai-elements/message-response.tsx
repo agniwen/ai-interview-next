@@ -18,6 +18,10 @@ const components = {
   },
 };
 
+/**
+ * 聊天回复的流式 Markdown 渲染器，统一代码、中文排版和表格滚动展示。
+ * Streaming Markdown renderer for chat responses, with code, CJK typography and scrollable tables.
+ */
 export function MessageResponse({
   children,
   className,

@@ -1,6 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 文档预览加载时的纸张形状占位，保留预览区域的滚动与尺寸边界。
+ * Paper-shaped document-loading placeholder retaining preview-region sizing and overflow boundaries.
+ */
 export function DocumentPreviewSkeleton() {
   return (
     <div

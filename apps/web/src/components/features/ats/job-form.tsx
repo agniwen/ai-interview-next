@@ -21,6 +21,10 @@ const MarkdownEditor = lazy(async () => {
 });
 const maxJobRequirementsLength = 30_000;
 
+/**
+ * 岗位编辑表单，持有项目、岗位描述和内部评价要求的草稿并提交新建或更新。
+ * Job form owning project, requirements and internal-criteria drafts and submitting creates or updates.
+ */
 export function JobForm({
   job,
   workspaceId,

@@ -20,6 +20,10 @@ const statusIcons = {
   running: IconTool,
 };
 
+/**
+ * 可折叠的工具调用区，将调用状态映射为 Trace 图标与状态展示。
+ * Collapsible tool-call view mapping call statuses to Trace icons and status presentation.
+ */
 export function Tool({
   title,
   status,

@@ -7,6 +7,10 @@ import { cn } from "@/lib/utils";
 export const AlertDialogCreateHandle: typeof AlertDialogPrimitive.createHandle =
   AlertDialogPrimitive.createHandle;
 
+/**
+ * 需要明确确认的操作弹窗，统一遮罩、标题、说明和底部动作布局。
+ * Confirmation-dialog primitives sharing backdrop, title, description and action-footer layout.
+ */
 export const AlertDialog: typeof AlertDialogPrimitive.Root = AlertDialogPrimitive.Root;
 
 export const AlertDialogPortal: typeof AlertDialogPrimitive.Portal = AlertDialogPrimitive.Portal;

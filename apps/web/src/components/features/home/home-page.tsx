@@ -16,6 +16,10 @@ import { TrustBoundaries } from "./trust-boundaries";
 import * as m from "@/paraglide/messages";
 import { UserMenu } from "@/components/features/auth/user-menu";
 
+/**
+ * 公开首页的页面组合，组织首屏、交互演示、功能介绍及账号、主题和语言入口。
+ * Public homepage composition organizing the hero, interactive demo, feature sections and account/theme/language controls.
+ */
 export function HomePage() {
   return (
     <ScrollArea className="h-dvh">

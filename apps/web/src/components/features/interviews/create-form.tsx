@@ -117,6 +117,10 @@ function canSaveInterview(
     : interviewers.length > 0 && validTimes;
 }
 
+/**
+ * AI 与真人轮次共用的受控草稿表单，提交新建或更新，并根据题目绑定状态锁定题套。
+ * Shared AI/human round draft form submitting creates or updates and locking question sets according to binding state.
+ */
 function Form({
   workspaceId,
   applicationId,
@@ -323,6 +327,10 @@ function Form({
   );
 }
 
+/**
+ * 新建轮次入口，先加载岗位默认题套与创建配置，再挂载共用表单。
+ * New-round entry loading job defaults and setup before mounting the shared form.
+ */
 export function InterviewForm({
   workspaceId,
   applicationId,
@@ -371,6 +379,10 @@ export function InterviewForm({
   );
 }
 
+/**
+ * 编辑轮次入口，按轮次 ID 加载现状，题目已绑定时保留锁定题套。
+ * Edit-round entry loading the round by ID and preserving locked question sets once questions bind.
+ */
 export function EditInterviewForm({
   workspaceId,
   applicationId,

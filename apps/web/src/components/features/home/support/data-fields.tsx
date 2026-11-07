@@ -25,6 +25,10 @@ export interface DataFieldsProps extends ComponentProps<"dl"> {
   labelClassName?: string;
 }
 
+/**
+ * 首页演示资料字段的分栏容器，负责标签和值组的布局，不加载业务数据。
+ * Column layout for homepage-demo data fields, without business-data loading.
+ */
 export function DataFields({
   columns = 2,
   density = "default",

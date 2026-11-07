@@ -15,6 +15,10 @@ const config: QuestionEditorConfig<FormSetContent, DraftQuestion> = {
   toInput: formSetInput,
 };
 
+/**
+ * 表单题套编辑器适配层，把表单题草稿和字段配置接入共用 QuestionSetEditor。
+ * Form-set adapter connecting form-question drafts and field configuration to QuestionSetEditor.
+ */
 export function FormSetEditor(props: QuestionSetEditorProps<FormSetContent>) {
   return <QuestionSetEditor {...props} config={config} />;
 }

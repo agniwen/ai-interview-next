@@ -2,6 +2,10 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { PreviewCard, PreviewCardPopup, PreviewCardTrigger } from "@/components/ui/preview-card";
 
+/**
+ * 关联记录名称的共用预览入口，兼容悬停和点击，并仅在展开时挂载详情内容。
+ * Shared linked-record preview supporting hover and click, mounting details only while open.
+ */
 export function RecordPreviewCard({ title, children }: { title: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (

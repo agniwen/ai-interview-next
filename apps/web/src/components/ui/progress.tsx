@@ -4,6 +4,10 @@ import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 任务完成进度的展示组件，组合标签、轨道、指示条和数值。
+ * Task-progress primitives composing label, track, indicator and value.
+ */
 export function Progress({
   className,
   children,

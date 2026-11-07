@@ -29,7 +29,10 @@ import { DEMO_CANDIDATE_EMAIL, DEMO_CANDIDATE_PHONE } from "./demo-workflow-data
 
 const DemoInterviewPanels = lazy(() => import("./demo-interview-panels"));
 
-/** Candidate page and workflow are local to the canvas; the homepage never subscribes. */
+/**
+ * 首页候选人详情演示，切换资料与流程页签，状态限定在演示画布内。
+ * Homepage candidate-detail demo switching materials and workflow tabs with state confined to the demo canvas.
+ */
 export function DemoCandidateDetail() {
   const demo = useDemo();
   const [tab, setTab] = useState("overview");

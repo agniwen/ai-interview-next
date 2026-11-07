@@ -1,5 +1,3 @@
-// 用途：页脚。左侧品牌字标，右侧产品锚点与入口链接。
-// Purpose: footer — brand wordmark with product anchors and entry links.
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -9,6 +7,10 @@ const COPYRIGHT_YEAR = 2026;
 
 const LINK_CLASS = "text-muted-foreground transition-colors hover:text-foreground";
 
+/**
+ * 首页页脚，展示品牌字标、产品锚点和入口链接。
+ * Homepage footer with the brand wordmark, product anchors and entry links.
+ */
 export function HomeFooter() {
   const sectionLinks = [
     { hash: "capabilities", label: m.home_footer_capabilities() },

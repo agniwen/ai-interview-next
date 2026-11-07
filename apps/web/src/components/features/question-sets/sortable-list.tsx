@@ -8,6 +8,10 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 提供共用拖拽上下文，使用稳定 key 对题目、选项或题套排序，并回传新顺序。
+ * Provides drag context for questions, options or sets, using stable keys and returning the reordered items.
+ */
 export function SortableList<T extends { key: string }>({
   items,
   onChange,
@@ -33,6 +37,10 @@ export function SortableList<T extends { key: string }>({
   );
 }
 
+/**
+ * 将单个条目接入排序上下文，提供拖拽手柄并保留业务内容的渲染位置。
+ * Connects one item to sortable context, providing a drag handle and a slot for feature content.
+ */
 export function SortableItem({
   id,
   index,

@@ -13,6 +13,10 @@ const dotMasks = Array.from({ length: 4 }, (_, group) => {
   return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="196" height="196"><path fill="white" d="${squares}"/></svg>`)}")`;
 });
 
+/**
+ * 候选人面试入口的装饰性点阵背景，以固定纹样配合 CSS 明暗动画并支持减少动态效果。
+ * Decorative candidate-entry dot background using fixed patterns and CSS opacity animation with reduced-motion support.
+ */
 export function InterviewEntryBackground() {
   return (
     <div

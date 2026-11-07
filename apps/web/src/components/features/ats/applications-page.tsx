@@ -20,6 +20,10 @@ import { listParams, applicationStatuses } from "./list-search";
 import type { ApplicationListSearch } from "./list-search";
 import { ProjectFilter } from "./project-select";
 
+/**
+ * 招聘记录列表，连接 URL 筛选与分页参数、列表查询和创建记录弹窗。
+ * Application list connecting URL filters and pagination to queries and the creation dialog.
+ */
 export function ApplicationsPage({
   workspaceId,
   query,

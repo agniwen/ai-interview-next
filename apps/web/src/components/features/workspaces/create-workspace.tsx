@@ -9,6 +9,10 @@ import { authData, useWorkspaceAction } from "@/lib/workspaces/actions";
 import { WorkspaceFeedback } from "./workspace-feedback";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 创建工作区的名称表单，通过工作区操作层提交并展示错误。
+ * Workspace-name form submitting creation through workspace actions and displaying errors.
+ */
 export function CreateWorkspace() {
   const [name, setName] = useState("");
   const action = useWorkspaceAction<string>();

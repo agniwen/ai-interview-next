@@ -7,6 +7,10 @@ import * as m from "@/paraglide/messages";
 import { candidateInterviewQuery } from "./client";
 import { InterviewPreparation } from "./preparation";
 
+/**
+ * 候选人邀请入口，加载凭证对应的面试并分流加载、失效、失败和准备流程状态。
+ * Candidate invitation entry loading the token's interview and selecting loading, unavailable, error or preparation views.
+ */
 export function CandidateInterviewEntry({ token }: { token: string }) {
   const query = useQuery(candidateInterviewQuery(token));
   const phase = useSkeletonPhase(query.isPending);

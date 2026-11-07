@@ -22,11 +22,6 @@ import {
   IconUserCog,
   IconUsers,
 } from "@tabler/icons-react";
-// 用途：复刻真实 Studio 壳（shadcn Sidebar variant="inset"）。所有尺寸严格按真实组件：
-// --sidebar-width 18rem (288px) · --header-height 3rem (48px) · SidebarMenuButton h-8
-// SidebarGroup p-2 · SidebarGroupLabel h-8 px-2 text-xs/70 · TabsList p-0.5 + shared indicator。
-// Purpose: 1:1 mirror of the real Studio sidebar+inset layout. Width / heights /
-// classes match the actual shadcn primitives the production app uses.
 
 import { useOptionalDemo } from "../demo-context";
 import { getDemoScreenCopy } from "../demo-screen-copy";
@@ -371,6 +366,10 @@ interface AppShellProps {
   children: ReactNode;
 }
 
+/**
+ * 首页演示的 Studio 外壳，组合演示侧栏、顶栏、内容、自动导览和弹层。
+ * Studio shell for the homepage demo, composing sidebar, header, content, autoplay and overlays.
+ */
 export function AppShell({
   tab = "studio",
   sidebar,

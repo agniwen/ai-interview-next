@@ -7,6 +7,10 @@ import * as m from "@/paraglide/messages";
 
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 
+/**
+ * 公共未找到页面，提供品牌、语言切换和返回入口。
+ * Public not-found page with branding, language switching and return navigation.
+ */
 export function NotFoundPage() {
   return (
     <div className="relative mx-auto min-h-svh w-full max-w-[105rem] px-4 sm:px-8 lg:px-16">

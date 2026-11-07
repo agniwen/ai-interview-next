@@ -183,6 +183,10 @@ function EditAgentForm({
   return <AgentForm agent={data} workspaceId={workspaceId} onSuccess={onSuccess} />;
 }
 
+/**
+ * 面试官 Agent 管理列表及新建、编辑表单，维护名称、说明与面试指令。
+ * Interviewer Agent management list and create/edit forms for names, descriptions and interview instructions.
+ */
 export function InterviewerAgentsPage({ workspaceId, query, onQueryChange }: AtsPageProps) {
   const dialog = useMemo(() => createDialogHandle<{ id: string }>(), []);
   const { data, isError, refetch } = useQuery(interviewerAgentsQuery(workspaceId, query));

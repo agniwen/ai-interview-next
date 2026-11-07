@@ -4,6 +4,10 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 表单字段组件，连接标签、控件、帮助说明和校验错误展示。
+ * Form-field primitives connecting labels, controls, help text and validation errors.
+ */
 export function Field({ className, ...props }: FieldPrimitive.Root.Props): React.ReactElement {
   return (
     <FieldPrimitive.Root

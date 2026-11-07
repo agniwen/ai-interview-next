@@ -39,6 +39,10 @@ async function readDepartmentOptions(
 
 type DepartmentPage = Awaited<ReturnType<typeof readDepartmentOptions>>;
 
+/**
+ * 工作区部门的搜索选择器，内部加载分页选项，调用方持有选中部门。
+ * Searchable workspace department picker; loads paginated options while the caller owns selection.
+ */
 export function DepartmentSelect({
   id,
   onChange,

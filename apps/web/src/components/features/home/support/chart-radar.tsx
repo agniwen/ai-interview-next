@@ -28,6 +28,10 @@ const DEFAULT_CONFIG: ChartConfig = {
   },
 };
 
+/**
+ * 评价维度雷达图，将维度数据转换为图表与提示信息，供首页评价演示复用。
+ * Evaluation-dimension radar chart mapping data to chart and tooltip content for homepage demos.
+ */
 export function DimensionRadarChart({
   dimensions,
   className,

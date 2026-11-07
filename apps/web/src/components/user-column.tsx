@@ -1,6 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
+/**
+ * 列表与详情共用的用户头像和名称单元，支持缺失头像的回退展示。
+ * Shared user avatar/name cell for lists and details, including avatar fallback.
+ */
 export function UserColumn({
   className,
   user,

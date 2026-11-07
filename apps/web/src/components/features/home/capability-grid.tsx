@@ -1,6 +1,4 @@
 import { useReducedMotion } from "@/components/features/home/support/reduced-motion";
-// 用途：能力 bento。上排两张可操作的大卡（岗位语境切换、AI 追问示例），下排四张图标小卡。
-// Purpose: capability bento — two interactive showcase cards above four compact icon tiles.
 
 import {
   IconArrowUpRight,
@@ -363,6 +361,10 @@ function getCompactTiles(): CompactTileProps[] {
   ];
 }
 
+/**
+ * 首页能力展示区，上排提供岗位语境切换和 AI 追问示例，下排展示四项简要能力。
+ * Homepage capabilities section with interactive job-context and AI follow-up examples above four compact features.
+ */
 export function CapabilityGrid() {
   return (
     <Section id="capabilities">

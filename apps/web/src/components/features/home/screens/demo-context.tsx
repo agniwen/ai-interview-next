@@ -54,6 +54,10 @@ type DemoState = ReturnType<typeof useDemoState>;
 const DemoContext = createContext<DemoState | null>(null);
 const DemoResetContext = createContext<(() => void) | null>(null);
 
+/**
+ * 首页演示的本地状态容器，统一模拟阶段、候选人、弹窗和重置指令，不写入业务数据。
+ * Local homepage-demo state for simulated phases, candidates, dialogs and reset commands, without business writes.
+ */
 export function DemoProvider({ children }: { children: ReactNode }) {
   const state = useDemoState();
   const { setPhase, setTurn, setCandidate, setDialog, setGroup, setStage, setNotice } = state;

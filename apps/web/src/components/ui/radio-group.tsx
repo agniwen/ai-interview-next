@@ -5,6 +5,10 @@ import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 互斥单选项组，统一单选控件与组布局。
+ * Mutually exclusive radio options with shared control and group styling.
+ */
 export function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props): React.ReactElement {
   return (
     <RadioGroupPrimitive

@@ -2,6 +2,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 账号入口的加载占位，按顶栏、侧栏及折叠形式匹配用户菜单尺寸。
+ * Account-entry placeholder matching header, sidebar and collapsed user-menu layouts.
+ */
 export function UserMenuSkeleton({
   className,
   iconOnly,

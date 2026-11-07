@@ -11,6 +11,10 @@ import type { AtsPageProps } from "../ats/list-page";
 import { questionSetsQuery } from "./client";
 import type { QuestionSetListSearch } from "./list-search";
 
+/**
+ * 题套列表，按表单题或沟通题分类查询，并提供新建和编辑入口。
+ * Question-set list filtered by form or conversation type, with create and edit entry points.
+ */
 export function QuestionSetsPage({
   workspaceId,
   query,

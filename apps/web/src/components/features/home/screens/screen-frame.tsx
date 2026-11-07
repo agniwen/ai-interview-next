@@ -1,8 +1,3 @@
-// 用途：landing page 的简化版 UI 画板。固定 1440×856 内部画布，通过 container query
-// scale 到容器实际宽度，保持像素级布局的精确性同时随容器自适应。
-// 横向比例接近桌面浏览器，列表与详情可以铺开展示。
-// Purpose: fixed 1440x856 inner canvas scaled to fit container width via cqi units,
-// keeping pixel-perfect mock layout while flexing to outer width.
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +11,10 @@ interface ScreenFrameProps {
 
 // 不再模仿 macOS 窗口：去掉标题栏与内边距，把高度留给演示内容。
 // No faux macOS chrome: the title bar and padding go, leaving the height to the demo.
+/**
+ * 将固定 1440×856 的演示画布缩放到容器宽度，保持内部桌面布局比例。
+ * Scales a fixed 1440x856 demo canvas to its container width while preserving the internal desktop layout.
+ */
 export function ScreenFrame({ children, className }: ScreenFrameProps) {
   return (
     <div

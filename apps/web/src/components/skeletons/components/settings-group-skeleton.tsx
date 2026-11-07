@@ -1,5 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+/**
+ * 设置分组的可复用骨架，可配置行数与头像占位供账号和工作区页面组合。
+ * Reusable settings-group skeleton with configurable row count and avatar placeholder for account/workspace pages.
+ */
 export function SettingsGroupSkeleton({
   rows = 3,
   avatar = false,

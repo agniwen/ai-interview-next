@@ -58,6 +58,10 @@ function AccountMenuItem({ workspaceId }: { workspaceId?: string }) {
   );
 }
 
+/**
+ * 账号入口菜单，按登录状态提供登录或账号操作，并适配顶栏与侧栏两种展示。
+ * Account entry menu offering sign-in or account actions according to session state, with header and sidebar variants.
+ */
 export function UserMenu({
   variant = "header",
   collapsed = false,

@@ -71,6 +71,10 @@ function ResumeOptionContent({ row }: { row: ApplicationResumeOption }) {
   );
 }
 
+/**
+ * 创建招聘记录时选择工作区内的简历，管理搜索、日期筛选与追加加载，选中值由调用方持有。
+ * Workspace resume picker for application creation; owns search, date filtering and pagination while the caller owns selection.
+ */
 export function ApplicationResumeField({
   onChange,
   value,

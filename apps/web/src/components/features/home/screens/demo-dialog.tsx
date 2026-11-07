@@ -21,7 +21,10 @@ import { useDemo } from "./demo-context";
 import { getDemoScreenCopy } from "./demo-screen-copy";
 import { DEMO_CANDIDATE_ID, DEMO_INVITATION_URL } from "./demo-workflow-data";
 
-/** Only the invitation and scheduling scenes used by the tour are mounted. */
+/**
+ * 首页导览使用的邀请、预约与简历弹层，内容和操作均由演示状态驱动。
+ * Invitation, scheduling and resume overlays for the homepage tour, driven by demo state.
+ */
 export function DemoDialogLayer() {
   const demo = useDemo();
   const [container, setContainer] = useState<HTMLDivElement | null>(null);

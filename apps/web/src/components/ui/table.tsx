@@ -13,6 +13,10 @@ export type TableProps = React.ComponentProps<"table"> & {
   render?: useRender.ComponentProps<"div">["render"];
 };
 
+/**
+ * 表格语义元素与滚动容器，提供统一单元格样式；查询、筛选和分页由业务列表负责。
+ * Table elements and scroll container sharing cell styling; feature lists own queries, filtering and pagination.
+ */
 export function Table({
   className,
   variant = "default",

@@ -2,6 +2,10 @@ import { Separator as SeparatorPrimitive } from "@base-ui/react/separator";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 语义分隔线组件，统一水平或垂直分隔的主题样式。
+ * Semantic separator with shared horizontal and vertical theme styling.
+ */
 export function Separator({
   className,
   orientation = "horizontal",

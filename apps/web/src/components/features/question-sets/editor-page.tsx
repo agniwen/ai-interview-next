@@ -22,6 +22,10 @@ const ConversationSetEditor = lazy(async () => {
   return { default: Editor };
 });
 
+/**
+ * 题套新建与编辑页面，按题套类型加载对应编辑器，并处理加载、错误与返回导航。
+ * Question-set create/edit page selecting the editor by type and handling loading, errors and return navigation.
+ */
 export function QuestionSetEditorPage({
   id,
   workspaceId,

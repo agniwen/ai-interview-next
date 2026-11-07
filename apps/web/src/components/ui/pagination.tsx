@@ -7,6 +7,10 @@ import type * as React from "react";
 import { cn } from "@/lib/utils";
 import { type Button, buttonVariants } from "@/components/ui/button";
 
+/**
+ * 页码导航的展示组件，提供前后页、页码和省略号；总页数与路由状态由调用方计算。
+ * Pagination presentation for previous/next, pages and ellipses; callers compute page counts and routing state.
+ */
 export function Pagination({
   className,
   ...props

@@ -4,6 +4,10 @@ import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 基于 Base UI 的滚动区域，统一视口、滚动条、边缘渐隐和滚动边界配置。
+ * Base UI scrolling area sharing viewport, scrollbar, edge fades and scroll-boundary configuration.
+ */
 export function ScrollArea({
   className,
   children,

@@ -6,6 +6,10 @@ import * as m from "@/paraglide/messages";
 import { ChoicePicker } from "./choice-picker";
 import type { Choice } from "./client";
 
+/**
+ * 轮次的题套多选与排序区域，顺序由父表单保存，绑定题目后可切换为锁定展示。
+ * Round question-set selection and ordering; the parent form stores order and can lock the view after questions bind.
+ */
 export function SetSelection({
   id,
   kind,

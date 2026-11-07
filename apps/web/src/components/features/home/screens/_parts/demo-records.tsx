@@ -1,7 +1,5 @@
 "use client";
 
-// 首页首屏专用的候选人资料、面试轮次与 Offer 展示：视觉对齐 Studio，文案全部来自演示文案。
-// Homepage-only candidate, round and offer views mirroring Studio, fully localized.
 import { IconBriefcase, IconCheck, IconSchool, IconTool } from "@tabler/icons-react";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -65,7 +63,10 @@ function TimelineEntry({
   );
 }
 
-/** Structured resume body used by the detail overview, resume dialog and meeting preview. */
+/**
+ * 详情概览、简历弹窗与会议预览共用的结构化示例简历正文。
+ * Structured sample resume body shared by detail overviews, resume dialogs and meeting previews.
+ */
 export function DemoResumeProfile({ withDetails = true }: { withDetails?: boolean }) {
   const { resume } = getDemoScreenCopy();
   return (
@@ -101,6 +102,10 @@ export function DemoResumeProfile({ withDetails = true }: { withDetails?: boolea
   );
 }
 
+/**
+ * 首页候选人演示的基本信息区，展示本地示例联系方式。
+ * Basic-information area for homepage candidates, showing local sample contact data.
+ */
 export function DemoCandidateBasicInfo() {
   const { basicInfo, job, people, resume } = getDemoScreenCopy();
   return (
@@ -185,6 +190,10 @@ function RoundEvaluation() {
   );
 }
 
+/**
+ * 首页演示的面试轮次卡，根据完成状态展示相应信息与评价。
+ * Homepage demo round card showing information and evaluation according to completion state.
+ */
 export function DemoRoundCard({ completed }: { completed: boolean }) {
   const { humanInterview, people, room, round } = getDemoScreenCopy();
   return (
@@ -239,6 +248,10 @@ export function DemoRoundCard({ completed }: { completed: boolean }) {
   );
 }
 
+/**
+ * 首页演示的 Offer 流程进度展示。
+ * Offer workflow progress display for the homepage demo.
+ */
 export function DemoOfferProgress() {
   const { progress } = getDemoScreenCopy().offer;
   const currentIndex = 2;
@@ -294,6 +307,10 @@ export function DemoOfferProgress() {
   );
 }
 
+/**
+ * 首页演示的 Offer 资料字段，使用本地示例数据。
+ * Offer information fields using local sample data for the homepage demo.
+ */
 export function DemoOfferFields() {
   const { offer } = getDemoScreenCopy();
   return (

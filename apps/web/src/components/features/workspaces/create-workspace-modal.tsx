@@ -4,6 +4,10 @@ import { Modal } from "@/components/ui/modal";
 import { CreateWorkspace } from "./create-workspace";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 将创建工作区表单装入响应式弹窗，并持有弹窗开关状态。
+ * Wraps workspace creation in a responsive modal and owns its open state.
+ */
 export function CreateWorkspaceModal({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   return (

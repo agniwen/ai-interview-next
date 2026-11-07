@@ -26,6 +26,10 @@ export function questionTypeLabel(type: FormQuestionType) {
   return labels[type]();
 }
 
+/**
+ * 单道表单题的类型、题干、说明与选项编辑区域，选项支持追加、删除和排序。
+ * Form-question type, prompt, help and option fields with option creation, removal and reordering.
+ */
 export function QuestionFields({
   question,
   number,

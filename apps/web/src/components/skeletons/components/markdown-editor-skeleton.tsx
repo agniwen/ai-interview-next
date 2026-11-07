@@ -2,6 +2,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 富文本编辑器的工具栏与正文占位，compact 用于较紧凑的内嵌字段。
+ * Rich-text toolbar and body placeholder, with compact mode for smaller inline fields.
+ */
 export function MarkdownEditorSkeleton({
   className,
   compact = false,

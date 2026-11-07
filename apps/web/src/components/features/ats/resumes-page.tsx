@@ -175,6 +175,10 @@ function ResumeCandidateDialog({
   );
 }
 
+/**
+ * 简历库列表，协调上传、解析重试、候选人归属确认、预览和创建招聘记录。
+ * Resume library list coordinating uploads, parsing retries, candidate resolution, previews and application creation.
+ */
 export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<ResumeListSearch>) {
   const client = useQueryClient();
   const param = { workspaceId };

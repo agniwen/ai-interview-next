@@ -5,6 +5,10 @@ import { useRender } from "@base-ui/react/use-render";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 单张卡片的主题表面；业务卡片复用此处的边框、阴影和圆角。
+ * Themed single-card surface; feature cards reuse its borders, shadows and radii.
+ */
 export function Card({
   className,
   render,
@@ -25,6 +29,10 @@ export function Card({
   });
 }
 
+/**
+ * 组合多张卡片的外框，处理相邻卡片接缝与整体圆角。
+ * Outer frame for grouped cards, handling adjoining seams and shared corner radii.
+ */
 export function CardFrame({
   className,
   render,

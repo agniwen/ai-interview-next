@@ -11,6 +11,10 @@ import { roundsQuery } from "./client";
 import { InterviewForm, EditInterviewForm } from "./create-form";
 import { InterviewRoundCard } from "./round-card";
 
+/**
+ * 招聘记录下的面试轮次列表，负责分页加载并协调新建轮次表单与轮次卡片。
+ * Application interview-round list handling pagination and coordinating creation forms with round cards.
+ */
 export function ApplicationInterviews({
   workspaceId,
   applicationId,

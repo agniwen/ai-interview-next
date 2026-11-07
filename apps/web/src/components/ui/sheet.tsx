@@ -9,6 +9,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+/**
+ * 侧边弹出面板，提供遮罩、标题、滚动正文和关闭入口，适合承载较完整的补充内容。
+ * Side panel with backdrop, header, scrollable content and close action for substantial supplementary views.
+ */
 export const Sheet: typeof SheetPrimitive.Root = SheetPrimitive.Root;
 
 export const SheetPortal: typeof SheetPrimitive.Portal = SheetPrimitive.Portal;

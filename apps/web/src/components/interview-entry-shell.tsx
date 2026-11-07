@@ -3,6 +3,10 @@ import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { InterviewEntryBackground } from "@/components/interview-entry-background";
 
+/**
+ * 候选人面试的独立页面外壳，统一点阵背景、语言和主题入口及居中内容区。
+ * Standalone candidate-interview shell sharing the dot background, language/theme controls and centered content.
+ */
 export function InterviewEntryShell({ children }: { children: ReactNode }) {
   return (
     <div className="relative isolate flex min-h-svh flex-1 flex-col bg-background">

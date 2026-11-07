@@ -33,6 +33,10 @@ interface ResumeLifecycleBadgeProps extends Omit<
   tone: ResumeLifecycleBadgeTone;
 }
 
+/**
+ * 显示首页演示的招聘阶段并提供点击入口；悬停加深底色，以免外扩光环被标题行裁切。
+ * Shows a clickable demo recruiting stage; hover deepens the fill so the title row cannot clip an outer halo.
+ */
 export function ResumeLifecycleBadge({
   className,
   detailLabel,

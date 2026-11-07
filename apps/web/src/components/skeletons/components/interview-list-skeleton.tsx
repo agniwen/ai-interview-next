@@ -2,6 +2,10 @@ import { Frame, FrameHeader, FramePanel } from "@/components/ui/frame";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 招聘记录面试页签的轮次卡片占位，复用轮次列表的分区外框。
+ * Round-card placeholder for the application interview tab, reusing the list's section frame.
+ */
 export function InterviewListSkeleton() {
   return (
     <div aria-busy="true" aria-label={m.ats_loading()}>

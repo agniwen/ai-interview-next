@@ -4,6 +4,10 @@ import { cn } from "@/lib/utils";
 
 const BrandShader = lazy(() => import("./brand-shader"));
 
+/**
+ * 品牌着色器的延迟加载与降级容器，在水合和着色器准备期间保留静态背景。
+ * Lazy-loading brand shader container retaining a static backdrop during hydration and shader loading.
+ */
 export function BrandBackground({
   className,
   animated = false,

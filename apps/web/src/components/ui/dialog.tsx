@@ -11,6 +11,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 export const DialogCreateHandle: typeof DialogPrimitive.createHandle = DialogPrimitive.createHandle;
 
+/**
+ * 通用对话框组件，统一遮罩、滚动面板、标题和操作区，打开状态可由调用方控制。
+ * General dialog primitives sharing backdrop, scrollable panel, header and actions, with caller-controlled open state.
+ */
 export const Dialog: typeof DialogPrimitive.Root = DialogPrimitive.Root;
 
 export const DialogPortal: typeof DialogPrimitive.Portal = DialogPrimitive.Portal;

@@ -14,6 +14,10 @@ export interface ModalProps {
   children: ReactNode;
 }
 
+/**
+ * 调用方控制 open；内部只负责按屏幕尺寸选择 Dialog 或 Drawer。
+ * The caller controls open; this component selects Dialog or Drawer by screen size.
+ */
 export function Modal({ open, onOpenChange, title, description, closeLabel, trigger, children }: ModalProps) {
   const mobile = useIsMobile();
   if (mobile) {

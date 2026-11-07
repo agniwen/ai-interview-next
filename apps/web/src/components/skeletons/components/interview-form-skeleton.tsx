@@ -1,6 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 面试轮次新建或编辑配置尚未就绪时的表单占位。
+ * Interview-round form placeholder while creation or editing configuration loads.
+ */
 export function InterviewFormSkeleton() {
   return (
     <div aria-busy="true" aria-label={m.ats_loading()} className="flex flex-col gap-6">

@@ -17,6 +17,10 @@ const JobForm = lazy(async () => {
   return { default: Editor };
 });
 
+/**
+ * 岗位新建与编辑页面，加载编辑数据并处理页面返回，字段草稿和保存交给 JobForm。
+ * Job create/edit page; loads records and handles return navigation, leaving draft fields and saving to JobForm.
+ */
 export function JobEditorPage({
   id,
   workspaceId,

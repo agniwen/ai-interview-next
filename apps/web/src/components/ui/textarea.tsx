@@ -11,6 +11,10 @@ export type TextareaProps = React.ComponentPropsWithoutRef<"textarea"> &
     unstyled?: boolean;
   };
 
+/**
+ * 多行文本输入的主题封装，保持原生输入接口和统一校验、焦点样式。
+ * Themed multiline input preserving native props and shared validation/focus styling.
+ */
 export function Textarea({
   className,
   size = "default",

@@ -5,6 +5,10 @@ import { IconChevronDown as ChevronDownIcon } from "@tabler/icons-react";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 主题化的多段折叠组件，组合根容器、条目、触发器与内容面板。
+ * Themed multi-section disclosure primitives: root, item, trigger and panel.
+ */
 export function Accordion(props: AccordionPrimitive.Root.Props): React.ReactElement {
   return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
 }

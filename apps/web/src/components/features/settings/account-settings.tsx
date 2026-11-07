@@ -54,6 +54,10 @@ function ThemeSelect() {
   );
 }
 
+/**
+ * 当前账号资料与偏好设置，包含姓名保存、身份信息、主题和语言切换。
+ * Current-account profile and preferences, including name saving, identity details, theme and language.
+ */
 export function AccountSettings() {
   const { data: session, isPending } = authClient.useSession();
   const phase = useSkeletonPhase(isPending && !session);

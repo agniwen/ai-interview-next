@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import * as m from "@/paraglide/messages";
 import { createInvitationMutation } from "./client";
 
+/**
+ * 为轮次创建或取得邀请链接并复制到剪贴板，同时展示请求与复制反馈。
+ * Creates or retrieves a round invitation link, copies it to the clipboard and reports request/copy feedback.
+ */
 export function InvitationButton({
   workspaceId,
   roundId,

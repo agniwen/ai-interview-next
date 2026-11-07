@@ -1,6 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 简历处理详情页占位，预留流程图与步骤输出面板的位置。
+ * Resume-processing page placeholder reserving flow-diagram and step-output areas.
+ */
 export function ResumeProcessingSkeleton() {
   return (
     <div

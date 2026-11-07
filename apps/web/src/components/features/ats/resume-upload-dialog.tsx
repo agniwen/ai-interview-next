@@ -72,6 +72,10 @@ function putResume(
   });
 }
 
+/**
+ * 简历批量上传入口，负责上传、确认和操作反馈，通过回调通知外层刷新数据。
+ * Batch resume upload entry handling upload, confirmation and feedback, notifying the caller to refresh data through a callback.
+ */
 export function ResumeUploadDialog({
   workspaceId,
   onSettled,

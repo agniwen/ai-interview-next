@@ -2,9 +2,6 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-// 无五官的单色人像：按种子确定性地选 6 种发型之一和 8 种色相之一，整幅头像用同一色相的浅色调。
-// A faceless monochrome portrait: the seed deterministically picks one of six hairstyles and one
-// of eight hues, and the whole avatar uses soft tones of that single hue.
 export const PERSON_SILHOUETTE_HAIRSTYLES = [
   "short",
   "sidePart",
@@ -199,6 +196,10 @@ const HAIRSTYLES: Record<
   },
 };
 
+/**
+ * 生成无五官的单色演示头像，按种子稳定选择发型和色相，供演示头像复用。
+ * Generates faceless monochrome demo portraits with seeded hairstyle and hue choices for reuse by demo avatars.
+ */
 export function PersonSilhouette({
   className,
   seed,

@@ -1,6 +1,10 @@
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 设置和信息列表的条目结构，统一标题、说明及操作区的排版。
+ * Item structure for settings and information lists, sharing title, description and action layout.
+ */
 export function List({ className, ...props }: ComponentProps<"ul">) {
   return <ul className={cn("flex min-w-0 flex-col divide-y", className)} data-slot="list" {...props} />;
 }

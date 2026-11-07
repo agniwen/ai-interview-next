@@ -7,6 +7,10 @@ import { cn } from "@/lib/utils";
 const AVATAR_GROUP_CUT =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 2'%3E%3Ccircle cx='1' cy='1' r='1'/%3E%3C/svg%3E\")";
 
+/**
+ * 头像及头像组组件，统一图片、回退内容和溢出数量的展示。
+ * Avatar and avatar-group primitives sharing image, fallback and overflow-count presentation.
+ */
 export function Avatar({ className, ...props }: AvatarPrimitive.Root.Props): React.ReactElement {
   return (
     <AvatarPrimitive.Root

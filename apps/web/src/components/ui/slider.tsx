@@ -4,6 +4,10 @@ import { Slider as SliderPrimitive } from "@base-ui/react/slider";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 连续数值滑块，统一轨道、拖动柄和值的展示。
+ * Continuous-value slider sharing track, thumb and value presentation.
+ */
 export function Slider({
   className,
   getAriaLabel,

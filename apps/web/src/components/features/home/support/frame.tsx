@@ -1,6 +1,10 @@
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 首页演示保留的分区框布局，组合标题、内容与页脚；真实业务优先使用共用 ui/frame。
+ * Section-frame layout retained for homepage demos, with header, body and footer; live features use shared ui/frame.
+ */
 export function Frame({ className, ...props }: React.ComponentProps<"div">): React.ReactElement {
   return (
     <div

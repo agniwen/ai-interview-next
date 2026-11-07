@@ -1,5 +1,3 @@
-// 用途：5 条常见问题
-// Purpose: Top 5 FAQs.
 "use client";
 
 import {
@@ -13,6 +11,10 @@ import { Section, SectionTitle } from "./section";
 
 const defaultExpandedFaqs = Array.from({ length: 5 }, (_, index) => `faq-${index}`);
 
+/**
+ * 首页常见问题区域，使用折叠条目展示五组问答。
+ * Homepage FAQ section presenting five question/answer pairs in accordion items.
+ */
 export function Faq() {
   const faqs = [
     { answer: m.home_faq_a1(), question: m.home_faq_q1() },

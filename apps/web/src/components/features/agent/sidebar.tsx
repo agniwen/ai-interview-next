@@ -108,6 +108,10 @@ function SessionTitleEditor({
   );
 }
 
+/**
+ * Agent 会话侧栏，展示会话并提供新建、重命名和删除入口，通过侧栏插槽渲染。
+ * Agent session sidebar with create, rename and delete actions, rendered through the sidebar slot.
+ */
 export function AgentSidebar({
   workspaceId,
   sessions,

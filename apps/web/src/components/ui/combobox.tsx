@@ -18,6 +18,10 @@ export const ComboboxContext: React.Context<{
   multiple: false,
 });
 
+/**
+ * 可搜索选择组件，封装单选、多选标签、选项列表与状态区，业务查询留在功能模块。
+ * Searchable selection primitives for single values, multi-value chips, item lists and status areas; queries remain in feature modules.
+ */
 export function Combobox<Value, Multiple extends boolean | undefined = false, Item = Value>(
   props: ComboboxPrimitive.Root.Props<Value, Multiple, Item>,
 ): React.ReactElement {

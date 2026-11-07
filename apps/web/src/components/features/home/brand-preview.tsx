@@ -3,6 +3,10 @@ import { PreviewCard, PreviewCardPopup, PreviewCardTrigger } from "@/components/
 import { Separator } from "@/components/ui/separator";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 首页品牌名称的解释浮层，展示品牌含义而不承担应用导航。
+ * Homepage brand explanation popup presenting the name's meaning without application navigation.
+ */
 export function BrandPreview() {
   const [open, setOpen] = useState(false);
   const descriptionId = useId();

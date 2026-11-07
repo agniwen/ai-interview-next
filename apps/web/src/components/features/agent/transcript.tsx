@@ -174,4 +174,8 @@ function TranscriptContent({ snapshot }: { snapshot: ChatSnapshot }) {
   );
 }
 
+/**
+ * 根据会话快照渲染消息、推理及工具调用，并通过共用消息滚动组件处理跟随与跳到底部。
+ * Renders messages, reasoning and tool calls from a session snapshot, using shared scrolling primitives for following and jumping to the end.
+ */
 export const Transcript = memo(TranscriptContent);

@@ -40,6 +40,10 @@ function CandidateContactLink({
   );
 }
 
+/**
+ * 候选人列表，展示联系方式并按候选人打开其简历列表。
+ * Candidate list with contact links and access to each candidate's resumes.
+ */
 export function CandidatesPage({ workspaceId, query, onQueryChange }: AtsPageProps) {
   const resumesDialog = useMemo(() => createDialogHandle<{ id: string; name: string }>(), []);
   const { data, isError, refetch } = useQuery({

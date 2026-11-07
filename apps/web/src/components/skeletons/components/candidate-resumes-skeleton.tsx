@@ -1,6 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 候选人简历弹窗的列表占位，保留文档信息与行内操作的空间。
+ * Resume-list placeholder inside the candidate dialog, reserving document metadata and row-action space.
+ */
 export function CandidateResumesSkeleton() {
   return (
     <div aria-busy="true" aria-label={m.ats_loading()}>

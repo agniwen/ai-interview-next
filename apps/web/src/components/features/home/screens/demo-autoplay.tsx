@@ -297,4 +297,8 @@ function DemoAutoplayContent() {
   );
 }
 
+/**
+ * 首页演示的自动导览，驱动画布内光标、滚动和演示步骤，播放状态独立于真实业务。
+ * Homepage demo tour driving canvas-local cursor movement, scrolling and steps independently of live business state.
+ */
 export const DemoAutoplay = memo(DemoAutoplayContent);

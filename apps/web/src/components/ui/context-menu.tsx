@@ -6,6 +6,10 @@ import type * as React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
+/**
+ * 右键上下文菜单，统一分组、选择项、子菜单与快捷键展示。
+ * Context-menu primitives sharing groups, selectable items, submenus and shortcut presentation.
+ */
 export const ContextMenu: typeof ContextMenuPrimitive.Root = ContextMenuPrimitive.Root;
 
 export const ContextMenuPortal: typeof ContextMenuPrimitive.Portal = ContextMenuPrimitive.Portal;

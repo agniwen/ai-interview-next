@@ -107,6 +107,10 @@ function ResumeCardSkeleton({ divider }: { divider: boolean }) {
   );
 }
 
+/**
+ * 首页交互演示的整窗骨架，保留侧栏、页签和简历卡片布局以稳定首屏尺寸。
+ * Full homepage-demo skeleton preserving sidebar, tabs and resume-card layout for a stable hero footprint.
+ */
 export function DemoWindowSkeleton() {
   return (
     <div

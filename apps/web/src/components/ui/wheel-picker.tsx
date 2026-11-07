@@ -22,6 +22,10 @@ function WheelPickerWrapper({
   );
 }
 
+/**
+ * 滚轮选项控件的主题适配层，供时间选择等离散值输入使用。
+ * Themed wheel-picker adapter for discrete choices such as time input.
+ */
 function WheelPicker<T extends WheelPickerValue = string>({
   "aria-label": label,
   classNames,

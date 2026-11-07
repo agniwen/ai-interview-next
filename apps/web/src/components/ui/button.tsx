@@ -54,6 +54,10 @@ export interface ButtonProps extends useRender.ComponentProps<"button"> {
   loading?: boolean;
 }
 
+/**
+ * 全站按钮的主题与尺寸入口，统一禁用、加载状态和图标布局。
+ * Application button styling and sizing, including disabled/loading state and icon layout.
+ */
 export function Button({
   className,
   variant,

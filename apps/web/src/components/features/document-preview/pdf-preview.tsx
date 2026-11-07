@@ -113,6 +113,10 @@ function PdfPreviewResult({
   return visible ? children : null;
 }
 
+/**
+ * 基于 EmbedPDF 和 PDFium 的浏览器 PDF 预览，管理文档渲染、滚动、缩放和加载反馈。
+ * Browser PDF viewer using EmbedPDF and PDFium for rendering, scrolling, zooming and loading feedback.
+ */
 export default function PdfPreview({
   onLoadingChange,
   toolbarTargets,

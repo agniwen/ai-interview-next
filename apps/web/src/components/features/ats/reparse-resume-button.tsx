@@ -6,6 +6,10 @@ import * as m from "@/paraglide/messages";
 import { atsApi, readAts, readResumeProfile } from "./client";
 import { atsKeys } from "./query-keys";
 
+/**
+ * 发起简历重新解析，并根据解析状态轮询和刷新相关简历数据。
+ * Starts resume reparsing and polls processing state to refresh related resume data.
+ */
 export function ReparseResumeButton({ id, workspaceId }: { id: string; workspaceId: string }) {
   const client = useQueryClient();
   const { data, isPending } = useQuery({

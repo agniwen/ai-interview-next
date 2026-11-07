@@ -132,6 +132,10 @@ function QueueRow({
   );
 }
 
+/**
+ * 待发送消息队列，支持排序、编辑、删除与提前发送；队列数据和操作由会话层提供。
+ * Pending message queue with reorder, edit, remove and send-next actions supplied by the session layer.
+ */
 export function ChatQueue({
   items,
   busy,

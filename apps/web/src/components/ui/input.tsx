@@ -13,6 +13,10 @@ export type InputProps = Omit<
   nativeInput?: boolean;
 };
 
+/**
+ * 单行文本输入的主题入口，统一尺寸、焦点、禁用和校验状态样式。
+ * Themed single-line input sharing size, focus, disabled and validation-state styling.
+ */
 export function Input({
   className,
   size = "default",

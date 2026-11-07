@@ -11,6 +11,10 @@ import {
   TraceTitle,
 } from "@/components/ui/trace";
 
+/**
+ * 可折叠的模型推理区，使用 Trace 展示思考状态、时长与推理内容。
+ * Collapsible model-reasoning view using Trace for thinking state, duration and content.
+ */
 export function Reasoning({
   title,
   duration,

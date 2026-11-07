@@ -9,6 +9,10 @@ export const TooltipCreateHandle: typeof TooltipPrimitive.createHandle =
 
 export const TooltipProvider: typeof TooltipPrimitive.Provider = TooltipPrimitive.Provider;
 
+/**
+ * 短说明提示组件，统一 Provider、触发器与提示浮层，供图标操作等场景复用。
+ * Short contextual tooltip primitives sharing provider, trigger and popup for controls such as icon actions.
+ */
 export const Tooltip: typeof TooltipPrimitive.Root = TooltipPrimitive.Root;
 
 export function TooltipTrigger(props: TooltipPrimitive.Trigger.Props): React.ReactElement {

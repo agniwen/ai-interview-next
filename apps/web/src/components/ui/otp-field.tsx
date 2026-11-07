@@ -5,6 +5,10 @@ import type * as React from "react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
+/**
+ * 验证码分格输入组件，统一单格输入与分隔符的视觉布局。
+ * Segmented one-time-code input sharing slot and separator styling.
+ */
 export function OTPField({
   className,
   size = "default",

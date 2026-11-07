@@ -1,6 +1,10 @@
 import { ResumeProfileSkeleton } from "@/components/skeletons/components/resume-profile-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 
+/**
+ * 招聘详情页的整体占位，对齐候选人信息、页签、简历和侧边活动区域。
+ * Full application-detail placeholder matching candidate metadata, tabs, resume and side activity areas.
+ */
 export function ApplicationDetailSkeleton() {
   return (
     <div className="flex flex-1 flex-col gap-6">

@@ -198,6 +198,10 @@ export interface MarkdownEditorProps {
   "aria-required"?: boolean | "true" | "false";
 }
 
+/**
+ * 对外保持 Markdown 字符串契约，Tiptap 文档状态仅存在于编辑器内部。
+ * Keeps a Markdown string contract externally while Tiptap document state stays inside the editor.
+ */
 export function MarkdownEditor({
   id,
   value,

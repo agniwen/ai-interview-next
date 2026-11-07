@@ -14,6 +14,10 @@ import { ResumeProfilePanel } from "./resume-profile-panel";
 
 const PdfPreview = lazy(createClientOnlyFn(() => import("./pdf-preview")));
 
+/**
+ * 简历预览入口，切换原始 PDF 与标准化简历，并衔接各自的加载状态。
+ * Resume preview entry switching between the original PDF and structured resume with separate loading states.
+ */
 export function ResumePreviewDialog({
   actions,
   filename,

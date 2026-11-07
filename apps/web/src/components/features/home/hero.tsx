@@ -45,6 +45,10 @@ function useEntranceFinished() {
   return { finished, rootRef };
 }
 
+/**
+ * 首页首屏标题与产品入口，协调一次性入场动画和品牌说明浮层。
+ * Homepage hero copy and product entry points, coordinating one-time entrance animation and brand explanation.
+ */
 export function Hero() {
   const { finished, rootRef } = useEntranceFinished();
   return (

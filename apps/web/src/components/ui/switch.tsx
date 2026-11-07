@@ -4,6 +4,10 @@ import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 布尔开关控件，统一开关轨道、滑块及禁用状态。
+ * Boolean switch sharing track, thumb and disabled-state styling.
+ */
 export function Switch({ className, ...props }: SwitchPrimitive.Root.Props): React.ReactElement {
   return (
     <SwitchPrimitive.Root

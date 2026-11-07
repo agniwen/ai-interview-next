@@ -13,6 +13,10 @@ interface FadeContentProps {
   ref?: Ref<HTMLDivElement>;
 }
 
+/**
+ * 首页内容的入场动效容器，并根据减少动态效果偏好调整动画。
+ * Homepage content entrance wrapper adapting animation to reduced-motion preferences.
+ */
 export function FadeContent({
   children,
   className,

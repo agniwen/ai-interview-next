@@ -4,6 +4,10 @@ import { cn } from "@/lib/utils";
 import { PersonSilhouette } from "./person-silhouette";
 
 export { AvatarFallback } from "@/components/ui/avatar";
+/**
+ * 首页演示头像，使用确定性人物剪影代替真实用户照片，并兼容头像回退内容。
+ * Homepage-demo avatar using deterministic silhouettes instead of real user photos, with avatar fallback support.
+ */
 export function Avatar({
   seed,
   label,

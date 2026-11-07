@@ -25,6 +25,10 @@ function InterviewNotice() {
   );
 }
 
+/**
+ * 受控的单步视图，父组件决定当前步骤和前后切换；这里不持久化面试进度。
+ * Controlled single-step view; the parent selects the step and navigation, and this view does not persist interview progress.
+ */
 export function PreparationStage({
   interview,
   step,
@@ -130,6 +134,10 @@ export function PreparationStage({
   );
 }
 
+/**
+ * 持有准备步骤，有表单时先进入表单占位，否则进入沟通准备；表单保存和设备检查尚未接入。
+ * Owns preparation steps, entering the form placeholder when present or readiness otherwise; form persistence and device checks are not yet connected.
+ */
 export function InterviewPreparation({ interview }: { interview: CandidateInterview }) {
   const [stepIndex, setStepIndex] = useState(0);
   const steps = interviewPreparationSteps((interview.questions?.form.length ?? 0) > 0);

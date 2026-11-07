@@ -8,6 +8,10 @@ import { cn } from "@/lib/utils";
 export const PopoverCreateHandle: typeof PopoverPrimitive.createHandle =
   PopoverPrimitive.createHandle;
 
+/**
+ * 锚定触发元素的交互浮层，提供标题、说明和关闭操作，适合局部编辑或确认。
+ * Interactive anchored popup with title, description and close actions for local editing or confirmation.
+ */
 export const Popover: typeof PopoverPrimitive.Root = PopoverPrimitive.Root;
 
 export function PopoverTrigger({

@@ -6,6 +6,10 @@ import { IconChevronRight as ChevronRight, IconDots as MoreHorizontal } from "@t
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 面包屑导航的结构组件，组合链接、当前位置、分隔符与折叠占位。
+ * Breadcrumb structure for links, current location, separators and collapsed segments.
+ */
 export function Breadcrumb({ ...props }: React.ComponentProps<"nav">): React.ReactElement {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
 }

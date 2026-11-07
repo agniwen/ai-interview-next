@@ -4,6 +4,10 @@ import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 表单相关字段的语义分组容器，提供组标题及统一布局。
+ * Semantic grouping for related form fields, with a legend and shared layout.
+ */
 export function Fieldset({
   className,
   ...props

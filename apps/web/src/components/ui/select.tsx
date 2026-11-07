@@ -9,6 +9,10 @@ import type * as React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
+/**
+ * 下拉单选组件，组合触发按钮、当前值、分组选项和滚动弹层。
+ * Dropdown selection primitives composing trigger, selected value, grouped items and scrollable popup.
+ */
 export const Select: typeof SelectPrimitive.Root = SelectPrimitive.Root;
 
 export const selectTriggerVariants = cva(

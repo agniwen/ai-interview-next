@@ -14,6 +14,10 @@ export interface DocumentPreviewToolbarTargets {
   zoom: HTMLElement | null;
 }
 
+/**
+ * 文档预览的缩放操作区，显示当前比例并通过回调控制预览器。
+ * Document-preview zoom controls showing the current scale and delegating changes to the viewer.
+ */
 export function DocumentPreviewToolbar({
   pages,
   targets,

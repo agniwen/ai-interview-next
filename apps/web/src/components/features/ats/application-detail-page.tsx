@@ -547,6 +547,10 @@ function ApplicationDetailContent({
   );
 }
 
+/**
+ * 招聘记录详情入口：加载简历、评价与活动记录，并协调概览、评价和面试页签及关闭、删除操作。
+ * Application detail entry: loads resume, evaluations and activity, and coordinates tabs plus close and delete actions.
+ */
 export function ApplicationDetailPage({
   id,
   search,

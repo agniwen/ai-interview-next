@@ -9,6 +9,10 @@ import {
   ListActions,
 } from "@/components/ui/list";
 
+/**
+ * 将一组设置条目放入带标题的分区，条目布局由 SettingsRow 提供。
+ * Groups settings under a section heading; SettingsRow supplies each item's layout.
+ */
 export function SettingsGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex min-w-0 flex-col gap-3" aria-label={title}>
@@ -18,6 +22,10 @@ export function SettingsGroup({ title, children }: { title: string; children: Re
   );
 }
 
+/**
+ * 排列单项设置的标题、说明和操作区，可在移动端将操作放到下一行。
+ * Arranges a setting's title, description and actions, optionally stacking actions on mobile.
+ */
 export function SettingsRow({
   title,
   description,

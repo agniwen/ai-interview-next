@@ -34,6 +34,10 @@ import {
 } from "@/components/ui/sidebar";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 工作区主侧栏，组织 Agent 与业务导航、页面专属侧栏插槽及底部账号入口。
+ * Main workspace sidebar organizing Agent/business navigation, the page-specific sidebar slot and account entry.
+ */
 export function AppSidebar({
   section,
   workspaceId,

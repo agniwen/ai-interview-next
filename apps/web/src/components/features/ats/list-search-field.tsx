@@ -1,5 +1,9 @@
 import { Input } from "@/components/ui/input";
 
+/**
+ * 列表关键词输入框，将搜索变化交给列表路由维护 URL 状态。
+ * List keyword input that delegates search changes to the list route's URL state.
+ */
 export function AtsListSearchField({
   value,
   placeholder,

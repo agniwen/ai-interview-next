@@ -11,6 +11,10 @@ function MessageGroup({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
+/**
+ * 首页演示的消息分组、头像与正文布局，供静态或模拟对话组合使用。
+ * Message groups, avatars and body layout for static or simulated homepage conversations.
+ */
 function Message({
   className,
   align = "start",

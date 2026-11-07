@@ -11,6 +11,10 @@ import * as m from "@/paraglide/messages";
 import type { ApplicationDetail } from "./application-detail-page";
 import { EvaluationResult } from "./evaluation-result";
 
+/**
+ * 招聘评价时间线中的 AI 消息，负责切换同组评价版本并提供重新评价入口。
+ * AI message in the application timeline, with version navigation and a reevaluation action.
+ */
 export function AgentEvaluationMessage({
   application,
   versions,

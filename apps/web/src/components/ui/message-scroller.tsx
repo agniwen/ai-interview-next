@@ -13,12 +13,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { IconArrowDown } from "@tabler/icons-react";
 
+/**
+ * 提供聊天滚动上下文，将自动跟随和消息位置协调交给底层消息滚动实现。
+ * Provides chat-scrolling context, delegating following and message-position coordination to the underlying implementation.
+ */
 function MessageScrollerProvider(
   props: React.ComponentProps<typeof MessageScrollerPrimitive.Provider>,
 ) {
   return <MessageScrollerPrimitive.Provider {...props} />;
 }
 
+/**
+ * 消息滚动区域的根布局，视口、消息内容和悬浮控件由子组件组成。
+ * Root layout for a message scroller, composed with viewport, content and floating-control children.
+ */
 function MessageScroller({
   className,
   ...props

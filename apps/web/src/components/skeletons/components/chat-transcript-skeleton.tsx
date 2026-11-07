@@ -1,6 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 聊天记录初次加载或重连的占位，按连接状态提供不同的无障碍提示。
+ * Chat transcript placeholder for initial load or reconnection, with connection-specific accessible labels.
+ */
 export function ChatTranscriptSkeleton({ reconnecting = false }: { reconnecting?: boolean }) {
   return (
     <output

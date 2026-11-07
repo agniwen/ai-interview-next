@@ -73,6 +73,10 @@ export function useSidebar(): SidebarContextProps {
   return context;
 }
 
+/**
+ * 持有侧栏展开及移动端开关状态，并提供共用快捷键与上下文。
+ * Owns sidebar expansion and mobile open state, exposing shared keyboard controls and context.
+ */
 export function SidebarProvider({
   defaultOpen = true,
   open: openProp,
@@ -171,6 +175,10 @@ export function SidebarProvider({
   );
 }
 
+/**
+ * 根据上下文渲染桌面侧栏或移动端抽屉，并处理折叠后的宽度与布局。
+ * Renders the desktop sidebar or mobile drawer from context, applying collapsed widths and layout.
+ */
 export function Sidebar({
   side = "left",
   variant = "sidebar",

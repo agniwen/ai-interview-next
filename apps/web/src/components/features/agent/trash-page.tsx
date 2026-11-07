@@ -19,6 +19,10 @@ import { agentSessionsQueryOptions } from "@/lib/agent/queries";
 import { agentClient } from "@/lib/agent/client";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 已删除会话列表，提供恢复和永久删除操作及确认反馈。
+ * Deleted-session list with restore and permanent-delete actions and confirmation feedback.
+ */
 export function AgentTrashPage({ workspaceId }: { workspaceId: string }) {
   const api = agentClient(workspaceId);
   const queryClient = useQueryClient();

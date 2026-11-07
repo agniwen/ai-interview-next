@@ -1,6 +1,10 @@
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 分区框根容器，搭配 FramePanel 承载一组内容面板。
+ * Section-frame root used with FramePanel to contain a group of content panels.
+ */
 export function Frame({ className, ...props }: React.ComponentProps<"div">): React.ReactElement {
   return (
     <div

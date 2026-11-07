@@ -60,6 +60,10 @@ function JobPreviewContent({ id, workspaceId }: { id: string; workspaceId: strin
   );
 }
 
+/**
+ * 在关联岗位名称上按需展示岗位详情，复用 RecordPreviewCard 的浮层与加载边界。
+ * On-demand job details from a linked job name, using RecordPreviewCard for the popup and mounting boundary.
+ */
 export function JobPreviewCard({
   id,
   title,

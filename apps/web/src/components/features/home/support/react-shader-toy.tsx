@@ -497,6 +497,10 @@ export interface ReactShaderToyProps {
   animateWhenNotVisible?: boolean;
 }
 
+/**
+ * 首页着色器演示的 WebGL 运行容器，管理画布、uniform、帧循环和资源释放。
+ * WebGL runtime for homepage shader demos, owning the canvas, uniforms, frame loop and resource cleanup.
+ */
 export function ReactShaderToy({
   fs,
   vs = BASIC_VS,

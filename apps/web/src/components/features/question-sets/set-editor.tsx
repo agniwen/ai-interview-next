@@ -57,6 +57,10 @@ export interface QuestionEditorConfig<Content, Question> {
   }>;
 }
 
+/**
+ * 题套编辑的共用草稿与保存流程，管理元数据、默认岗位和题目顺序，具体题型由配置注入。
+ * Shared question-set draft and save flow for metadata, default jobs and question order, with question types supplied by configuration.
+ */
 export function QuestionSetEditor<
   Content extends QuestionSetInput["content"],
   Question extends { key: string; content: string },

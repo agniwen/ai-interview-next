@@ -4,6 +4,10 @@ import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { IconChevronRight } from "@tabler/icons-react";
 
+/**
+ * 模型执行过程的视觉结构，组合状态图标、标题、说明及可折叠详情。
+ * Model-execution trace structure with status icons, titles, descriptions and collapsible details.
+ */
 function Trace({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div

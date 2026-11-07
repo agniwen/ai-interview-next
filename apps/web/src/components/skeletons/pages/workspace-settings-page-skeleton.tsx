@@ -2,6 +2,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SettingsGroupSkeleton } from "../components/settings-group-skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 工作区设置页面骨架，覆盖名称、成员及邀请等分组区域。
+ * Workspace settings-page skeleton covering name, members and invitation groups.
+ */
 export function WorkspaceSettingsPageSkeleton() {
   return (
     <output

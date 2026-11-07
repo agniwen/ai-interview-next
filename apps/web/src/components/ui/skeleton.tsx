@@ -1,6 +1,10 @@
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 骨架占位的基础视觉单元；具体页面布局与显示时长由页面骨架和加载控制层负责。
+ * Base skeleton visual; page skeletons and loading controllers own layout and visibility timing.
+ */
 export function Skeleton({ className, ...props }: React.ComponentProps<"div">): React.ReactElement {
   return (
     <div

@@ -42,6 +42,10 @@ const bubbleVariants = cva(
   },
 );
 
+/**
+ * 聊天气泡的视觉容器，负责正文、分组及反应区，消息作者信息由 Message 层组织。
+ * Chat bubble surfaces for content, groups and reactions; Message components organize author metadata.
+ */
 function Bubble({
   variant = "default",
   align = "start",

@@ -22,6 +22,10 @@ const codeBlockVariants = cva(
   },
 );
 
+/**
+ * 代码展示容器，组合标题、正文、行和复制操作；代码内容由调用方提供。
+ * Code display container with header, content, lines and copy actions; callers provide code.
+ */
 function CodeBlock({
   className,
   variant = "default",

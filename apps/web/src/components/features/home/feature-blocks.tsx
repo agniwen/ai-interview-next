@@ -1,6 +1,3 @@
-// 用途：以近景插画和单一焦点 UI 讲清招聘链路中的三个关键动作。
-// Purpose: explains three recruiting actions with close-up editorial scenes and focused UI.
-
 import { IconBriefcase, IconMicrophone, IconSparkles } from "@tabler/icons-react";
 import { RESUME_REVIEW_DIMENSIONS } from "@/components/features/home/support/resume-review";
 import { cn } from "@/lib/utils";
@@ -504,6 +501,10 @@ function StoryCard({ story }: { story: Story }) {
   );
 }
 
+/**
+ * 以插画和聚焦的演示界面介绍招聘流程中的关键操作。
+ * Introduces key recruiting actions through illustrations and focused demo views.
+ */
 export function FeatureBlocks() {
   const stories = getStories();
   // 拖拽、惯性吸附、无限循环交给 embla；居中对齐、邻卡露出。duration 稍大让换页更从容。

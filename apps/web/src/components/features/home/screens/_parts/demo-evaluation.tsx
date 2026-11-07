@@ -1,8 +1,6 @@
 /* oxlint-disable react/no-unstable-nested-components -- Chart tooltip APIs accept render callbacks. */
 "use client";
 
-// 首页首屏专用的简历评价展示：视觉对齐 Studio 的六维评价面板，文案全部来自演示文案。
-// Homepage-only resume evaluation views mirroring the Studio panel, fully localized.
 import { IconAlertTriangle, IconSparkles, IconThumbUp } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -31,6 +29,10 @@ const LEVEL_META = {
 const POINT_GRID_CLASS =
   "grid min-w-0 grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)] items-start gap-x-4";
 
+/**
+ * 首页演示的推荐结论徽标，根据示例推荐等级选择标签与样式。
+ * Homepage recommendation badge choosing labels and styles from a demo recommendation level.
+ */
 export function DemoRecommendation({
   className,
   level,
@@ -61,6 +63,10 @@ interface DemoEvaluationPoint {
   resumeEvidence: string | null;
 }
 
+/**
+ * 展示首页演示评价中的匹配点或风险点。
+ * Displays matching evidence or risks from homepage demo evaluations.
+ */
 export function DemoEvaluationPoints({
   className,
   items,
@@ -103,6 +109,10 @@ export function DemoEvaluationPoints({
   );
 }
 
+/**
+ * 用首页示例维度数据绘制评价雷达图，可切换紧凑布局。
+ * Draws the evaluation radar from homepage sample dimensions with an optional compact layout.
+ */
 export function DemoDimensionRadar({ compact = false }: { compact?: boolean }) {
   const copy = getDemoScreenCopy();
   const ui = copy.evaluationUi;
@@ -139,7 +149,10 @@ export function DemoDimensionRadar({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/** Judgment, matching evidence and risks: reused by the detail page and the meeting materials. */
+/**
+ * 详情与会议资料共用的演示评价摘要，组合判断、匹配依据与风险。
+ * Demo evaluation summary shared by details and meeting materials, combining judgment, matches and risks.
+ */
 export function DemoEvaluationSummary({ className }: { className?: string }) {
   const { evaluation, evaluationUi: ui } = getDemoScreenCopy();
   return (
@@ -166,6 +179,10 @@ const DIMENSION_GROUP_CORNERS = [
   "rounded-[2px] rounded-br-xl",
 ] as const;
 
+/**
+ * 首页演示的完整评价区，组合摘要和各维度详情。
+ * Full homepage-demo evaluation view combining the summary and dimension details.
+ */
 export function DemoEvaluationDetails({ summaryAction }: { summaryAction?: ReactNode }) {
   const { evaluation, evaluationUi: ui } = getDemoScreenCopy();
   const groups = [

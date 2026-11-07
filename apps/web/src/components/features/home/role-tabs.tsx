@@ -1,6 +1,4 @@
 import { useReducedMotion } from "@/components/features/home/support/reduced-motion";
-// 用途：按角色切换（HR / 用人经理 / 候选人），每个角色配一块局部 UI 与一组颗粒渐变背景。
-// Purpose: role tabs (HR / hiring manager / candidate), each with a focused UI block and grain backdrop.
 
 import { AnimatePresence, motion as m } from "motion/react";
 import {
@@ -265,6 +263,10 @@ function getSteps(): Step[] {
   ];
 }
 
+/**
+ * 按 HR、用人经理和候选人角色切换首页示例，每个角色配对应的局部 UI 与背景。
+ * Switches homepage examples by HR, hiring manager and candidate roles, each with its own UI fragment and backdrop.
+ */
 export function RoleTabs() {
   const steps = getSteps();
   const [activeValue, setActiveValue] = useState<StepValue>("hr");

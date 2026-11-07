@@ -40,6 +40,10 @@ function useChart() {
   return context;
 }
 
+/**
+ * 为图表提供尺寸容器和系列配置上下文，提示层与图例从该上下文读取标签和颜色。
+ * Provides chart sizing and series configuration context for tooltip and legend labels and colors.
+ */
 function ChartContainer({
   id,
   className,
@@ -109,6 +113,10 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
+/**
+ * 将图表悬停数据映射为系列标签、颜色和数值提示。
+ * Maps chart hover payloads to series labels, colors and value hints.
+ */
 function ChartTooltipContent({
   active,
   payload,
@@ -250,6 +258,10 @@ function ChartTooltipContent({
 
 const ChartLegend = RechartsPrimitive.Legend;
 
+/**
+ * 根据系列配置展示图例，统一颜色标记与标签。
+ * Renders legends from series configuration with consistent color markers and labels.
+ */
 function ChartLegendContent({
   className,
   hideIcon = false,

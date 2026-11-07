@@ -5,6 +5,10 @@ import { Input } from "@/components/ui/input";
 import { toastManager } from "@/components/ui/toast";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 失焦或回车提交的设置输入框，维护本地草稿、保存进度和错误反馈。
+ * Settings input saving on blur or Enter, with local draft, pending and error state.
+ */
 export function AutoSaveInput({
   id,
   label,

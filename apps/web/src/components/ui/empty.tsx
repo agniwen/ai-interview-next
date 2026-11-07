@@ -17,6 +17,10 @@ const emptyMediaVariants = cva(
   },
 );
 
+/**
+ * 空状态的内容结构，组合图标、标题、说明和后续操作，由业务层决定何时显示。
+ * Empty-state composition for media, title, description and next actions; features decide when to show it.
+ */
 export function Empty({ className, ...props }: React.ComponentProps<"div">): React.ReactElement {
   return (
     <div

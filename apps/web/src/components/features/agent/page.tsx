@@ -229,6 +229,10 @@ function ChatContent({
   );
 }
 
+/**
+ * 工作区 Agent 会话页面，连接会话列表、实时聊天状态、输入框和待发送队列。
+ * Workspace Agent page connecting sessions, live chat state, the composer and queued messages.
+ */
 export function AgentPage({ workspaceId, sessionId }: { workspaceId: string; sessionId?: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();

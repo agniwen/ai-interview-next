@@ -2,6 +2,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 标准化简历内容占位，区分独立预览与招聘详情内嵌布局。
+ * Structured resume placeholder with standalone-preview and inline application-detail layouts.
+ */
 export function ResumeProfileSkeleton({ layout = "preview" }: { layout?: "inline" | "preview" }) {
   return (
     <div

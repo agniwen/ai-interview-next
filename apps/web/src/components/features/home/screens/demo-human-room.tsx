@@ -198,7 +198,10 @@ function CandidateMaterials({ compact }: { compact: boolean }) {
   );
 }
 
-/** Real meeting chrome with homepage-only materials, local participants and no LiveKit/network access. */
+/**
+ * 首页真人面试会议演示，组合本地参会者和候选人资料，不连接真实会议房间。
+ * Homepage human-interview meeting demo composing local participants and materials without joining a live room.
+ */
 export default function DemoHumanRoom() {
   const demo = useDemo();
   const [materials, setMaterials] = useState(false);

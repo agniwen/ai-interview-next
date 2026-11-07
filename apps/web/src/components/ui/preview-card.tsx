@@ -5,6 +5,10 @@ import type React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
+/**
+ * 关联内容的预览浮层，供记录名称等触发器展示补充信息。
+ * Anchored content preview for triggers such as linked record names.
+ */
 export const PreviewCard: typeof PreviewCardPrimitive.Root = PreviewCardPrimitive.Root;
 
 export function PreviewCardTrigger({

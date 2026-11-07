@@ -30,6 +30,10 @@ const directionMap: Record<DrawerPosition, DrawerPrimitive.Root.Props["swipeDire
 
 export const DrawerCreateHandle: typeof DrawerPrimitive.createHandle = DrawerPrimitive.createHandle;
 
+/**
+ * 可滑动抽屉组件，组合方向、手势、遮罩、内容面板及抽屉内菜单。
+ * Swipeable drawer primitives composing direction, gestures, backdrop, panels and drawer menus.
+ */
 export function Drawer({
   swipeDirection,
   position = "bottom",

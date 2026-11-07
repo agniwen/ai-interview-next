@@ -1,5 +1,3 @@
-// 用途：页尾收束 CTA，颗粒渐变面板上一句话加两个入口按钮，与首屏按钮一致。
-// Purpose: closing CTA — one line and the two hero entry buttons on a grain panel.
 "use client";
 
 import { IconArrowUpRight } from "@tabler/icons-react";
@@ -9,6 +7,10 @@ import * as messages from "@/paraglide/messages";
 import { Section } from "./section";
 import { StageArtwork } from "./stage-artwork";
 
+/**
+ * 首页页尾行动区，在渐变面板上复用首屏的两个产品入口。
+ * Closing homepage call to action reusing the two hero entry points on a gradient panel.
+ */
 export function CtaSection() {
   return (
     <Section>

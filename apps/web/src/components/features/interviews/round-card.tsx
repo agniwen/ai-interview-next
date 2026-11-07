@@ -114,6 +114,10 @@ function ScheduledTime({ label, value }: { label: string; value: string | null }
   );
 }
 
+/**
+ * 面试轮次摘要卡，展示类型、人员、时间和题量，并承载编辑、删除与邀请操作。
+ * Interview-round summary with type, people, schedule and question counts, plus edit, delete and invite actions.
+ */
 export function InterviewRoundCard({
   round,
   workspaceId,

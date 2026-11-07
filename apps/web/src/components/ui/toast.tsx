@@ -269,6 +269,10 @@ export interface ToastProviderProps extends Toast.Provider.Props {
   portalProps?: React.ComponentProps<typeof Toast.Portal>;
 }
 
+/**
+ * 挂载全局通知上下文和通知列表，使用 toastManager 接收页面发出的通知。
+ * Mounts global toast context and the toast list, receiving page notifications through toastManager.
+ */
 export function ToastProvider({
   children,
   position = "bottom-right",
@@ -287,6 +291,10 @@ export interface AnchoredToastProviderProps extends Toast.Provider.Props {
   portalProps?: React.ComponentProps<typeof Toast.Portal>;
 }
 
+/**
+ * 挂载锚定通知上下文，通过 anchoredToastManager 在关联元素附近展示通知。
+ * Mounts anchored toast context, using anchoredToastManager to display notifications near associated elements.
+ */
 export function AnchoredToastProvider({
   children,
   portalProps,

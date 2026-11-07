@@ -22,6 +22,10 @@ export const segmentedControlIndicatorSurfaceClassName =
 const SegmentedControlContext: React.Context<SegmentedControlSize> =
   React.createContext<SegmentedControlSize>("default");
 
+/**
+ * 提供分段布局和指示器上下文；选择或导航行为由子项及调用方决定。
+ * Provides segmented layout and indicator context; items and callers decide selection or navigation behavior.
+ */
 export function SegmentedControl({
   className,
   children,

@@ -13,6 +13,10 @@ import { useReducedMotion } from "@/components/features/home/support/reduced-mot
 
 const BEAM_GROUP_ID = "sainoa_brand_beams";
 
+/**
+ * 品牌背景的 WebGPU 效果组合，按主题调整颜色并由 animated 控制动态效果。
+ * WebGPU brand-background composition with theme-aware colors and animation controlled by animated.
+ */
 export default function BrandShader({ animated = false }: { animated?: boolean }) {
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";

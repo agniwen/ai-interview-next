@@ -4,6 +4,10 @@ import { Toolbar as ToolbarPrimitive } from "@base-ui/react/toolbar";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 可键盘导航的工具栏，组合按钮、链接、输入与分组分隔。
+ * Keyboard-navigable toolbar composing buttons, links, inputs and grouped separators.
+ */
 export function Toolbar({ className, ...props }: ToolbarPrimitive.Root.Props): React.ReactElement {
   return (
     <ToolbarPrimitive.Root

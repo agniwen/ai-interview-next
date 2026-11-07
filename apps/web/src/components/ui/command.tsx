@@ -89,6 +89,10 @@ export function CommandDialogPopup({
   );
 }
 
+/**
+ * 命令检索界面，组合搜索输入、分组选项、快捷键和可选弹窗容器。
+ * Command search UI composing input, grouped items, shortcuts and an optional dialog shell.
+ */
 export function Command({
   autoHighlight = "always",
   keepHighlight = true,

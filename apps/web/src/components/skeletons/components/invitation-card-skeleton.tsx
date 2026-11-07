@@ -1,6 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 工作区邀请卡片的加载占位，包含邀请信息和接受操作区域。
+ * Workspace invitation-card placeholder for invitation details and acceptance actions.
+ */
 export function InvitationCardSkeleton() {
   return (
     <output aria-label={m.auth_loading()} aria-busy="true" className="block rounded-xl border p-6">

@@ -12,6 +12,10 @@ export const NumberFieldContext: React.Context<{
   fieldId: string;
 } | null>(null);
 
+/**
+ * 数值输入组件，组合输入框、增减按钮和拖动调值区域。
+ * Numeric field composing input, increment/decrement buttons and a scrub area.
+ */
 export function NumberField({
   id,
   className,

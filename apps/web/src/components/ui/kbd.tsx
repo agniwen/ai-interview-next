@@ -1,6 +1,10 @@
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 键盘快捷键提示的键帽与组合布局，仅负责展示，不注册快捷键。
+ * Keycap and shortcut-group presentation without registering keyboard shortcuts.
+ */
 export function Kbd({ className, ...props }: React.ComponentProps<"kbd">): React.ReactElement {
   return (
     <kbd

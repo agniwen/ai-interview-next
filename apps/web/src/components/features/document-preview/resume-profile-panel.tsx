@@ -12,6 +12,10 @@ function isParsing(status: string | null | undefined) {
   return status === "queued" || status === "running";
 }
 
+/**
+ * 加载并跟踪标准化简历解析状态，准备完成后交给 ResumeProfileDocument 展示。
+ * Loads and tracks structured resume parsing, handing completed profiles to ResumeProfileDocument.
+ */
 export function ResumeProfilePanel({ id, workspaceId }: { id: string; workspaceId: string }) {
   const { data, isError, isPending, refetch } = useQuery({
     queryFn: () => readResumeProfile({ id, workspaceId }),

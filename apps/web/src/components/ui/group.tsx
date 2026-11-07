@@ -24,6 +24,10 @@ export const groupVariants = cva(
   },
 );
 
+/**
+ * 将按钮、标签或输入等相邻控件组合为连续控制组，并提供分隔元素。
+ * Joins adjacent buttons, labels or inputs into a continuous control group with separators.
+ */
 export function Group({
   className,
   orientation,

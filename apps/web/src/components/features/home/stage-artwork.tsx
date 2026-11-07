@@ -1,9 +1,4 @@
 import { useReducedMotion } from "@/components/features/home/support/reduced-motion";
-// 首页面板背景：颗粒感柔和渐变。上浅偏冷、下深偏暖的线性底色 + 四团边缘渐隐的径向色团 +
-// 逐物理像素的灰度噪点 + 可选的白色细线纹样。色团用 CSS 缓慢漂移，悬停时按弹簧朝光标偏移。
-// Homepage panel backdrop: soft grainy gradient. A light/cool-to-deep/warm linear base, four
-// feathered radial blobs, per-physical-pixel grayscale grain and an optional thin white line
-// pattern. Blobs drift via CSS and lean toward the cursor on a spring while hovered.
 
 import "./stage-artwork.css";
 
@@ -176,8 +171,8 @@ interface StageArtworkProps {
 }
 
 /**
- * 铺满父元素的颗粒渐变背景。悬停监听挂在父元素上，因为前景 UI 盖在背景之上。
- * Grainy gradient filling its parent. Hover is read from the parent since foreground UI covers it.
+ * 铺满父元素的颗粒渐变背景，组合色团、噪点与线纹；前景盖住背景，因此在父元素上监听悬停。
+ * Grainy parent-filling backdrop combining color blobs, noise and line patterns; hover is read from the parent because foreground content covers it.
  */
 export function StageArtwork({ className, palette, pattern }: StageArtworkProps) {
   const rootRef = useRef<HTMLDivElement>(null);

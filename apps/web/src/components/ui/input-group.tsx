@@ -27,6 +27,10 @@ const inputGroupAddonVariants = cva(
   },
 );
 
+/**
+ * 带前后附加内容的输入组合，统一图标、文字、输入框和多行输入的排列。
+ * Input composition with leading/trailing addons, arranging icons, text and single/multiline controls.
+ */
 export function InputGroup({
   className,
   ...props

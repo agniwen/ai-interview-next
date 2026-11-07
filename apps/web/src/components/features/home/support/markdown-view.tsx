@@ -55,6 +55,10 @@ function normalizeRestrictedMarkdown(content: string) {
     .replaceAll(INLINE_ORDERED_LIST_MARKER_RE, "$<punctuation>\n$<marker> ");
 }
 
+/**
+ * 渲染首页演示的完整 Markdown，支持 GFM 表格并提供表格滚动样式。
+ * Renders full Markdown for homepage demos with GFM tables and scrollable table styling.
+ */
 export function MarkdownView({ content, className }: { content: string; className?: string }) {
   return (
     <div className={cn("typeset typeset-compact min-w-0 max-w-full", className)}>
@@ -65,6 +69,10 @@ export function MarkdownView({ content, className }: { content: string; classNam
   );
 }
 
+/**
+ * 展示简短评价文本，只保留段落、强调和列表，并规范化中文标点后的行内列表标记。
+ * Displays short evaluation copy using only paragraphs, emphasis and lists, normalizing inline list markers after CJK punctuation.
+ */
 export function RestrictedMarkdownView({
   content,
   className,

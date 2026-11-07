@@ -8,6 +8,10 @@ export function interviewPreparationSteps(hasForms: boolean): PreparationStep[] 
   return hasForms ? ["intro", "forms", "ready"] : ["intro", "ready"];
 }
 
+/**
+ * 候选人准备流程的步骤定义与只读进度条；表单为空时省略表单步骤，导航由外层控制。
+ * Preparation step definitions and read-only progress; omits the form step when empty and leaves navigation to the parent.
+ */
 export function InterviewFlowProgress({
   step,
   steps,

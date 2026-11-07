@@ -220,6 +220,10 @@ const connections = [
   { source: "original", sourceHandle: "portrait", target: "avatar" },
 ] as const;
 
+/**
+ * 把简历处理步骤及状态绘制为可选择的流程图，步骤详情由外层页面展示。
+ * Selectable flow diagram of resume processing steps and statuses; the parent page presents step details.
+ */
 export function ResumeProcessingFlow({
   detail,
   selected,

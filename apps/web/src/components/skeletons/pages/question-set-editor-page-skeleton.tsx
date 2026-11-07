@@ -2,6 +2,10 @@ import { QuestionSetSkeleton } from "@/components/skeletons/components/question-
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 题套编辑页面的整体占位，在内容骨架外补齐返回和标题区域。
+ * Full question-set editor placeholder adding navigation and heading space around the content skeleton.
+ */
 export function QuestionSetEditorPageSkeleton() {
   return (
     <div

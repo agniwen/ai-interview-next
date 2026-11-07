@@ -12,6 +12,10 @@ import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
 import { atsApi, readAts } from "./client";
 
+/**
+ * 项目选择器及列表筛选适配层，统一加载工作区项目选项。
+ * Project picker and list-filter adapter sharing workspace project options.
+ */
 export function ProjectSelect({
   filter = false,
   onChange,
@@ -55,6 +59,10 @@ export function ProjectSelect({
   );
 }
 
+/**
+ * 列表筛选专用适配器，启用“全部项目”的筛选语义。
+ * List-filter adapter enabling the all-projects filter semantics.
+ */
 export function ProjectFilter(props: Omit<Parameters<typeof ProjectSelect>[0], "filter">) {
   return (
     <TableFilterGroup label={m.ats_project()}>

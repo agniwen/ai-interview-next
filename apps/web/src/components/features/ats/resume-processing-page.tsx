@@ -177,6 +177,10 @@ function ProcessingContent({
   );
 }
 
+/**
+ * 简历处理详情页面，加载处理结果并将流程选择、步骤输出及尝试历史连接起来。
+ * Resume processing page connecting loaded results, selected flow steps, outputs and attempt history.
+ */
 export function ResumeProcessingPage({
   id,
   search,

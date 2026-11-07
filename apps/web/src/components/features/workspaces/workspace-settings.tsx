@@ -97,6 +97,10 @@ function RoleSelect({
   );
 }
 
+/**
+ * 工作区管理页面，加载成员和邀请并提供名称、角色、邀请及退出或删除操作。
+ * Workspace administration page loading members and invitations and handling names, roles, invites, leaving and deletion.
+ */
 export function WorkspaceSettings({
   workspaceId,
   name: originalName,

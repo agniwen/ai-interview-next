@@ -14,6 +14,10 @@ export const ToggleGroupContext: React.Context<VariantProps<typeof toggleVariant
     variant: "default",
   });
 
+/**
+ * 单选或多选的按压按钮组，共享尺寸、样式和相邻分隔。
+ * Single/multiple pressed-button groups sharing size, styling and adjacent separators.
+ */
 export function ToggleGroup({
   className,
   variant = "default",

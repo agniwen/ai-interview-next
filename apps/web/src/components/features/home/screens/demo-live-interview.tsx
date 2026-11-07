@@ -47,7 +47,10 @@ function DemoStateIndicator({ className, speaking }: { className?: string; speak
   );
 }
 
-/** Uses the real session visualizer, state indicator, and transcript message primitives, without a room connection. */
+/**
+ * 首页 AI 语音面试演示，通过本地轮次显示对话和音频动效，不启动真实面试。
+ * Homepage AI voice-interview demo showing local turns and audio visuals without starting a real interview.
+ */
 export default function DemoLiveInterview() {
   const demo = useDemo();
   const { conversation, job, liveInterview: copy, people } = getDemoScreenCopy();

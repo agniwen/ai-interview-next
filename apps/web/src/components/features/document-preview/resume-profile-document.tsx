@@ -348,6 +348,10 @@ function ResumeSection({ children, title }: { children: ReactNode; title: string
   );
 }
 
+/**
+ * 只消费已解析的 ResumeProfile；preview 用于文档弹窗，inline 用于详情正文。
+ * Consumes an already parsed ResumeProfile; preview targets document dialogs and inline targets detail content.
+ */
 export function ResumeProfileDocument({
   avatarSrc,
   profile,

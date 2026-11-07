@@ -4,6 +4,10 @@ import { Meter as MeterPrimitive } from "@base-ui/react/meter";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 范围内数值的量表组件，展示当前值、标签与轨道，不表示任务完成进度。
+ * Meter for a value within a range, with label and track, distinct from task progress.
+ */
 export function Meter({
   className,
   children,

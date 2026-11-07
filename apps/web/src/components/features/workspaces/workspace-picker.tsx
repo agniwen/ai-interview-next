@@ -65,6 +65,10 @@ function WorkspaceSelect({
   );
 }
 
+/**
+ * 工作区选择入口，处理不可用工作区提示、选择后确认进入、创建和待处理邀请。
+ * Workspace picker handling unavailable-workspace feedback, explicit entry confirmation, creation and pending invitations.
+ */
 export function WorkspacePicker({
   workspaces,
   unavailable = false,

@@ -4,6 +4,10 @@ import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible"
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 单段内容的展开与收起组件，适合无需多条目管理的局部折叠区域。
+ * Single-section disclosure primitives for locally expandable content without multi-item coordination.
+ */
 export function Collapsible({ ...props }: CollapsiblePrimitive.Root.Props): React.ReactElement {
   return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />;
 }

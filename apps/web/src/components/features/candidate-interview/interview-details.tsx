@@ -32,6 +32,10 @@ function DetailRow({
   );
 }
 
+/**
+ * 候选人可见的面试信息卡，展示岗位、团队和题数；真人面试另显示设备本地时区的预约时间。
+ * Candidate-facing interview details with job, team and question counts; human interviews also show device-local appointment times.
+ */
 export function InterviewDetails({ interview }: { interview: CandidateInterview }) {
   return (
     <Card

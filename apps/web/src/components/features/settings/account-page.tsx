@@ -5,6 +5,10 @@ import { SettingsGroup } from "./settings-group";
 import { AccountSettings } from "./account-settings";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 账号设置页面的内容组合，存在工作区时额外提供该工作区的 Agent 回收站入口。
+ * Account settings composition, adding the workspace Agent trash entry when a workspace is available.
+ */
 export function AccountPageContent({ workspaceId }: { workspaceId?: string }) {
   return (
     <main

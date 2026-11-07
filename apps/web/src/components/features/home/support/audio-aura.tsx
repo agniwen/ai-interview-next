@@ -322,6 +322,10 @@ function AuraShader({
   );
 }
 
+/**
+ * 首页语音演示的着色器光晕，根据聆听或说话状态调整动画速度与幅度。
+ * Shader aura for homepage voice demos, varying animation speed and amplitude by listening or speaking state.
+ */
 export function AgentAudioVisualizerAura({
   state,
   ...props

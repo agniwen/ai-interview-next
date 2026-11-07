@@ -2,6 +2,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InvitationCardSkeleton } from "../components/invitation-card-skeleton";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 工作区选择页面加载占位，保留居中的选择和说明布局。
+ * Workspace-picker page placeholder retaining the centered selection and explanation layout.
+ */
 export function WorkspacesPageSkeleton() {
   return (
     <div className="flex min-h-dvh flex-1 flex-col">

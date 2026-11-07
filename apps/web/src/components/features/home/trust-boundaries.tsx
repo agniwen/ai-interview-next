@@ -1,5 +1,3 @@
-// 用途：人机边界与数据边界。三张等宽卡，上半部颗粒渐变配一块小 UI，下半部一句话说明。
-// Purpose: human/AI and data boundaries — three equal cards, grain artwork with a small UI chip above one line of copy.
 "use client";
 
 import {
@@ -283,6 +281,10 @@ function getCards(): BoundaryCardProps[] {
   ];
 }
 
+/**
+ * 通过三张示例卡说明人机决策边界、信息来源和数据使用边界。
+ * Uses three example cards to explain human/AI decisions, evidence sources and data-use boundaries.
+ */
 export function TrustBoundaries() {
   return (
     <Section id="trust">

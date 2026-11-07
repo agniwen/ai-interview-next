@@ -7,6 +7,10 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+/**
+ * 带建议列表的文本输入组件，保留自由输入，选项与加载状态由调用方提供。
+ * Text autocomplete with suggestions and free-form input; callers provide items and loading state.
+ */
 export const Autocomplete: typeof AutocompletePrimitive.Root = AutocompletePrimitive.Root;
 
 export function AutocompleteInput({

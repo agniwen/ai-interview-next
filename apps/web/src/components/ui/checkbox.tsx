@@ -4,6 +4,10 @@ import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 主题化复选框，支持选中、未选中与部分选中状态的视觉展示。
+ * Themed checkbox for checked, unchecked and indeterminate states.
+ */
 export function Checkbox({
   className,
   ...props

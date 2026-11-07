@@ -91,6 +91,10 @@ function ComposerFrame({
 export type ComposerProps = Omit<ComposerFormProps, "defaultValue" | "onSubmit" | "name"> &
   ComposerEditorOptions & { layout?: ComposerLayout };
 
+/**
+ * 结构化消息输入组件，连接编辑器值、文本输入、候选项和操作栏，发送逻辑由调用方决定。
+ * Structured message composer connecting editor values, input, suggestions and actions; callers decide submission behavior.
+ */
 export function Composer({
   layout,
   value,

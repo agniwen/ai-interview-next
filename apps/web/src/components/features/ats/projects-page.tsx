@@ -167,6 +167,10 @@ function EditProjectForm({
   return <ProjectForm project={data} workspaceId={workspaceId} onSuccess={onSuccess} />;
 }
 
+/**
+ * 项目列表与新建、编辑弹窗；编辑时加载完整项目，再交给共用表单保存。
+ * Project list and create/edit dialogs; loads full records before editing through the shared form.
+ */
 export function ProjectsPage({ workspaceId, query, onQueryChange }: AtsPageProps) {
   const dialog = useMemo(() => createDialogHandle<EditableProject>(), []);
   const { data, isError, refetch } = useQuery({

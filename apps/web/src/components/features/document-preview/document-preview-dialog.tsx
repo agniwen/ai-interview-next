@@ -20,6 +20,10 @@ export function DocumentPreviewError() {
   );
 }
 
+/**
+ * 文档弹窗内容容器；由外层 Dialog 管理打开状态，children 提供预览器。
+ * Document-dialog content shell; an outer Dialog owns open state and children supply the viewer.
+ */
 export function DocumentPreviewDialog({
   actions,
   children,

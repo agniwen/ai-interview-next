@@ -13,6 +13,10 @@ import { evaluationMessages } from "./evaluation-messages";
 import { AgentEvaluationMessage } from "./agent-evaluation-message";
 import { atsKeys } from "./query-keys";
 
+/**
+ * 将人工反馈与分组的 AI 评价组合为时间线，并处理重新评价请求。
+ * Combines human feedback and grouped AI evaluations into a timeline and handles reevaluation requests.
+ */
 export function ApplicationEvaluations({
   application,
   evaluations,

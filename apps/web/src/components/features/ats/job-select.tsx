@@ -41,6 +41,10 @@ async function readJobOptions(
 
 type JobPage = Awaited<ReturnType<typeof readJobOptions>>;
 
+/**
+ * 可搜索并追加加载的岗位多选器，用于维护题套默认关联岗位。
+ * Searchable, paginated job multi-picker for question-set default job associations.
+ */
 export function JobSelect({
   id,
   disabled,

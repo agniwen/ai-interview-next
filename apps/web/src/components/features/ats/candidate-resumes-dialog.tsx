@@ -29,6 +29,10 @@ import { atsApi, readAts } from "./client";
 
 const resumeRowClassName = "flex min-w-0 flex-1 items-center gap-3 px-2 py-3 text-left";
 
+/**
+ * 候选人的简历列表弹窗，提供原文预览和从指定简历创建招聘记录的入口。
+ * Candidate resume dialog with original-document preview and application creation from a selected resume.
+ */
 export function CandidateResumesDialog({
   id,
   name,

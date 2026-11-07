@@ -133,6 +133,10 @@ function DepartmentForm({
   );
 }
 
+/**
+ * 部门管理列表及新建、编辑表单，共用列表分页和 Markdown 描述编辑能力。
+ * Department management list with create/edit forms, shared pagination and Markdown descriptions.
+ */
 export function DepartmentsPage({ workspaceId, query, onQueryChange }: AtsPageProps) {
   const dialog = useMemo(() => createDialogHandle<EditableDepartment>(), []);
   const { data, isError, refetch } = useQuery({

@@ -90,6 +90,10 @@ function TimeFields({
   );
 }
 
+/**
+ * value 是已确认值，draft 只存在于当前编辑浮层；确认时才触发 onChange。
+ * value is the confirmed range, while draft belongs to the open editor; onChange fires only on confirmation.
+ */
 export function TimeRange({
   id,
   value,

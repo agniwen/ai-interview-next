@@ -75,6 +75,10 @@ function renderTableViewport({ children, className, ...props }: ComponentProps<"
   );
 }
 
+/**
+ * 只负责表头、单元格与滚动呈现，行内容由列表页面组装。
+ * Owns headers, cells and scrolling only; list pages assemble row content.
+ */
 export function AtsTable({
   firstColumnClassName,
   hasRowActions,
@@ -171,6 +175,10 @@ function renderPageLink(page: number) {
   return <Link to="." search={(prev) => ({ ...prev, page })} />;
 }
 
+/**
+ * 负责列表操作区、加载反馈和页码交互，查询参数变化通过 onQueryChange 交回路由。
+ * Owns list actions, loading feedback and pagination, returning parameter changes to the route via onQueryChange.
+ */
 export function AtsListPage({
   action,
   children,

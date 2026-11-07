@@ -3,6 +3,10 @@ import { Card } from "@/components/ui/card";
 import { InterviewEntryShell } from "@/components/interview-entry-shell";
 import * as m from "@/paraglide/messages";
 
+/**
+ * 已处于 InterviewEntryShell 内时使用的内容骨架。
+ * Content skeleton for use inside an existing InterviewEntryShell.
+ */
 export function CandidateInterviewSkeleton() {
   return (
     <div
@@ -35,6 +39,10 @@ export function CandidateInterviewSkeleton() {
   );
 }
 
+/**
+ * 路由加载时使用的整页骨架，自带候选人入口外壳。
+ * Full-page route fallback including the candidate-entry shell.
+ */
 export function CandidateInterviewPageSkeleton() {
   return (
     <InterviewEntryShell>

@@ -75,6 +75,10 @@ function ChoiceInput({
   );
 }
 
+/**
+ * 面试配置共用搜索选择器，按资源加载成员、Agent 或题套选项，支持单选和多选。
+ * Shared interview configuration picker loading member, Agent or question-set options for single or multiple selection.
+ */
 export function ChoicePicker<Multiple extends boolean = false>({
   id,
   workspaceId,

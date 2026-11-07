@@ -14,6 +14,10 @@ import { ProjectPreviewCard } from "./project-preview-card";
 import { ProjectFilter } from "./project-select";
 import { jobEditorLinkOptions } from "./job-navigation";
 
+/**
+ * 岗位列表，将项目筛选和分页连接到查询，并导航到岗位新建或编辑页面。
+ * Job list connecting project filtering and pagination to queries and job create/edit navigation.
+ */
 export function JobsPage({ workspaceId, query, onQueryChange }: AtsPageProps<JobListSearch>) {
   const { data, isError, refetch } = useQuery({
     queryFn: async ({ signal }) =>

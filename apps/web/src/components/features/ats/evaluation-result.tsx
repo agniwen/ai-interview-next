@@ -115,6 +115,10 @@ function EvaluationEvidence({
   );
 }
 
+/**
+ * 按评价结果格式渲染推荐结论、依据与风险，供 AI 评价消息复用。
+ * Renders recommendations, evidence and risks by evaluation format for reuse in AI evaluation messages.
+ */
 export function EvaluationResult({ result }: { result: ApplicationEvaluationResult }) {
   return (
     <div className="@container/evaluation flex min-w-0 flex-col gap-6">
