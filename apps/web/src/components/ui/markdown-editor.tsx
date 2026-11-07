@@ -175,7 +175,7 @@ function FormatControls({ editor, disabled }: { editor: Editor; disabled: boolea
 }
 
 const contentClassName = cn(
-  "min-h-44 px-3.5 py-3 text-base/7 wrap-anywhere outline-none sm:text-sm/6",
+  "min-h-(--markdown-editor-min-height) px-3.5 py-3 text-base/7 wrap-anywhere outline-none sm:text-sm/6",
   "[&>*+*]:mt-2 [&>h1]:font-heading [&>h1]:text-xl [&>h2]:font-heading [&>h2]:text-lg [&>h3]:text-base [&>:is(h1,h2,h3)]:font-semibold [&>:is(h1,h2,h3):not(:first-child)]:mt-4",
   "[&_ul]:list-disc [&_ol]:list-decimal [&_:is(ul,ol)]:ps-6 [&_li+li]:mt-0.5 [&_li>:is(ul,ol)]:mt-0.5",
   "[&_blockquote]:border-s-2 [&_blockquote]:border-border [&_blockquote]:ps-3 [&_blockquote]:text-muted-foreground [&_hr]:border-border",
@@ -191,6 +191,7 @@ export interface MarkdownEditorProps {
   placeholder?: string;
   maxLength?: number;
   disabled?: boolean;
+  compact?: boolean;
   className?: string;
   "aria-label"?: string;
   "aria-labelledby"?: string;
@@ -204,6 +205,7 @@ export function MarkdownEditor({
   placeholder,
   maxLength,
   disabled = false,
+  compact = false,
   className,
   "aria-label": label,
   "aria-labelledby": labelledBy,
@@ -268,7 +270,7 @@ export function MarkdownEditor({
 
   const phase = useSkeletonPhase(!editor);
   if (phase === "skeleton") {
-    return <MarkdownEditorSkeleton className={className} />;
+    return <MarkdownEditorSkeleton className={className} compact={compact} />;
   }
   if (!editor) {
     return null;
@@ -281,6 +283,7 @@ export function MarkdownEditor({
         overLimit &&
           "border-destructive/50 focus-within:border-destructive/64 focus-within:ring-destructive/16",
         disabled && "opacity-64",
+        compact ? "[--markdown-editor-min-height:5.5rem]" : "[--markdown-editor-min-height:11rem]",
         className,
       )}
       data-slot="markdown-editor"
@@ -326,7 +329,7 @@ export function MarkdownEditor({
             aria-invalid={overLimit}
             aria-required={required}
             readOnly={disabled}
-            className="block [&_textarea]:block [&_textarea]:min-h-44 [&_textarea]:resize-none [&_textarea]:px-3.5 [&_textarea]:py-3 [&_textarea]:font-mono [&_textarea]:text-base/7 sm:[&_textarea]:text-sm/6"
+            className="block [&_textarea]:block [&_textarea]:min-h-(--markdown-editor-min-height) [&_textarea]:resize-none [&_textarea]:px-3.5 [&_textarea]:py-3 [&_textarea]:font-mono [&_textarea]:text-base/7 sm:[&_textarea]:text-sm/6"
             placeholder={placeholder}
             value={value}
             onChange={(event) => onChange(event.target.value)}

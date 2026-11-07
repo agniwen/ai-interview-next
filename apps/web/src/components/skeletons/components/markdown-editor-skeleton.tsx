@@ -2,7 +2,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 
-export function MarkdownEditorSkeleton({ className }: { className?: string }) {
+export function MarkdownEditorSkeleton({
+  className,
+  compact = false,
+}: {
+  className?: string;
+  compact?: boolean;
+}) {
   return (
     <div
       aria-busy="true"
@@ -13,7 +19,7 @@ export function MarkdownEditorSkeleton({ className }: { className?: string }) {
         <Skeleton aria-hidden="true" className="h-5 w-1/2" />
         <Skeleton aria-hidden="true" className="h-5 w-28" />
       </div>
-      <div className="min-h-44 px-3.5 py-3">
+      <div className={cn("px-3.5 py-3", compact ? "min-h-22" : "min-h-44")}>
         <Skeleton aria-hidden="true" className="h-4 w-2/3" />
       </div>
     </div>

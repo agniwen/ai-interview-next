@@ -6,6 +6,7 @@ import {
   IconFileCv,
   IconFolders,
   IconListDetails,
+  IconListCheck,
   IconRobot,
   IconUsers,
   IconSparkle,
@@ -154,6 +155,11 @@ export function AppSidebar({
                       icon: IconRobot,
                       label: m.interviewer_agents_title(),
                       to: "/w/$workspaceId/hub/interviewer-agents",
+                    },
+                    {
+                      icon: IconListCheck,
+                      label: m.question_sets_title(),
+                      to: "/w/$workspaceId/hub/questions",
                     },
                   ] as const
                 ).map(({ icon: Icon, label, to }) => (

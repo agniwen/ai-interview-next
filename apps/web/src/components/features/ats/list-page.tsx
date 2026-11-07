@@ -176,6 +176,7 @@ export function AtsListPage({
   children,
   title,
   description,
+  navigation,
   icon: Icon,
   filters,
   feedback,
@@ -195,6 +196,7 @@ export function AtsListPage({
   children?: ReactNode;
   title: string;
   description?: string;
+  navigation?: ReactNode;
   icon: Icon;
   filters?: ReactNode;
   feedback?: ReactNode;
@@ -225,6 +227,7 @@ export function AtsListPage({
       </PageHeaderContent>
       <section aria-label={title} className="flex min-w-0 flex-col gap-4">
         <PageHeader description={description} title={title} />
+        {navigation}
         <TableFilters
           actions={
             <Group aria-label={m.ats_action()}>
