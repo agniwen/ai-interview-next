@@ -85,8 +85,8 @@ it.each([false, true])(
       expect(markup).not.toContain(m.candidate_form_requirements());
     } else {
       expect(markup).not.toContain(m.candidate_step_forms());
-      expect(markup).toContain(m.candidate_ready_microphone());
-      expect(markup).toContain(m.candidate_ready_camera());
+      expect(markup).toContain(m.candidate_device_check_microphone());
+      expect(markup).toContain(m.candidate_device_camera_optional());
     }
   },
 );
