@@ -7,6 +7,8 @@ import {
   text,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+import type { InterviewQuestionSelection } from "../interview-question-selection";
+import { interviewerAgent } from "./interviewer-agents";
 import type { ResumeParsedProfile } from "../resume-profile";
 import type { ApplicationEvaluationResult } from "../application-evaluation";
 import { user } from "./auth";
@@ -314,12 +316,21 @@ export const applicationResume = sqliteTable(
 export const interviewRound = sqliteTable(
   "interview_round",
   {
+    /** 入场截止时间不是强制结束时间。 / Admission deadline does not force an ongoing interview to end. */
+    admissionDeadline: integer("admissionDeadline", { mode: "timestamp_ms" }),
     /** 面试所在的应聘。 / Application that owns the interview. */
     applicationId: text("applicationId").notNull(),
     /** 面试轮次建立时间。 / Interview round creation time. */
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+    createdBy: text("createdBy").references(() => user.id),
     /** 面试轮次 ID。 / Interview round ID. */
     id: text("id").primaryKey(),
+    interviewerAgentId: text("interviewerAgentId").references(() => interviewerAgent.id),
+    kind: text("kind", { enum: ["ai", "human"] }).notNull(),
+    label: text("label").notNull().default(""),
+    questionSelection: text("questionSelection", { mode: "json" })
+      .$type<InterviewQuestionSelection>()
+      .notNull(),
     /** 该轮使用的简历版本，尚未选定时为空。 / Resume version used in this round. Null until selected. */
     resumeId: text("resumeId"),
     /** 计划开始面试的时间。 / Scheduled interview start time. */
@@ -333,6 +344,12 @@ export const interviewRound = sqliteTable(
   },
   (table) => [
     uniqueIndex("interview_round_workspace_id_uq").on(table.workspaceId, table.id),
+    index("interview_round_application_sequence_idx").on(
+      table.workspaceId,
+      table.applicationId,
+      table.sequence,
+      table.id,
+    ),
     foreignKey({
       columns: [table.workspaceId, table.applicationId],
       foreignColumns: [application.workspaceId, application.id],
@@ -341,6 +358,39 @@ export const interviewRound = sqliteTable(
       columns: [table.workspaceId, table.resumeId],
       foreignColumns: [resume.workspaceId, resume.id],
     }),
+  ],
+);
+
+/** 本轮的指定面试官或评价确认人，可按工作区与用户直接查询。
+ * Assigned interviewers or evaluation reviewers, searchable by workspace and user. */
+export const interviewAssignment = sqliteTable(
+  "interview_assignment",
+  {
+    interviewRoundId: text("interviewRoundId").notNull(),
+    position: integer("position").notNull(),
+    role: text("role", { enum: ["interviewer", "reviewer"] }).notNull(),
+    userId: text("userId")
+      .notNull()
+      .references(() => user.id),
+    workspaceId: workspaceIdColumn(),
+  },
+  (table) => [
+    uniqueIndex("interview_assignment_round_user_role_uq").on(
+      table.workspaceId,
+      table.interviewRoundId,
+      table.userId,
+      table.role,
+    ),
+    index("interview_assignment_user_round_idx").on(
+      table.workspaceId,
+      table.userId,
+      table.interviewRoundId,
+      table.role,
+    ),
+    foreignKey({
+      columns: [table.workspaceId, table.interviewRoundId],
+      foreignColumns: [interviewRound.workspaceId, interviewRound.id],
+    }).onDelete("cascade"),
   ],
 );
 

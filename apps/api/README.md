@@ -220,3 +220,34 @@ API 的 `.env` 用于本地开发，`.env.production` 用于生产发布，二�
 Web 不需要这些认证 env，通过 Service Binding 调用 API；Web 与 API 的开发脚本使用同一服务注册目录。Google 配置、已有环境的密钥迁移及完整部署步骤统一见 [Google 登录](../../docs/auth/google-login.md)。
 
 题套支持可选的 `defaultJobIds`：创建时省略则无绑定，编辑时省略保留原绑定，传空数组清空；重复 ID 合并。岗位必须属于当前工作区，否则返回 `JOB_UNAVAILABLE`（400），不改变题套内容或绑定。详情返回 `defaultJobs: [{ id, title }]`；列表可用 `jobId` 查询默认绑定该岗位的题套，与题型和关键词筛选共同作用于分页和总数。绑定仅为创建面试提供初始选择，不限制题套的使用范围。
+
+### 面试轮次 / Interview rounds
+
+- `POST /api/interviews/:workspaceId/applications/:applicationId` 创建首轮 AI 或真人面试，返回 `{ version: 1, id }`（201）。请求字段：
+  - `version: 1`；AI 面试使用 `kind: "ai"` 和 `interviewerAgentId`，真人面试使用 `kind: "human"` 和非空、不重复的 `interviewerUserIds`（当前工作区成员）。两类配置不可混选。
+  - 真人面试专用 `scheduledAt`、`admissionDeadline`：带时区的 ISO 时间；截止时间必须晚于预约开始时间。AI 面试不接收这两个字段，数据库均保存为 `null`，不受预约时间限制。
+  - AI 专用 `conversationQuestionSetIds`：按本轮使用顺序排列，至少一套含有题目；`formQuestionSetIds` 可省略或为空。两类选择分别不允许重复 ID。
+  - AI 专用 `confirmationUserId`：可省略，默认创建者；指定时必须为当前工作区成员。
+  - `label`：可选的自由标签，最多 200 字符。
+- `GET /api/interviews/:workspaceId/applications/:applicationId?page=1&pageSize=20` 返回 `{ version: 1, rows, page, pageSize, total }`，按轮次号、ID 升序排列。超出页码返回空列表和同一总数。
+- `GET /api/interviews/:workspaceId/applications/:applicationId/setup` 返回 `{ version: 1, sets, reviewer }`，按岗位默认绑定预选题套，包含题型与题数，确认人默认为当前用户。
+- `GET /api/interviews/:workspaceId/members?page=1&pageSize=20&search=` 搜索并分页返回工作区成员，供真人面试官或 AI 评价确认人选择；返回 `{ version: 1, rows, page, pageSize, total }`。
+- `GET /api/interviews/:workspaceId/:id` 返回轮次字段与 `assignments`（用户信息及 `interviewer`／`reviewer` 职责）。`kind`、`label`、`interviewerAgentId` 为普通列；`questionSelection` 是版本化 JSON，仅保存两类题套的有序 ID。创建不复制题目、Agent 提示词或招聘材料。
+- 创建要求招聘记录仍开放，所选真人面试官或 Agent、题套和确认人均属于当前工作区。关闭的招聘记录返回 `APPLICATION_CLOSED`（409），已有轮次返回 `INTERVIEW_ALREADY_EXISTS`（409）。本步只开放首轮，后续轮次将在正式评价确认规则接入后开放。
+- 资源不可用返回 `APPLICATION_UNAVAILABLE`／`INTERVIEW_UNAVAILABLE`（404）；所选 Agent、确认人或题套不可用返回 `INTERVIEWER_AGENT_UNAVAILABLE`／`CONFIRMATION_USER_UNAVAILABLE`／`QUESTION_SET_UNAVAILABLE`（400）；沟通题全部为空返回 `CONVERSATION_QUESTIONS_REQUIRED`（400）；真人面试官不属于当前工作区返回 `INTERVIEWER_USER_UNAVAILABLE`（400）；格式错误返回 `INVALID_INPUT`（400）。业务错误响应均含 `version: 1`。
+- 本步不生成邀请链接，不开放候选人访问、房间入场或面试启动，也不改变招聘阶段。招聘流程详情的「面试」Tab 已接入创建表单，邀请与快照按后续步骤分别接入。
+- `DELETE /api/interviews/:workspaceId/:id` 仅允许轮次创建者删除仍为 `scheduled` 的轮次，返回 `{ version: 1, id }`。按轮次状态而非预约时刻判断是否开始；非创建者返回 `INTERVIEW_DELETE_FORBIDDEN`（403），非预约状态返回 `INTERVIEW_NOT_DELETABLE`（409）。删除不影响面试官或题套。列表行返回当前用户的 `canDelete`，前端据此展示操作。
+  Only the round creator can delete a round while its status is `scheduled`; the response is `{ version: 1, id }`. Eligibility follows the round status rather than the scheduled time. A different creator receives 403, and other statuses receive 409. Agents and question sets are retained. List rows expose the current user's `canDelete` permission for the UI.
+
+- 首轮创建支持 `kind: "ai" | "human"`。真人轮次不接收 AI 配置，列表通过 `interviewers` 返回所选成员的姓名和头像。
+  First-round creation supports AI and human interviews. Human rounds reject AI-specific settings, and list rows include selected members' names and avatars in `interviewers`.
+
+- `interview_assignment` 保存指定面试官与评价确认人，`position` 保留选择顺序；`(workspaceId, userId, interviewRoundId)` 索引支持按当前用户筛选，轮次与人员在同一批事务中创建，删除轮次级联删除人员关联。人员关系不在 JSON 中重复保存。
+  `interview_assignment` stores assigned interviewers and reviewers, preserving selection order with `position`. The workspace/user/round index supports user-based filtering. Rounds and assignments are created atomically; deleting a round cascades to its assignments. JSON does not duplicate these relationships.
+
+- `GET /api/interviews/:workspaceId/:id/edit` 返回 `{ version: 1, round, agent, sets }`，以本轮已保存的人员、题套顺序和时间回填编辑表单，不重新采用岗位默认值。仅创建者或当前工作区 `admin`／`owner` 可访问未开始轮次的编辑配置。
+  The edit endpoint loads saved round selections and current choice labels, without reapplying job defaults. Only the creator or a workspace admin/owner may load an unstarted round for editing.
+- `PUT /api/interviews/:workspaceId/:id` 完整替换本轮可编辑配置，输入沿用创建格式，但 AI 必须明确提交 `confirmationUserId`，不会因管理员编辑而默认更换确认人。面试类型创建后固定，跨类型修改返回 `INTERVIEW_KIND_IMMUTABLE`（400）。标签、时间、Agent、题套和人员关系在同一批事务中更新；保留轮次 ID、编号和创建信息。人员选择移除后不再出现在该用户负责的面试中。
+  PUT replaces the editable configuration using the creation format, with an explicit AI reviewer required. The interview type is fixed after creation; a type change returns `INTERVIEW_KIND_IMMUTABLE` (400). It updates round settings and assignments atomically while retaining round identity and creation metadata. Removed assignees no longer own that responsibility.
+- 编辑权限不足返回 `INTERVIEW_EDIT_FORBIDDEN`（403），轮次不再为 `scheduled` 时返回 `INTERVIEW_NOT_EDITABLE`（409）；以实际状态而非预约时刻锁定。列表行的 `canEdit` 控制编辑入口，后端独立执行相同权限和状态规则。
+  Editing returns 403 without permission and 409 once the round leaves scheduled status. The list exposes `canEdit`; the backend independently enforces permission and status.

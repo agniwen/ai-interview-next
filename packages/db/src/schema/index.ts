@@ -8,6 +8,7 @@ export {
   candidatePhoneHistory,
   department,
   interviewFeedback,
+  interviewAssignment,
   interviewRound,
   job,
   recruitmentProject,

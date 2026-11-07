@@ -154,6 +154,55 @@
       "when": 1794048904707,
       "tag": "20261107105504_thin_shiver_man",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1794049807864,
+      "tag": "20261107111007_cooing_terror",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1794059105006,
+      "tag": "20261107134505_interview_configuration_required",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1794059536759,
+      "tag": "20261107135216_interview_assignments",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1794059545711,
+      "tag": "20261107135225_extract_interview_assignments",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1794059565147,
+      "tag": "20261107135245_relational_interview_rounds",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1794059576044,
+      "tag": "20261107135256_restore_interview_assignments",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1794059754266,
+      "tag": "20261107135554_interview_assignee_lookup",
+      "breakpoints": true
     }
   ],
   "version": "7"

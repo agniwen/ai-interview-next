@@ -1,0 +1,2 @@
+DROP INDEX `interview_assignment_user_round_idx`;--> statement-breakpoint
+CREATE INDEX `interview_assignment_user_round_idx` ON `interview_assignment` (`workspaceId`,`userId`,`interviewRoundId`,`role`);
