@@ -5,6 +5,7 @@ import {
   questionSet,
   questionSetJob,
   interviewerAgent,
+  interviewQuestionSnapshot,
 } from "@ai-interview/db/schema";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { ListQuery } from "../ats/input";
@@ -87,7 +88,7 @@ export async function interviewEditSetup(
     ...round.questionSelection.formQuestionSetIds,
     ...round.questionSelection.conversationQuestionSetIds,
   ];
-  const [sets, agent] = await Promise.all([
+  const [sets, agent, snapshot] = await Promise.all([
     db
       .select({
         id: questionSet.id,
@@ -108,6 +109,22 @@ export async function interviewEditSetup(
           )
           .get()
       : undefined,
+    round.questionsBoundAt
+      ? db
+          .select({ content: interviewQuestionSnapshot.content })
+          .from(interviewQuestionSnapshot)
+          .where(eq(interviewQuestionSnapshot.interviewRoundId, id))
+          .get()
+      : undefined,
   ]);
+  if (snapshot) {
+    const counts = new Map<string, number>();
+    for (const question of [...snapshot.content.form, ...snapshot.content.conversation]) {
+      counts.set(question.questionSetId, (counts.get(question.questionSetId) ?? 0) + 1);
+    }
+    for (const set of sets) {
+      set.questionCount = counts.get(set.id) ?? 0;
+    }
+  }
   return { agent: agent ?? null, round, sets, version: 1 as const };
 }

@@ -203,6 +203,13 @@
       "when": 1794059754266,
       "tag": "20261107135554_interview_assignee_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1794063051909,
+      "tag": "20261107145051_interview_entry",
+      "breakpoints": true
     }
   ],
   "version": "7"

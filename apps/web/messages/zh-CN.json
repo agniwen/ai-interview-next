@@ -645,5 +645,15 @@
   "interviews_edit": "编辑面试",
   "interviews_edit_error": "无法编辑此面试。请确认你有编辑权限，且面试尚未开始。",
   "time_zone": "时区",
-  "time_zone_local": "本机时区：{zone}"
+  "time_zone_local": "本机时区：{zone}",
+  "interviews_copy_invitation": "复制邀请链接",
+  "interviews_invitation_copied": "链接已复制",
+  "interviews_invitation_error": "无法复制邀请链接，请重试。",
+  "candidate_interview_title": "面试邀请",
+  "candidate_interview_loading": "正在加载面试邀请",
+  "candidate_interview_load_error": "无法加载面试，请重试。",
+  "candidate_interview_unavailable": "邀请不可用",
+  "candidate_interview_unavailable_help": "链接无效或面试已不可访问，请联系招聘团队。",
+  "candidate_interview_entry_ready": "此邀请仅供你本人使用，请妥善保存链接。",
+  "interviews_questions_locked": "候选人已进入，题目内容和顺序已固定，不能再修改题套选择。"
 }

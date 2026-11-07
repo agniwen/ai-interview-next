@@ -7,6 +7,7 @@ import { requireWorkspace } from "../../middleware/workspace";
 import { interviewSetup, interviewMembers, interviewEditSetup } from "./options";
 import { listQuery, paginationQuery } from "../ats/input";
 import { createInterviewInput, updateInterviewInput } from "./input";
+import { createInterviewInvitation } from "./invitation";
 import {
   updateInterview,
   deleteInterview,
@@ -90,6 +91,17 @@ export const interviewRoutes = new Hono<AuthenticatedEnv>()
       );
     },
   )
+  .post("/:workspaceId/:id/invitation", interviewParams, async (c) => {
+    const result = await createInterviewInvitation(
+      c.get("database"),
+      c.get("workspaceId"),
+      c.req.valid("param").id,
+    );
+    if ("error" in result) {
+      return c.json({ error: result.error, version: 1 as const }, result.status);
+    }
+    return c.json(result, 200);
+  })
   .get("/:workspaceId/:id/edit", interviewParams, async (c) => {
     const result = await interviewEditSetup(
       c.get("database"),

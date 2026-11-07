@@ -26,6 +26,7 @@ import { UserColumn } from "@/components/user-column";
 import * as m from "@/paraglide/messages";
 import { deleteInterviewMutation } from "./client";
 import type { InterviewRound } from "./client";
+import { InvitationButton } from "./invitation-button";
 
 function DeleteInterviewPopover({
   round,
@@ -232,6 +233,7 @@ export function InterviewRoundCard({
             </span>
           </div>
         )}
+        <InvitationButton workspaceId={workspaceId} roundId={round.id} />
       </FramePanel>
     </Frame>
   );

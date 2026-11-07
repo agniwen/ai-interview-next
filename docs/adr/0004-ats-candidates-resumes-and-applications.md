@@ -101,6 +101,10 @@ AI 面试输出相同的评价字段，结论和整体评价必填，其他字�
 
 创建面试时记录所选题套，不复制具体题目。候选人首次进入 AI 面试页面时，采用所选题套的最新内容展开并绑定到本轮，固定题目内容和顺序。刷新或再次访问复用本轮已绑定的题目，不因题库后续修改而改变。招聘材料和面试官 Agent 配置仍按前述规则在实际开始面试时保存快照。
 
+题目绑定后，招聘端的题套选择及顺序同时锁定，避免所选题套与本轮已固定题目不一致。时间、面试官和评价确认人仍按原规则在实际开始前可编辑。
+
+Once questions are bound, recruiting-side question set selections and their order are locked to keep them consistent with the round's fixed questions. Times, interviewers, and the evaluation reviewer remain editable before the actual start under the existing rules.
+
 AI 面试候选人可随时打开链接查看介绍、填写表单，并在完成准备后开始沟通，无需等待预约时间。
 
 介绍与准备界面完整参考旧项目 `ai-interview` 的准备界面 UI。第一版采用统一介绍文案，展示岗位、面试流程及录音和转录说明，岗位自动带入；仅真人面试展示预约时间。候选人点击「下一步」进入表单；没有表单题时进入沟通准备。

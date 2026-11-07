@@ -183,3 +183,13 @@ export function updateInterviewMutation(
     },
   });
 }
+
+export function createInvitationMutation(client: QueryClient, workspaceId: string) {
+  return mutationOptions({
+    mutationFn: async (id: string) =>
+      readAts(await interviewsApi[":id"].invitation.$post({ param: { id, workspaceId } })),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: interviewKeys.workspace(workspaceId).queryKey });
+    },
+  });
+}

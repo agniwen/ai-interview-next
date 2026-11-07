@@ -15,6 +15,7 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AAccountRouteImport } from './routes/_a.account'
 import { Route as AWorkspacesRouteImport } from './routes/_a.workspaces'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
+import { Route as InterviewTokenRouteImport } from './routes/interview.$token'
 import { Route as AInviteInvitationIdRouteImport } from './routes/_a.invite.$invitationId'
 import { Route as AWWorkspaceIdRouteImport } from './routes/_a.w.$workspaceId'
 import { Route as AWWorkspaceIdIndexRouteImport } from './routes/_a.w.$workspaceId.index'
@@ -69,6 +70,11 @@ const AWorkspacesRoute = AWorkspacesRouteImport.update({
 const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
   path: '/api/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterviewTokenRoute = InterviewTokenRouteImport.update({
+  id: '/interview/$token',
+  path: '/interview/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AInviteInvitationIdRoute = AInviteInvitationIdRouteImport.update({
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AAccountRoute
   '/workspaces': typeof AWorkspacesRoute
   '/api/$': typeof ApiSplatRoute
+  '/interview/$token': typeof InterviewTokenRoute
   '/invite/$invitationId': typeof AInviteInvitationIdRoute
   '/w/$workspaceId': typeof AWWorkspaceIdRouteWithChildren
   '/w/$workspaceId/account': typeof AWWorkspaceIdAccountRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByTo {
   '/account': typeof AAccountRoute
   '/workspaces': typeof AWorkspacesRoute
   '/api/$': typeof ApiSplatRoute
+  '/interview/$token': typeof InterviewTokenRoute
   '/invite/$invitationId': typeof AInviteInvitationIdRoute
   '/w/$workspaceId/account': typeof AWWorkspaceIdAccountRoute
   '/w/$workspaceId/agent': typeof AWWorkspaceIdAgentRoute
@@ -291,6 +299,7 @@ export interface FileRoutesById {
   '/_a/account': typeof AAccountRoute
   '/_a/workspaces': typeof AWorkspacesRoute
   '/api/$': typeof ApiSplatRoute
+  '/interview/$token': typeof InterviewTokenRoute
   '/_a/invite/$invitationId': typeof AInviteInvitationIdRoute
   '/_a/w/$workspaceId': typeof AWWorkspaceIdRouteWithChildren
   '/_a/w/$workspaceId/account': typeof AWWorkspaceIdAccountRoute
@@ -326,6 +335,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/workspaces'
     | '/api/$'
+    | '/interview/$token'
     | '/invite/$invitationId'
     | '/w/$workspaceId'
     | '/w/$workspaceId/account'
@@ -359,6 +369,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/workspaces'
     | '/api/$'
+    | '/interview/$token'
     | '/invite/$invitationId'
     | '/w/$workspaceId/account'
     | '/w/$workspaceId/agent'
@@ -392,6 +403,7 @@ export interface FileRouteTypes {
     | '/_a/account'
     | '/_a/workspaces'
     | '/api/$'
+    | '/interview/$token'
     | '/_a/invite/$invitationId'
     | '/_a/w/$workspaceId'
     | '/_a/w/$workspaceId/account'
@@ -425,6 +437,7 @@ export interface RootRouteChildren {
   ARoute: typeof ARouteWithChildren
   SignInRoute: typeof SignInRoute
   ApiSplatRoute: typeof ApiSplatRoute
+  InterviewTokenRoute: typeof InterviewTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -469,6 +482,13 @@ declare module '@tanstack/react-router' {
       path: '/api/$'
       fullPath: '/api/$'
       preLoaderRoute: typeof ApiSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interview/$token': {
+      id: '/interview/$token'
+      path: '/interview/$token'
+      fullPath: '/interview/$token'
+      preLoaderRoute: typeof InterviewTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_a/invite/$invitationId': {
@@ -794,6 +814,7 @@ const rootRouteChildren: RootRouteChildren = {
   ARoute: ARouteWithChildren,
   SignInRoute: SignInRoute,
   ApiSplatRoute: ApiSplatRoute,
+  InterviewTokenRoute: InterviewTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -4,6 +4,7 @@ import {
   interviewerAgent,
   interviewRound,
   interviewAssignment,
+  interviewQuestionSnapshot,
   member,
   user,
   questionSet,
@@ -33,6 +34,7 @@ async function selectionError(
   workspaceId: string,
   input: Extract<CreateInterviewInput, { kind: "ai" }>,
   confirmationUserId: string,
+  questionsBound: boolean,
 ) {
   const ids = [...input.formQuestionSetIds, ...input.conversationQuestionSetIds];
   const [agent, reviewer, sets] = await Promise.all([
@@ -62,6 +64,9 @@ async function selectionError(
   if (!reviewer) {
     return "CONFIRMATION_USER_UNAVAILABLE" as const;
   }
+  if (questionsBound) {
+    return;
+  }
   const byId = new Map(sets.map((set) => [set.id, set.content]));
   if (
     input.formQuestionSetIds.some((id) => byId.get(id)?.kind !== "form") ||
@@ -79,6 +84,7 @@ async function interviewSelectionError(
   workspaceId: string,
   input: CreateInterviewInput,
   userId: string,
+  questionsBound = false,
 ) {
   if (input.kind === "human") {
     const members = await db
@@ -96,7 +102,7 @@ async function interviewSelectionError(
     return;
   }
   const confirmationUserId = input.confirmationUserId ?? userId;
-  return selectionError(db, workspaceId, input, confirmationUserId);
+  return selectionError(db, workspaceId, input, confirmationUserId, questionsBound);
 }
 
 function roundSettings(input: CreateInterviewInput) {
@@ -279,8 +285,12 @@ export async function listInterviews(
 
 export async function getInterview(db: Database, workspaceId: string, id: string) {
   const result = await db
-    .select({ round: interviewRound })
+    .select({ questionsBoundAt: interviewQuestionSnapshot.capturedAt, round: interviewRound })
     .from(interviewRound)
+    .leftJoin(
+      interviewQuestionSnapshot,
+      eq(interviewQuestionSnapshot.interviewRoundId, interviewRound.id),
+    )
     .innerJoin(application, eq(application.id, interviewRound.applicationId))
     .where(
       and(
@@ -294,7 +304,13 @@ export async function getInterview(db: Database, workspaceId: string, id: string
     return;
   }
   const assignments = await roundAssignments(db, workspaceId, [id]);
-  return { round: { ...result.round, assignments: assignments.get(id) ?? [] } };
+  return {
+    round: {
+      ...result.round,
+      assignments: assignments.get(id) ?? [],
+      questionsBoundAt: result.questionsBoundAt,
+    },
+  };
 }
 
 export async function deleteInterview(
@@ -352,7 +368,18 @@ export async function updateInterview(
   if (input.kind !== result.round.kind) {
     return { error: "INTERVIEW_KIND_IMMUTABLE" as const, status: 400 as const };
   }
-  const error = await interviewSelectionError(db, workspaceId, input, userId);
+  const questionsBound = result.round.questionsBoundAt !== null;
+  if (
+    questionsBound &&
+    input.kind === "ai" &&
+    (JSON.stringify(input.formQuestionSetIds) !==
+      JSON.stringify(result.round.questionSelection.formQuestionSetIds) ||
+      JSON.stringify(input.conversationQuestionSetIds) !==
+        JSON.stringify(result.round.questionSelection.conversationQuestionSetIds))
+  ) {
+    return { error: "INTERVIEW_QUESTIONS_LOCKED" as const, status: 409 as const };
+  }
+  const error = await interviewSelectionError(db, workspaceId, input, userId, questionsBound);
   if (error) {
     return { error, status: 400 as const };
   }

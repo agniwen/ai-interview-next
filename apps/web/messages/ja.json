@@ -645,5 +645,15 @@
   "interviews_edit": "面接を編集",
   "interviews_edit_error": "この面接を編集できません。編集権限があり、面接がまだ開始されていないことを確認してください。",
   "time_zone": "タイムゾーン",
-  "time_zone_local": "端末のタイムゾーン：{zone}"
+  "time_zone_local": "端末のタイムゾーン：{zone}",
+  "interviews_copy_invitation": "招待リンクをコピー",
+  "interviews_invitation_copied": "リンクをコピーしました",
+  "interviews_invitation_error": "招待リンクをコピーできませんでした。もう一度お試しください。",
+  "candidate_interview_title": "面接の招待",
+  "candidate_interview_loading": "面接の招待を読み込み中",
+  "candidate_interview_load_error": "面接を読み込めませんでした。もう一度お試しください。",
+  "candidate_interview_unavailable": "招待を利用できません",
+  "candidate_interview_unavailable_help": "リンクが無効か、面接にアクセスできなくなっています。採用担当者にお問い合わせください。",
+  "candidate_interview_entry_ready": "この招待はご本人専用です。リンクは他の人と共有しないでください。",
+  "interviews_questions_locked": "候補者がこの面接を開いたため、質問と順序は確定しており、質問セットの選択は変更できません。"
 }

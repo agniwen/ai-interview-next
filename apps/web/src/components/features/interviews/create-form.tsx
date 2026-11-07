@@ -15,7 +15,7 @@ import * as m from "@/paraglide/messages";
 import { ChoicePicker } from "./choice-picker";
 import { SetSelection } from "./set-selection";
 import { createInterviewMutation, setupQuery, updateInterviewMutation, editQuery } from "./client";
-import type { Choice } from "./client";
+import type { Choice, InterviewInput } from "./client";
 
 interface FormValues {
   kind: "ai" | "human";
@@ -72,12 +72,58 @@ function InterviewTypeField({
   );
 }
 
+function toInterviewInput({
+  kind,
+  label,
+  agent,
+  reviewer,
+  interviewers,
+  form,
+  conversation,
+  timeRange,
+}: FormValues): InterviewInput {
+  return {
+    ...(kind === "ai"
+      ? {
+          confirmationUserId: reviewer?.id,
+          conversationQuestionSetIds: conversation.map((set) => set.id),
+          formQuestionSetIds: form.map((set) => set.id),
+          interviewerAgentId: agent?.id ?? "",
+          kind,
+        }
+      : {
+          admissionDeadline: timeRange?.to?.toISOString() ?? "",
+          interviewerUserIds: interviewers.map((person) => person.id),
+          kind,
+          scheduledAt: timeRange?.from?.toISOString() ?? "",
+        }),
+    label,
+    version: 1,
+  };
+}
+
+function canSaveInterview(
+  {
+    kind,
+    agent,
+    reviewer,
+    interviewers,
+  }: Pick<FormValues, "kind" | "agent" | "reviewer" | "interviewers">,
+  hasQuestions: boolean,
+  validTimes: boolean,
+) {
+  return kind === "ai"
+    ? Boolean(agent && reviewer && hasQuestions)
+    : interviewers.length > 0 && validTimes;
+}
+
 function Form({
   workspaceId,
   applicationId,
   initial,
   title,
   roundId,
+  questionsLocked = false,
   onClose,
 }: {
   workspaceId: string;
@@ -85,6 +131,7 @@ function Form({
   initial: FormValues;
   title: string;
   roundId?: string;
+  questionsLocked?: boolean;
   onClose: () => void;
 }) {
   const id = useId();
@@ -104,31 +151,29 @@ function Form({
   const [timeRange, setTimeRange] = useState(initial.timeRange);
   const validTimes = Boolean(timeRange?.from && timeRange.to && timeRange.to > timeRange.from);
   const invalidTimes = Boolean(timeRange?.from && timeRange.to && !validTimes);
-  const hasQuestions = conversation.some((set) => (set.questionCount ?? 0) > 0);
+  const questionsDisabled = mutation.isPending || questionsLocked;
+  const hasQuestions = questionsLocked || conversation.some((set) => (set.questionCount ?? 0) > 0);
+  const canSave = canSaveInterview(
+    { agent, interviewers, kind, reviewer },
+    hasQuestions,
+    validTimes,
+  );
   return (
     <form
       className="flex min-w-0 flex-col gap-6"
       onSubmit={(event) => {
         event.preventDefault();
         mutation.mutate(
-          {
-            ...(kind === "ai"
-              ? {
-                  confirmationUserId: reviewer?.id,
-                  conversationQuestionSetIds: conversation.map((set) => set.id),
-                  formQuestionSetIds: form.map((set) => set.id),
-                  interviewerAgentId: agent?.id ?? "",
-                  kind,
-                }
-              : {
-                  admissionDeadline: timeRange?.to?.toISOString() ?? "",
-                  interviewerUserIds: interviewers.map((person) => person.id),
-                  kind,
-                  scheduledAt: timeRange?.from?.toISOString() ?? "",
-                }),
+          toInterviewInput({
+            agent,
+            conversation,
+            form,
+            interviewers,
+            kind,
             label,
-            version: 1,
-          },
+            reviewer,
+            timeRange,
+          }),
           { onSuccess: onClose },
         );
       }}
@@ -236,8 +281,11 @@ function Form({
             kind="conversation"
             value={conversation}
             onChange={setConversation}
-            disabled={mutation.isPending}
+            disabled={questionsDisabled}
           />
+          {questionsLocked && (
+            <p className="text-xs text-muted-foreground">{m.interviews_questions_locked()}</p>
+          )}
           {!hasQuestions && (
             <p className="text-sm text-muted-foreground">{m.interviews_questions_required()}</p>
           )}
@@ -247,7 +295,7 @@ function Form({
             kind="form"
             value={form}
             onChange={setForm}
-            disabled={mutation.isPending}
+            disabled={questionsDisabled}
           />
         </>
       )}
@@ -265,12 +313,7 @@ function Form({
         <ToolbarButton
           type="submit"
           render={<Button size="sm" variant="outline" loading={mutation.isPending} />}
-          disabled={
-            mutation.isPending ||
-            (kind === "ai"
-              ? !agent || !reviewer || !hasQuestions
-              : interviewers.length === 0 || !validTimes)
-          }
+          disabled={mutation.isPending || !canSave}
         >
           <IconDeviceFloppy />
           {m.ats_save()}
@@ -370,6 +413,7 @@ export function EditInterviewForm({
       workspaceId={workspaceId}
       applicationId={applicationId}
       roundId={roundId}
+      questionsLocked={round.questionsBoundAt !== null}
       title={m.interviews_edit()}
       onClose={onClose}
       initial={{

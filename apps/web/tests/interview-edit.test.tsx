@@ -5,7 +5,11 @@ import { EditInterviewForm } from "@/components/features/interviews/create-form"
 import { interviewKeys } from "@/components/features/interviews/client";
 import * as m from "@/paraglide/messages";
 
-it.each(["human", "ai"] as const)("initializes the %s editor from saved selections", (kind) => {
+it.each([
+  { kind: "human", locked: false },
+  { kind: "ai", locked: false },
+  { kind: "ai", locked: true },
+] as const)("initializes the $kind editor with questions locked: $locked", ({ kind, locked }) => {
   const client = new QueryClient();
   const roundId = "saved-round";
   const workspaceId = "workspace";
@@ -48,6 +52,7 @@ it.each(["human", "ai"] as const)("initializes the %s editor from saved selectio
         formQuestionSetIds: [],
         version: 1,
       },
+      questionsBoundAt: locked ? "2026-11-07T00:00:00.000Z" : null,
       scheduledAt: kind === "human" ? "2027-01-01T01:00:00.000Z" : null,
       sequence: 1,
       status: "scheduled",
@@ -79,6 +84,17 @@ it.each(["human", "ai"] as const)("initializes the %s editor from saved selectio
     expect(markup).toContain(m.interviews_time_range());
     expect(markup).not.toContain(m.interviews_reviewer());
   } else {
+    const questionInputs = (markup.match(/<input[^>]+>/gu) ?? []).filter((input) =>
+      /id="[^"]*-(?:form|conversation)"/u.test(input),
+    );
+    expect(questionInputs).toHaveLength(2);
+    expect(questionInputs.every((input) => input.includes('disabled=""'))).toBe(locked);
+    const personInputs = (markup.match(/<input[^>]+>/gu) ?? []).filter((input) =>
+      /id="[^"]*-(?:agent|reviewer)"/u.test(input),
+    );
+    expect(personInputs).toHaveLength(2);
+    expect(personInputs.some((input) => input.includes('disabled=""'))).toBe(false);
+    expect(markup.includes(m.interviews_questions_locked())).toBe(locked);
     expect(markup).toContain("Saved Agent");
     expect(markup).toContain("Saved Reviewer");
     expect(markup.indexOf("Second set")).toBeLessThan(markup.indexOf("First set"));

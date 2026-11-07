@@ -251,3 +251,16 @@ Web 不需要这些认证 env，通过 Service Binding 调用 API；Web 与 API 
   PUT replaces the editable configuration using the creation format, with an explicit AI reviewer required. The interview type is fixed after creation; a type change returns `INTERVIEW_KIND_IMMUTABLE` (400). It updates round settings and assignments atomically while retaining round identity and creation metadata. Removed assignees no longer own that responsibility.
 - 编辑权限不足返回 `INTERVIEW_EDIT_FORBIDDEN`（403），轮次不再为 `scheduled` 时返回 `INTERVIEW_NOT_EDITABLE`（409）；以实际状态而非预约时刻锁定。列表行的 `canEdit` 控制编辑入口，后端独立执行相同权限和状态规则。
   Editing returns 403 without permission and 409 once the round leaves scheduled status. The list exposes `canEdit`; the backend independently enforces permission and status.
+
+### 候选人邀请与题目快照 / Candidate invitations and question snapshots
+
+- `POST /api/interviews/:workspaceId/:id/invitation` 供当前工作区成员取得本轮候选人邀请凭证，返回 `{ version: 1, token }`。首次请求创建 32 字节随机凭证，之后复用；凭证独立于轮次 ID，不出现在轮次列表和详情中。Web 复制同源 `/interview/:token` 链接，不自动联系候选人。
+  Workspace members obtain a stable, random 32-byte invitation credential. It is separate from the round ID and excluded from round lists and details. Web copies the same-origin candidate link without contacting the candidate.
+- `POST /api/candidate-interviews/:token/entry` 以邀请凭证访问，无需登录；无效凭证、已删除轮次或已删除招聘流程均返回 `INTERVIEW_UNAVAILABLE`（404）。响应禁用缓存，只包含岗位、工作区名称、轮次公开信息及候选人表单题，不包含沟通题内容、评价指引或 Agent 提示词。
+  The anonymous entry endpoint authorizes access using the invitation credential. Invalid invitations, deleted rounds, and deleted applications return the same 404. Responses are not cacheable and expose only preparation data and form questions; conversation content, evaluation guidance, and agent prompts remain private.
+- AI 首次进入时读取选中题套的最新内容，按题套及套内顺序保存 `interview_question_snapshot.content`（`version: 1`）；保留重复题目，为每题分配独立 ID，并保存题套来源和原始位置。以后进入复用本轮快照。真人入口不创建题目快照；进入准备页面不会开始面试，也不会固定招聘材料或 Agent 配置。
+  First AI entry captures current selected questions in set and question order, retaining duplicates, independent IDs, and source positions. Later visits reuse the snapshot. Human entry does not capture questions, and opening either preparation page does not start the interview or freeze recruiting materials or agent settings.
+- 题目绑定后，编辑详情返回 `questionsBoundAt`；改变题套选择或顺序返回 `INTERVIEW_QUESTIONS_LOCKED`（409）。Agent 和确认人仍可编辑，题库后续变化不会阻止编辑；编辑器的题数来自快照。删除轮次级联删除邀请凭证及题目快照。
+  After binding, edit details expose `questionsBoundAt`; changing selections or order returns 409. Agent and reviewer edits remain available even if source sets change. Editor counts come from the snapshot. Deleting the round cascades to its invitation and question snapshot.
+- Web 使用 TanStack Start 的 `ssr: false` 和骨架屏回退，在浏览器实际渲染入口时发送进入请求，避免 SSR 或预加载提前固定题目。当前页面仅提供邀请信息；完整介绍、表单作答、设备准备及房间入场按后续步骤实现。真人入场时间限制不用于阻止打开准备页面。
+  Web uses selective SSR with a skeleton fallback and sends the entry request only when the browser renders the page. This step provides invitation information; full introduction, form answers, device setup, and room admission follow in subsequent steps. Human admission windows do not prevent opening preparation pages.
