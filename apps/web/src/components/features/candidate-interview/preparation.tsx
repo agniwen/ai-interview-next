@@ -1,8 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { IconMicrophone, IconVideo, IconVolume } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import * as m from "@/paraglide/messages";
 import type { CandidateInterview } from "./client";
 import { InterviewDetails } from "./interview-details";
@@ -10,6 +8,7 @@ import { InterviewFlowProgress, interviewPreparationSteps } from "./flow-progres
 import type { PreparationStep } from "./flow-progress";
 import { CandidateFormStage } from "./form-stage";
 import { initialPreparationStep } from "./form-progress";
+import { InterviewDeviceCheck } from "./device-check";
 
 function focusHeading(element: HTMLHeadingElement | null) {
   element?.focus({ preventScroll: true });
@@ -79,59 +78,15 @@ export function PreparationStage({
         {interview.label ? ` · ${interview.label}` : ""}
       </p>
       {step === "forms" && children}
-      {step !== "forms" && (
+      {step === "ready" && <InterviewDeviceCheck hasForms={hasForms} onBack={onBack} />}
+      {step === "intro" && (
         <div className="mt-8 flex w-full max-w-sm flex-col items-center">
-          {step === "intro" && (
-            <>
-              <InterviewDetails interview={interview} />
-              <InterviewNotice />
-            </>
-          )}
-          {step === "ready" && (
-            <Card
-              render={<section />}
-              aria-label={m.candidate_ready_heading()}
-              className="w-full p-5 text-left"
-            >
-              <ul className="flex flex-col gap-4 text-sm leading-6">
-                <li className="flex items-start gap-3">
-                  <IconMicrophone
-                    aria-hidden="true"
-                    className="mt-1 size-4 shrink-0 text-muted-foreground"
-                  />
-                  <span>{m.candidate_ready_microphone()}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <IconVideo
-                    aria-hidden="true"
-                    className="mt-1 size-4 shrink-0 text-muted-foreground"
-                  />
-                  <span>{m.candidate_ready_camera()}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <IconVolume
-                    aria-hidden="true"
-                    className="mt-1 size-4 shrink-0 text-muted-foreground"
-                  />
-                  <span>{m.candidate_ready_environment()}</span>
-                </li>
-              </ul>
-            </Card>
-          )}
-          <div className="mt-8 flex w-full justify-center gap-2">
-            {step === "intro" ? (
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto sm:min-w-32"
-                onClick={onContinue}
-              >
-                {m.candidate_interview_next()}
-              </Button>
-            ) : (
-              <Button variant="outline" className="w-full sm:w-auto sm:min-w-32" onClick={onBack}>
-                {hasForms ? m.candidate_form_edit() : m.candidate_interview_back()}
-              </Button>
-            )}
+          <InterviewDetails interview={interview} />
+          <InterviewNotice />
+          <div className="mt-8 flex w-full justify-center">
+            <Button variant="outline" className="w-full sm:w-auto sm:min-w-32" onClick={onContinue}>
+              {m.candidate_interview_next()}
+            </Button>
           </div>
         </div>
       )}
