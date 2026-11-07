@@ -528,5 +528,17 @@
   "ats_evaluation_write": "Add your evaluation",
   "ats_evaluation_placeholder": "Share your assessment, supporting evidence, or questions about this candidate…",
   "ats_evaluation_no_matches": "No matching evidence identified in the current materials.",
-  "ats_evaluation_no_risks": "No additional risks or open questions identified in the current materials."
+  "ats_evaluation_no_risks": "No additional risks or open questions identified in the current materials.",
+  "interviewer_agents_title": "Interviewer agents",
+  "interviewer_agents_name": "Name",
+  "interviewer_agents_description": "Description (optional)",
+  "interviewer_agents_prompt": "Prompt",
+  "interviewer_agents_prompt_help": "Describe the interviewer’s role, communication style, and approach to follow-up questions.",
+  "interviewer_agents_create": "Create interviewer agent",
+  "interviewer_agents_edit": "Edit interviewer agent",
+  "interviewer_agents_edit_named": "Edit {name}",
+  "interviewer_agents_help": "Manage reusable interviewer roles, descriptions, and prompts.",
+  "interviewer_agents_updated_at": "Updated",
+  "interviewer_agents_empty": "No interviewer agents yet",
+  "interviewer_agents_search": "Search names or descriptions"
 }

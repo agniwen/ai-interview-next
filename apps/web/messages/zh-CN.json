@@ -528,5 +528,17 @@
   "ats_evaluation_write": "添加评价",
   "ats_evaluation_placeholder": "记录你对候选人的评价、依据或待确认的问题…",
   "ats_evaluation_no_matches": "当前材料中暂无明确的匹配依据。",
-  "ats_evaluation_no_risks": "当前材料中暂无额外识别出的风险或待确认项。"
+  "ats_evaluation_no_risks": "当前材料中暂无额外识别出的风险或待确认项。",
+  "interviewer_agents_title": "面试官 Agent",
+  "interviewer_agents_name": "名称",
+  "interviewer_agents_description": "说明（选填）",
+  "interviewer_agents_prompt": "提示词",
+  "interviewer_agents_prompt_help": "描述面试官的角色、沟通方式和追问原则。",
+  "interviewer_agents_create": "新增面试官 Agent",
+  "interviewer_agents_edit": "编辑面试官 Agent",
+  "interviewer_agents_edit_named": "编辑 {name}",
+  "interviewer_agents_help": "维护可复用的面试官角色、说明和提示词。",
+  "interviewer_agents_updated_at": "更新时间",
+  "interviewer_agents_empty": "暂无面试官 Agent",
+  "interviewer_agents_search": "搜索名称或说明"
 }

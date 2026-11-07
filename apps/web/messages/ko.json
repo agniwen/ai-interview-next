@@ -528,5 +528,17 @@
   "ats_evaluation_write": "평가 추가",
   "ats_evaluation_placeholder": "후보자에 대한 평가, 근거 또는 확인할 사항을 남기세요…",
   "ats_evaluation_no_matches": "현재 자료에서 명확한 적합 근거가 확인되지 않았습니다.",
-  "ats_evaluation_no_risks": "현재 자료에서 추가 위험이나 확인 사항이 발견되지 않았습니다."
+  "ats_evaluation_no_risks": "현재 자료에서 추가 위험이나 확인 사항이 발견되지 않았습니다.",
+  "interviewer_agents_title": "면접관 Agent",
+  "interviewer_agents_name": "이름",
+  "interviewer_agents_description": "설명(선택)",
+  "interviewer_agents_prompt": "프롬프트",
+  "interviewer_agents_prompt_help": "면접관의 역할, 대화 방식, 후속 질문 원칙을 작성하세요.",
+  "interviewer_agents_create": "면접관 Agent 추가",
+  "interviewer_agents_edit": "면접관 Agent 편집",
+  "interviewer_agents_edit_named": "{name} 편집",
+  "interviewer_agents_help": "재사용할 면접관의 역할, 설명, 프롬프트를 관리하세요.",
+  "interviewer_agents_updated_at": "수정 일시",
+  "interviewer_agents_empty": "아직 면접관 Agent가 없습니다",
+  "interviewer_agents_search": "이름 또는 설명 검색"
 }

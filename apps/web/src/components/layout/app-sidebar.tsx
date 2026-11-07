@@ -6,6 +6,7 @@ import {
   IconFileCv,
   IconFolders,
   IconListDetails,
+  IconRobot,
   IconUsers,
   IconSparkle,
   IconStack2,
@@ -149,6 +150,11 @@ export function AppSidebar({
                       to: "/w/$workspaceId/hub/departments",
                     },
                     { icon: IconBriefcase, label: m.ats_job(), to: "/w/$workspaceId/hub/jobs" },
+                    {
+                      icon: IconRobot,
+                      label: m.interviewer_agents_title(),
+                      to: "/w/$workspaceId/hub/interviewer-agents",
+                    },
                   ] as const
                 ).map(({ icon: Icon, label, to }) => (
                   <SidebarMenuItem key={to}>

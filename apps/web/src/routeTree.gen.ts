@@ -28,6 +28,7 @@ import { Route as AWWorkspaceIdHubApplicationsRouteImport } from './routes/_a.w.
 import { Route as AWWorkspaceIdHubCandidatesRouteImport } from './routes/_a.w.$workspaceId.hub.candidates'
 import { Route as AWWorkspaceIdHubDashboardRouteImport } from './routes/_a.w.$workspaceId.hub.dashboard'
 import { Route as AWWorkspaceIdHubDepartmentsRouteImport } from './routes/_a.w.$workspaceId.hub.departments'
+import { Route as AWWorkspaceIdHubInterviewerAgentsRouteImport } from './routes/_a.w.$workspaceId.hub.interviewer-agents'
 import { Route as AWWorkspaceIdHubJobsRouteImport } from './routes/_a.w.$workspaceId.hub.jobs'
 import { Route as AWWorkspaceIdHubProjectsRouteImport } from './routes/_a.w.$workspaceId.hub.projects'
 import { Route as AWWorkspaceIdHubResumesRouteImport } from './routes/_a.w.$workspaceId.hub.resumes'
@@ -136,6 +137,12 @@ const AWWorkspaceIdHubDepartmentsRoute =
     path: '/departments',
     getParentRoute: () => AWWorkspaceIdHubRoute,
   } as any)
+const AWWorkspaceIdHubInterviewerAgentsRoute =
+  AWWorkspaceIdHubInterviewerAgentsRouteImport.update({
+    id: '/interviewer-agents',
+    path: '/interviewer-agents',
+    getParentRoute: () => AWWorkspaceIdHubRoute,
+  } as any)
 const AWWorkspaceIdHubJobsRoute = AWWorkspaceIdHubJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
@@ -196,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
   '/w/$workspaceId/hub/departments': typeof AWWorkspaceIdHubDepartmentsRoute
+  '/w/$workspaceId/hub/interviewer-agents': typeof AWWorkspaceIdHubInterviewerAgentsRoute
   '/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRoute
   '/w/$workspaceId/hub/projects': typeof AWWorkspaceIdHubProjectsRoute
   '/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRouteWithChildren
@@ -222,6 +230,7 @@ export interface FileRoutesByTo {
   '/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
   '/w/$workspaceId/hub/departments': typeof AWWorkspaceIdHubDepartmentsRoute
+  '/w/$workspaceId/hub/interviewer-agents': typeof AWWorkspaceIdHubInterviewerAgentsRoute
   '/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRoute
   '/w/$workspaceId/hub/projects': typeof AWWorkspaceIdHubProjectsRoute
   '/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRouteWithChildren
@@ -251,6 +260,7 @@ export interface FileRoutesById {
   '/_a/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/_a/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
   '/_a/w/$workspaceId/hub/departments': typeof AWWorkspaceIdHubDepartmentsRoute
+  '/_a/w/$workspaceId/hub/interviewer-agents': typeof AWWorkspaceIdHubInterviewerAgentsRoute
   '/_a/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRoute
   '/_a/w/$workspaceId/hub/projects': typeof AWWorkspaceIdHubProjectsRoute
   '/_a/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRouteWithChildren
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/hub/candidates'
     | '/w/$workspaceId/hub/dashboard'
     | '/w/$workspaceId/hub/departments'
+    | '/w/$workspaceId/hub/interviewer-agents'
     | '/w/$workspaceId/hub/jobs'
     | '/w/$workspaceId/hub/projects'
     | '/w/$workspaceId/hub/resumes'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/hub/candidates'
     | '/w/$workspaceId/hub/dashboard'
     | '/w/$workspaceId/hub/departments'
+    | '/w/$workspaceId/hub/interviewer-agents'
     | '/w/$workspaceId/hub/jobs'
     | '/w/$workspaceId/hub/projects'
     | '/w/$workspaceId/hub/resumes'
@@ -334,6 +346,7 @@ export interface FileRouteTypes {
     | '/_a/w/$workspaceId/hub/candidates'
     | '/_a/w/$workspaceId/hub/dashboard'
     | '/_a/w/$workspaceId/hub/departments'
+    | '/_a/w/$workspaceId/hub/interviewer-agents'
     | '/_a/w/$workspaceId/hub/jobs'
     | '/_a/w/$workspaceId/hub/projects'
     | '/_a/w/$workspaceId/hub/resumes'
@@ -485,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AWWorkspaceIdHubDepartmentsRouteImport
       parentRoute: typeof AWWorkspaceIdHubRoute
     }
+    '/_a/w/$workspaceId/hub/interviewer-agents': {
+      id: '/_a/w/$workspaceId/hub/interviewer-agents'
+      path: '/interviewer-agents'
+      fullPath: '/w/$workspaceId/hub/interviewer-agents'
+      preLoaderRoute: typeof AWWorkspaceIdHubInterviewerAgentsRouteImport
+      parentRoute: typeof AWWorkspaceIdHubRoute
+    }
     '/_a/w/$workspaceId/hub/jobs': {
       id: '/_a/w/$workspaceId/hub/jobs'
       path: '/jobs'
@@ -572,6 +592,7 @@ interface AWWorkspaceIdHubRouteChildren {
   AWWorkspaceIdHubCandidatesRoute: typeof AWWorkspaceIdHubCandidatesRoute
   AWWorkspaceIdHubDashboardRoute: typeof AWWorkspaceIdHubDashboardRoute
   AWWorkspaceIdHubDepartmentsRoute: typeof AWWorkspaceIdHubDepartmentsRoute
+  AWWorkspaceIdHubInterviewerAgentsRoute: typeof AWWorkspaceIdHubInterviewerAgentsRoute
   AWWorkspaceIdHubJobsRoute: typeof AWWorkspaceIdHubJobsRoute
   AWWorkspaceIdHubProjectsRoute: typeof AWWorkspaceIdHubProjectsRoute
   AWWorkspaceIdHubResumesRoute: typeof AWWorkspaceIdHubResumesRouteWithChildren
@@ -585,6 +606,8 @@ const AWWorkspaceIdHubRouteChildren: AWWorkspaceIdHubRouteChildren = {
   AWWorkspaceIdHubCandidatesRoute: AWWorkspaceIdHubCandidatesRoute,
   AWWorkspaceIdHubDashboardRoute: AWWorkspaceIdHubDashboardRoute,
   AWWorkspaceIdHubDepartmentsRoute: AWWorkspaceIdHubDepartmentsRoute,
+  AWWorkspaceIdHubInterviewerAgentsRoute:
+    AWWorkspaceIdHubInterviewerAgentsRoute,
   AWWorkspaceIdHubJobsRoute: AWWorkspaceIdHubJobsRoute,
   AWWorkspaceIdHubProjectsRoute: AWWorkspaceIdHubProjectsRoute,
   AWWorkspaceIdHubResumesRoute: AWWorkspaceIdHubResumesRouteWithChildren,

@@ -19,7 +19,13 @@ function validationResult(result: { success: boolean }, c: Context<Authenticated
   }
 }
 
-const agentParams = sValidator("param", z.object({ id: z.uuid() }), validationResult);
+// 保留完整路径参数，供类型化客户端构建工作区内的详情和编辑地址。
+// Preserve all path parameters so the typed client can build workspace-scoped detail and edit URLs.
+const agentParams = sValidator(
+  "param",
+  z.object({ id: z.uuid(), workspaceId: z.string() }),
+  validationResult,
+);
 const agentInput = sValidator("json", interviewerAgentInput, validationResult);
 
 /** 外层 app 解析登录态；此处校验工作区成员关系，并在 HTTP 入口校验操作输入。
