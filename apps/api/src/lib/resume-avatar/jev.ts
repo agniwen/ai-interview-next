@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { ResumeImageType } from "../resume-file";
 
 export const jevAvatarModel = "typesafe-ai/jev-1.14.0";
+export const jevAvatarPromptVersion = 2;
 export const jevAvatarTimeoutMs = 15_000;
 export const jevImageMinSide = 280;
 export const jevImageMaxSide = 1568;
@@ -32,8 +33,7 @@ export async function locateResumePortrait(
     body: JSON.stringify({
       questions: {
         hasPortrait: {
-          instructions:
-            "Does this resume page visibly contain a real portrait photograph of the candidate? Exclude illustrations, logos, other people's photos, and decorative icons.",
+          instructions: "Does this resume contain a portrait photo?",
           type: "boolean",
         },
         portrait: {

@@ -7,7 +7,11 @@ import { z } from "zod";
 import type { ApiBindings } from "../../env";
 import { createVercelGatewayPdfTextExtractor } from "../../lib/pdf-text/vercel-gateway";
 import { createResumeAvatarExtractor } from "../../lib/resume-avatar";
-import { jevAvatarModel, jevAvatarTimeoutMs } from "../../lib/resume-avatar/jev";
+import {
+  jevAvatarModel,
+  jevAvatarPromptVersion,
+  jevAvatarTimeoutMs,
+} from "../../lib/resume-avatar/jev";
 import { createPdfFirstPageRenderer } from "../../lib/resume-avatar/pdf-first-page";
 import { createDefaultResumeStructurer } from "../../lib/resume-structuring/default";
 import { stageMessage, workflowInput } from "./contracts";
@@ -84,7 +88,7 @@ export async function resumeQueueHandler(batch: MessageBatch, env: ApiBindings) 
           {
             avatarParameters: {
               model: jevAvatarModel,
-              promptVersion: 1,
+              promptVersion: jevAvatarPromptVersion,
               timeoutMs: jevAvatarTimeoutMs,
               version: 1,
             },

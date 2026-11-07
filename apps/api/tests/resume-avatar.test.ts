@@ -3,6 +3,7 @@ import { PNG } from "pngjs";
 import { expect, it, vi } from "vitest";
 import { createResumeAvatarExtractor, cropResumePortrait } from "../src/lib/resume-avatar";
 import { createPdfFirstPageRenderer } from "../src/lib/resume-avatar/pdf-first-page";
+import { locateResumePortrait } from "../src/lib/resume-avatar/jev";
 
 function twoPagePdf() {
   const firstPage = "1 0 0 rg 0 0 30 50 re f";
@@ -72,6 +73,36 @@ it.each([
       const avatar = PNG.sync.read(Buffer.from(cropped ?? new ArrayBuffer(0)));
       expect(avatar.width).toBe(Math.min(512, width / 2));
       expect(avatar.height).toBe(Math.min(256, height / 2));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  },
+);
+
+it.each([
+  { accepted: true, confidence: 0.81, probability: 0.99 },
+  { accepted: false, confidence: 0.86, probability: 0.48 },
+  { accepted: false, confidence: 0.9, probability: 0.02 },
+  { accepted: false, confidence: 0.2, probability: 0.99 },
+])(
+  "only crops a visible portrait with a reliable box (%o)",
+  async ({ confidence, probability, accepted }) => {
+    const box = { bottom: 0.13, left: 0.81, right: 0.93, top: 0.05 };
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(
+        Response.json({
+          answers: {
+            hasPortrait: { probability, type: "boolean" },
+            portrait: { box, type: "box" },
+          },
+          providerMetadata: { typesafe: { confidence: { portrait: confidence } } },
+        }),
+      ),
+    );
+    try {
+      expect(await locateResumePortrait(new Uint8Array(), "image/png", "test-key")).toEqual(
+        accepted ? box : null,
+      );
     } finally {
       vi.unstubAllGlobals();
     }
