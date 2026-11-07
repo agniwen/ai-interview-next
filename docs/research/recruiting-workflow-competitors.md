@@ -145,6 +145,12 @@ Greenhouse 的官方集成将其分为只总结，以及评价并生成 scorecar
 | 重开／重做／AI 重试 | 未检索到足够详细的官方帮助页确认可用按钮、谁可操作、是否保留旧面试、是否重新计费。候选人练习功能不足以回答这些问题。 [候选人体验](https://brighthire.com/ai-interviewer/candidate-experience/)                                                           |
 | AI 处理状态         | 已确认有结果摘要和可选评价，未取得任务排队、失败、重跑的正式枚举；不能凭“转录→评分”的描述编造后台状态机。 [集成](https://support.greenhouse.io/hc/en-us/articles/44305038086427-BrightHire-Screen-integration)                                           |
 
+## Metaview 题目配置补充
+
+2026-11-07 再次核对 Screening Setup：Interview 按步骤组织，每步有标题、目标和题目；步骤及题目均可排序。每题分别配置提问形式、题干、可选追问、答案格式及评价标准（rubric）。答案格式中的 Text、Number、Date 等用于提取结构化答案，不等于候选人在面试前填写对应表单控件。[官方题目设置](https://support.metaview.ai/screening/setup#interview-the-plan-itself)
+
+该页支持测试单题及完整面试，但没有将面试明确划分为独立的「先填表、再沟通」两阶段，也不足以证明存在独立的可复用题库。Sainoa 的题目菜单、表单题和沟通题属于本产品待明确的设计，不能将其写成 Metaview 已核实的固定流程。
+
 ## 实际流程示例：可配置的实例，不是固定官方枚举
 
 ### 示例一：先审简历，再 AI 初筛，最后真人面试
