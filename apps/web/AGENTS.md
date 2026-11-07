@@ -31,3 +31,11 @@ When creating or changing a page with asynchronous data or lazy content, read [t
 
 Use `src/components/ui/markdown-editor.tsx` for editable long-form fields such as job requirements. Store their values as Markdown strings.
 岗位要求等可编辑的长文本字段使用 `src/components/ui/markdown-editor.tsx`，以 Markdown 字符串保存。
+
+# Page save actions / 页面保存操作
+
+Page-level save actions follow the floating toolbar pattern in [the application detail page](src/components/features/ats/application-detail-page.tsx): compose the existing `Toolbar` and `ToolbarButton`, center the compact toolbar near the viewport bottom, and keep it reachable while scrolling with mobile safe-area spacing. Group related actions in this toolbar, show saving progress, and disable submission while pending or incomplete. Keep validation guidance beside the form content.
+页面级保存操作沿用[招聘流程详情页](src/components/features/ats/application-detail-page.tsx)的悬浮工具栏交互：组合现有的 `Toolbar` 与 `ToolbarButton`，将紧凑工具栏居中放在视口底部附近，滚动时保持可达，并留出移动端安全区。相关操作集中在工具栏中，保存时显示进度，提交中或内容未完善时禁用提交；校验提示放在表单内容旁。
+
+Single-column editing pages, including form and conversation question sets, use the personal center's centered `mx-auto w-full max-w-4xl` content width. Apply the same width to their page skeletons.
+单列表单编辑页（包括表单题套与沟通题套）使用个人中心的居中内容宽度 `mx-auto w-full max-w-4xl`，页面骨架屏同步采用相同宽度。

@@ -8,6 +8,7 @@ import { questionSetKeys } from "./query-keys";
 
 const api = workspaceApi.api["question-sets"][":workspaceId"];
 export type QuestionSetInput = Parameters<typeof api.$post>[0]["json"];
+export type ConversationSetContent = Extract<QuestionSetInput["content"], { kind: "conversation" }>;
 export type FormSetContent = Extract<QuestionSetInput["content"], { kind: "form" }>;
 
 export function questionSetsQuery(workspaceId: string, query: QuestionSetListSearch) {

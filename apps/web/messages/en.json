@@ -579,7 +579,19 @@
   "question_sets_move_up": "Move {label} up",
   "question_sets_move_down": "Move {label} down",
   "question_sets_remove": "Remove {label}",
-  "question_sets_conversation_readonly": "Conversation sets currently support list viewing only.",
   "question_sets_drag": "Reorder {label}",
-  "question_sets_sort_keyboard": "Use Space to pick up, arrow keys to move, and Space to drop. Escape cancels."
+  "question_sets_sort_keyboard": "Use Space to pick up, arrow keys to move, and Space to drop. Escape cancels.",
+  "question_sets_create_conversation": "Create conversation question set",
+  "question_sets_edit_conversation": "Edit conversation question set",
+  "question_sets_conversation_help": "The interviewer covers questions in order and follows up based on answers and your guidance.",
+  "question_sets_complete_conversation": "Complete the prompt for question {number} and check field lengths.",
+  "question_sets_difficulty": "Difficulty",
+  "question_sets_easy": "Easy",
+  "question_sets_medium": "Medium",
+  "question_sets_hard": "Hard",
+  "question_sets_evaluation_focus": "Assessment focus (optional)",
+  "question_sets_follow_up": "Follow-up directions (optional)",
+  "question_sets_evaluation_criteria": "Evaluation criteria (optional)",
+  "question_sets_evaluation_help": "Describe how to assess the quality of an answer.",
+  "question_sets_back": "Back to question sets"
 }

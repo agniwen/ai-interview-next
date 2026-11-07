@@ -1,4 +1,5 @@
-import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi, Outlet, useMatch } from "@tanstack/react-router";
+import { Activity } from "react";
 import { questionSetListSearch } from "@/components/features/question-sets/list-search";
 import { QuestionSetsPage } from "@/components/features/question-sets/page";
 import * as m from "@/paraglide/messages";
@@ -9,15 +10,27 @@ function Page() {
   const { workspaceId } = routeApi.useParams();
   const query = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
+  const showingEditor = useMatch({
+    from: "/_a/w/$workspaceId/hub/questions/overlay/$id",
+    select: () => true,
+    shouldThrow: false,
+  });
   return (
-    <QuestionSetsPage
-      key={workspaceId}
-      workspaceId={workspaceId}
-      query={query}
-      onQueryChange={(changes) => {
-        void navigate({ search: (prev) => ({ ...prev, ...changes }) });
-      }}
-    />
+    <>
+      {/* Activity 只保留列表组件状态；地址遮罩由入口 Link 的原生 mask 处理。
+          Activity only preserves list component state; the entry Link's native mask handles the URL. */}
+      <Activity mode={showingEditor ? "hidden" : "visible"}>
+        <QuestionSetsPage
+          key={workspaceId}
+          workspaceId={workspaceId}
+          query={query}
+          onQueryChange={(changes) => {
+            void navigate({ search: (prev) => ({ ...prev, ...changes }) });
+          }}
+        />
+      </Activity>
+      <Outlet />
+    </>
   );
 }
 

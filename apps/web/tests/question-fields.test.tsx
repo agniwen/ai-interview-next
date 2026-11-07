@@ -1,3 +1,5 @@
+import { ConversationFields } from "../src/components/features/question-sets/conversation-fields";
+import { newConversationQuestion } from "../src/components/features/question-sets/conversation-draft";
 import { renderToString } from "react-dom/server";
 import { expect, it } from "vitest";
 import { QuestionFields } from "../src/components/features/question-sets/question-fields";
@@ -17,3 +19,14 @@ it.each(["text", "single_choice", "multiple_choice"] as const)(
     ).not.toThrow();
   },
 );
+
+it("renders conversation difficulty and guidance fields with their Base UI context", () => {
+  const markup = renderToString(
+    <ConversationFields
+      question={newConversationQuestion()}
+      disabled={false}
+      onChange={() => {}}
+    />,
+  );
+  expect(markup).toMatch(/aria-pressed="true"[^>]*>Medium<\/button>/u);
+});

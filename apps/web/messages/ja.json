@@ -579,7 +579,19 @@
   "question_sets_move_up": "{label} を上へ",
   "question_sets_move_down": "{label} を下へ",
   "question_sets_remove": "{label} を削除",
-  "question_sets_conversation_readonly": "対話質問セットは現在、一覧表示のみ対応しています。",
   "question_sets_drag": "並べ替え：{label}",
-  "question_sets_sort_keyboard": "スペースで持ち上げ、矢印キーで移動、スペースで配置。Escでキャンセル。"
+  "question_sets_sort_keyboard": "スペースで持ち上げ、矢印キーで移動、スペースで配置。Escでキャンセル。",
+  "question_sets_create_conversation": "対話質問セットを作成",
+  "question_sets_edit_conversation": "対話質問セットを編集",
+  "question_sets_conversation_help": "面接官は質問を順番に進め、回答と追加質問の方針に沿って掘り下げます。",
+  "question_sets_complete_conversation": "質問 {number} の質問文を入力し、文字数を確認してください。",
+  "question_sets_difficulty": "難易度",
+  "question_sets_easy": "簡単",
+  "question_sets_medium": "普通",
+  "question_sets_hard": "難しい",
+  "question_sets_evaluation_focus": "評価の観点（任意）",
+  "question_sets_follow_up": "追加質問の方針（任意）",
+  "question_sets_evaluation_criteria": "評価基準（任意）",
+  "question_sets_evaluation_help": "回答の質をどのように評価するかを記述してください。",
+  "question_sets_back": "質問セット一覧に戻る"
 }

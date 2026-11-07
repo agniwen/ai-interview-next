@@ -579,7 +579,19 @@
   "question_sets_move_up": "上移{label}",
   "question_sets_move_down": "下移{label}",
   "question_sets_remove": "删除{label}",
-  "question_sets_conversation_readonly": "沟通题套暂仅支持查看列表。",
   "question_sets_drag": "拖动排序：{label}",
-  "question_sets_sort_keyboard": "键盘操作：空格提起，方向键移动，再按空格放下；Esc 取消。"
+  "question_sets_sort_keyboard": "键盘操作：空格提起，方向键移动，再按空格放下；Esc 取消。",
+  "question_sets_create_conversation": "新增沟通题套",
+  "question_sets_edit_conversation": "编辑沟通题套",
+  "question_sets_conversation_help": "面试官会按顺序覆盖题目，并结合回答与追问方向继续提问。",
+  "question_sets_complete_conversation": "请完善第 {number} 题的题干，并检查字数。",
+  "question_sets_difficulty": "难度",
+  "question_sets_easy": "简单",
+  "question_sets_medium": "中等",
+  "question_sets_hard": "困难",
+  "question_sets_evaluation_focus": "考核点（选填）",
+  "question_sets_follow_up": "追问方向（选填）",
+  "question_sets_evaluation_criteria": "评价标准（选填）",
+  "question_sets_evaluation_help": "描述如何判断回答质量。",
+  "question_sets_back": "返回题套列表"
 }

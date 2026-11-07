@@ -579,7 +579,19 @@
   "question_sets_move_up": "{label} 위로 이동",
   "question_sets_move_down": "{label} 아래로 이동",
   "question_sets_remove": "{label} 삭제",
-  "question_sets_conversation_readonly": "현재 대화 질문 세트는 목록 조회만 지원합니다.",
   "question_sets_drag": "순서 변경: {label}",
-  "question_sets_sort_keyboard": "스페이스로 선택하고 방향키로 이동한 뒤 스페이스로 놓으세요. Esc로 취소합니다."
+  "question_sets_sort_keyboard": "스페이스로 선택하고 방향키로 이동한 뒤 스페이스로 놓으세요. Esc로 취소합니다.",
+  "question_sets_create_conversation": "대화 질문 세트 만들기",
+  "question_sets_edit_conversation": "대화 질문 세트 수정",
+  "question_sets_conversation_help": "면접관은 질문을 순서대로 진행하고 답변과 후속 질문 방향에 따라 추가 질문을 합니다.",
+  "question_sets_complete_conversation": "질문 {number}의 내용을 입력하고 글자 수를 확인해 주세요.",
+  "question_sets_difficulty": "난이도",
+  "question_sets_easy": "쉬움",
+  "question_sets_medium": "보통",
+  "question_sets_hard": "어려움",
+  "question_sets_evaluation_focus": "평가 초점 (선택)",
+  "question_sets_follow_up": "후속 질문 방향 (선택)",
+  "question_sets_evaluation_criteria": "평가 기준 (선택)",
+  "question_sets_evaluation_help": "답변의 질을 어떻게 평가할지 설명해 주세요.",
+  "question_sets_back": "질문 세트 목록으로 돌아가기"
 }

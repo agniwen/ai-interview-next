@@ -20,9 +20,6 @@ export function SortableList<T extends { key: string }>({
   return (
     <DragDropProvider
       onDragEnd={(event) => {
-        // 拖拽消耗结束按键，避免 Esc 取消排序时同时关闭编辑弹窗。
-        // Consume the ending key so Escape cancels sorting without closing the editor dialog.
-        event.nativeEvent?.stopPropagation();
         onChange(
           move(
             items.map((item) => ({ id: item.key, item })),

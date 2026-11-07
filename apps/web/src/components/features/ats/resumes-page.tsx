@@ -1,3 +1,4 @@
+import { resumeDetailLinkOptions } from "./detail-navigation";
 import { Link } from "@tanstack/react-router";
 import { TableFilterSelect } from "@/components/layout/table-filters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -323,9 +324,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
               variant={statusVariants[row.parseStatus ?? row.status] ?? "outline"}
               render={
                 <Link
-                  to="/w/$workspaceId/hub/resumes/overlay/$id"
-                  params={{ id: row.id, workspaceId }}
-                  search={query}
+                  {...resumeDetailLinkOptions(workspaceId, row.id, query)}
                   aria-label={`${atsStatus(row.parseStatus ?? row.status)} · ${m.resume_processing_title()} · ${row.filename}`}
                 />
               }

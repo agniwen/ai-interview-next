@@ -77,3 +77,6 @@ Test the real implementation and assert through it. Keep the business logic in t
 ## Process
 
 Use the tools and workflows this repository already uses. A tool or process that is not already in use here stays out.
+
+Before implementing framework or library behavior, consult the relevant installed skills and official documentation for the version in use. Prefer native APIs and recommended patterns; introduce a custom mechanism only when they do not meet the requirement, and explain that gap.
+实现框架或库相关功能前，查阅对应的本地技能和当前版本的官方文档。优先使用原生 API 与推荐实践；只有原生能力无法满足需求时才引入自定义机制，并说明缺口。

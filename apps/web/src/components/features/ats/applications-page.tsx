@@ -1,3 +1,4 @@
+import { applicationDetailLinkOptions } from "./detail-navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
@@ -75,13 +76,7 @@ export function ApplicationsPage({
           <Button
             size="sm"
             variant="outline"
-            render={
-              <Link
-                to="/w/$workspaceId/hub/applications/overlay/$id"
-                params={{ id: row.id, workspaceId }}
-                search={query}
-              />
-            }
+            render={<Link {...applicationDetailLinkOptions(workspaceId, row.id, query)} />}
           >
             {m.ats_view_application()}
           </Button>

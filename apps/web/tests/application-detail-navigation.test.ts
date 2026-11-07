@@ -1,3 +1,7 @@
+import {
+  applicationDetailLinkOptions,
+  resumeDetailLinkOptions,
+} from "@/components/features/ats/detail-navigation";
 import { ok } from "node:assert/strict";
 import { createMemoryHistory } from "@tanstack/react-router";
 import { expect, it, vi } from "vitest";
@@ -29,11 +33,7 @@ it("builds a shareable detail URL and carries the list search through both route
   const listUrl = `${listPath}?page=2&pageSize=10&search=Engineer&status=open`;
   const router = routerAt(listUrl);
   await router.load();
-  const detail = router.buildLocation({
-    params: { id, workspaceId },
-    search,
-    to: "/w/$workspaceId/hub/applications/overlay/$id",
-  });
+  const detail = router.buildLocation(applicationDetailLinkOptions(workspaceId, id, search));
 
   ok(detail.maskedLocation);
   expect(detail.maskedLocation.pathname).toBe(detailPath);
@@ -48,4 +48,21 @@ it("builds a shareable detail URL and carries the list search through both route
     "/_a/w/$workspaceId/hub/applications_/$id",
   );
   expect(directRouter.state.location.search).toEqual(search);
+});
+
+it("uses the resume link's native mask and supports direct visits with filters", async () => {
+  const router = routerAt("/w/example/hub/resumes");
+  await router.load();
+  const query = { page: 4, pageSize: 50, search: "项目", status: "succeeded" as const };
+  const detail = router.buildLocation(resumeDetailLinkOptions(workspaceId, id, query));
+  ok(detail.maskedLocation);
+  expect(detail.maskedLocation.pathname).toBe(`/w/example/hub/resumes/${id}`);
+  expect(detail.maskedLocation.search).toEqual(query);
+  expect(
+    router.matchRoutes(detail.pathname, detail.search).map((match) => match.routeId),
+  ).toContain("/_a/w/$workspaceId/hub/resumes");
+  const direct = routerAt(detail.maskedLocation.href);
+  await direct.load();
+  expect(direct.state.matches.at(-1)?.routeId).toBe("/_a/w/$workspaceId/hub/resumes_/$id");
+  expect(direct.state.location.search).toEqual(query);
 });

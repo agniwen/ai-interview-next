@@ -17,6 +17,8 @@ function Page() {
   });
   return (
     <>
+      {/* Activity 只保留列表组件状态；地址遮罩由入口 Link 的原生 mask 处理。
+          Activity only preserves list component state; the entry Link's native mask handles the URL. */}
       <Activity mode={showingDetail ? "hidden" : "visible"}>
         <ApplicationsPage
           workspaceId={workspaceId}
