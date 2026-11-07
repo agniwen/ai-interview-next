@@ -1,0 +1,48 @@
+.interview-entry-grain {
+  opacity: 0.5;
+  mask-image: radial-gradient(ellipse at center, rgb(0 0 0 / 0.12) 15%, black 80%);
+}
+
+.interview-entry-grain-field {
+  mask-image:
+    radial-gradient(ellipse at 12% 20%, black, transparent 48%),
+    radial-gradient(ellipse at 80% 65%, rgb(0 0 0 / 0.8), transparent 55%),
+    linear-gradient(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.12));
+}
+
+.interview-entry-grain-dots {
+  mask-size: 196px 196px;
+  opacity: 0.16;
+  animation: interview-grain-flicker 20s steps(1, end) infinite;
+}
+
+@keyframes interview-grain-flicker {
+  0%,
+  100% {
+    opacity: 0.08;
+  }
+  25% {
+    opacity: 0.16;
+  }
+  50% {
+    opacity: 0.24;
+  }
+  75% {
+    opacity: 0.36;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interview-entry-grain-dots {
+    animation: none;
+  }
+  .interview-entry-grain-dots:nth-child(2) {
+    opacity: 0.08;
+  }
+  .interview-entry-grain-dots:nth-child(3) {
+    opacity: 0.24;
+  }
+  .interview-entry-grain-dots:nth-child(4) {
+    opacity: 0.36;
+  }
+}
