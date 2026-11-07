@@ -1,6 +1,6 @@
 import { AgentTrashPageSkeleton } from "@/components/skeletons/pages/agent-trash-page-skeleton";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
-import { AgentTrashPage } from "@/components/agent/trash-page";
+import { AgentTrashPage } from "@/components/features/agent/trash-page";
 import * as m from "@/paraglide/messages";
 
 const routeApi = getRouteApi("/_a/w/$workspaceId/account_/trash");

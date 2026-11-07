@@ -1,6 +1,6 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { z } from "zod";
-import { AgentPage } from "@/components/agent/page";
+import { AgentPage } from "@/components/features/agent/page";
 import { AgentPageSkeleton } from "@/components/skeletons/pages/agent-page-skeleton";
 import * as m from "@/paraglide/messages";
 

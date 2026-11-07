@@ -3,6 +3,7 @@ import {
   application,
   applicationActivity,
   applicationEvaluation,
+  applicationFeedback,
   applicationResume,
   candidate,
   department,
@@ -617,7 +618,7 @@ export async function applicationDetail(
     ...record
   } = details;
 
-  const [activity, evaluations, [latestRun]] = await Promise.all([
+  const [activity, evaluations, feedback, [latestRun]] = await Promise.all([
     db
       .select({ actorImage: user.image, actorName: user.name, event: applicationActivity })
       .from(applicationActivity)
@@ -639,6 +640,24 @@ export async function applicationDetail(
         ),
       )
       .orderBy(desc(applicationEvaluation.createdAt), desc(applicationEvaluation.id)),
+    db
+      .select({
+        authorId: applicationFeedback.authorUserId,
+        authorImage: user.image,
+        authorName: user.name,
+        body: applicationFeedback.body,
+        createdAt: applicationFeedback.createdAt,
+        id: applicationFeedback.id,
+      })
+      .from(applicationFeedback)
+      .innerJoin(user, eq(user.id, applicationFeedback.authorUserId))
+      .where(
+        and(
+          eq(applicationFeedback.workspaceId, workspaceId),
+          eq(applicationFeedback.applicationId, id),
+        ),
+      )
+      .orderBy(asc(applicationFeedback.createdAt), asc(applicationFeedback.id)),
     db
       .select({ id: run.id, status: run.status })
       .from(run)
@@ -668,6 +687,7 @@ export async function applicationDetail(
       evaluationStatus: latestRun?.status ?? null,
     },
     evaluations,
+    feedback,
     resume: resumeId
       ? {
           filename: resumeFilename,

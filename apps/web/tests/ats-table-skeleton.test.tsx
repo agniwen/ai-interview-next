@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
-import { AtsTable } from "@/components/ats/list-page";
+import { AtsTable } from "@/components/features/ats/list-page";
 import { AtsTableSkeleton } from "@/components/skeletons/pages/ats-table-skeleton";
 
 it("measures loading content inside each cell, including the pinned action column", () => {

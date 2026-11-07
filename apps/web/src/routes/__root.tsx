@@ -2,14 +2,14 @@ import { HeadContent, Scripts, createRootRouteWithContext } from "@tanstack/reac
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { ThemeProvider } from "next-themes";
-import { NotFoundPage } from "@/components/home/not-found";
+import { NotFoundPage } from "@/components/features/home/not-found";
 import { ToastProvider } from "@/components/ui/toast";
 import { getLocale } from "@/paraglide/runtime";
 
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 
 import appCss from "../styles.css?url";
-import homeCss from "../components/home/home.css?url";
+import homeCss from "../components/features/home/home.css?url";
 
 import type { QueryClient } from "@tanstack/react-query";
 

@@ -8,14 +8,9 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import type { ResumeParsedProfile } from "../resume-profile";
+import type { ApplicationEvaluationResult } from "../application-evaluation";
 import { user } from "./auth";
 import { organization } from "./organization";
-
-/** 评估结果 JSON，带格式版本。 / Evaluation result JSON with its format version. */
-export interface ApplicationEvaluationResult extends Record<string, unknown> {
-  /** 评估结果 JSON 的格式版本。 / Format version of the evaluation result JSON. */
-  version: 1;
-}
 
 const workspaceIdColumn = () =>
   text("workspaceId")
@@ -386,6 +381,8 @@ export const applicationEvaluation = sqliteTable(
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
     /** 评估记录 ID。 / Evaluation ID. */
     id: text("id").primaryKey(),
+    /** 发起评价时的内部招聘标准，后续编辑岗位不会改写历史依据。 / Internal criteria captured when evaluation was requested, unchanged by later job edits. */
+    internalCriteriaSnapshot: text("internalCriteriaSnapshot").notNull().default(""),
     /** 评估实际使用的岗位要求快照。 / Snapshot of the job requirements used in the evaluation. */
     jobRequirementsSnapshot: text("jobRequirementsSnapshot").notNull(),
     /** 结构化评估结果。 / Structured evaluation result. */
@@ -404,6 +401,39 @@ export const applicationEvaluation = sqliteTable(
       columns: [table.workspaceId, table.resumeId],
       foreignColumns: [resume.workspaceId, resume.id],
     }),
+  ],
+);
+
+/** 成员追加的应聘评价，与 AI 评价共同组成消息流。 / Member feedback appended to the application evaluation feed alongside AI evaluations. */
+export const applicationFeedback = sqliteTable(
+  "application_feedback",
+  {
+    /** 评价针对本次应聘，同一候选人的其他应聘不共享此内容。 / Feedback belongs to this application, not the candidate's other applications. */
+    applicationId: text("applicationId").notNull(),
+    /** 作者取自已认证会话，不接受客户端指定。 / The author comes from the authenticated session, never the request body. */
+    authorUserId: text("authorUserId")
+      .notNull()
+      .references(() => user.id),
+    /** 成员提交的 Markdown 原文，消息和操作记录共用此正文。 / Original member-authored Markdown, shared by messages and activity records. */
+    body: text("body").notNull(),
+    /** 与对应活动记录使用同一时间，保证时间线一致。 / Shared with the corresponding activity timestamp to keep timelines consistent. */
+    createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+    /** 活动记录通过 feedbackId 引用这条评价。 / Activity records reference this feedback through feedbackId. */
+    id: text("id").primaryKey(),
+    /** 与应聘组成复合外键，禁止跨工作区关联。 / Part of the application foreign key, preventing cross-workspace associations. */
+    workspaceId: workspaceIdColumn(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.workspaceId, table.applicationId],
+      foreignColumns: [application.workspaceId, application.id],
+    }),
+    index("application_feedback_timeline_idx").on(
+      table.workspaceId,
+      table.applicationId,
+      table.createdAt,
+      table.id,
+    ),
   ],
 );
 

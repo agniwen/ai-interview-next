@@ -4,9 +4,9 @@
 
 ## 仓库现状
 
-- **ATS 多数直接写数组。** 岗位、候选人、简历、应聘和项目的列表键形如 `["ats", workspaceId, "jobs", query]`，最后一项带上页码、每页条数和筛选。写入后用 `["ats", workspaceId, "jobs"]` 让该工作区的所有岗位列表失效，部分操作则用 `["ats", workspaceId]` 刷新整个 ATS。仓库规则规定了分页和工作区参数如何入键，目前各功能分别组织自己的键。 [分页约定](../../AGENTS.md#list-pagination--列表分页) · [岗位查询和失效](../../apps/web/src/components/ats/jobs-page.tsx#L132) · [简历失效](../../apps/web/src/components/ats/resumes-page.tsx#L155)
-- **项目列表和下拉选项共用前缀。** 列表键为 `["ats", workspaceId, "projects", query]`，选项键为 `["ats", workspaceId, "projects", "options"]`。新建项目后按 `["ats", workspaceId, "projects"]` 失效，两种缓存都在范围内。 [项目列表](../../apps/web/src/components/ats/projects-page.tsx#L84) · [项目写入后的失效](../../apps/web/src/components/ats/projects-page.tsx#L118) · [项目下拉](../../apps/web/src/components/ats/project-select.tsx#L27)
-- **Workspaces 和 Agent 已经有 `queryOptions`。** 工作区会话复用同一个选项定义，路由用它读取，工作区操作从它取键做失效。Agent 会话也有 `agentSessionsQueryOptions(workspaceId)`，但会话页和回收站仍各自手写 `["agent-sessions", workspaceId]` 来失效。工作区详情和邀请仍分开写数组。 [工作区会话定义](../../apps/web/src/lib/workspaces/session-query.ts#L4) · [路由读取](../../apps/web/src/routes/_a.tsx#L8) · [工作区失效](../../apps/web/src/lib/workspaces/actions.ts#L28) · [Agent 会话定义](../../apps/web/src/lib/agent/queries.ts#L4) · [会话页](../../apps/web/src/components/agent/page.tsx#L236) · [回收站](../../apps/web/src/components/agent/trash-page.tsx#L25)
+- **ATS 多数直接写数组。** 岗位、候选人、简历、应聘和项目的列表键形如 `["ats", workspaceId, "jobs", query]`，最后一项带上页码、每页条数和筛选。写入后用 `["ats", workspaceId, "jobs"]` 让该工作区的所有岗位列表失效，部分操作则用 `["ats", workspaceId]` 刷新整个 ATS。仓库规则规定了分页和工作区参数如何入键，目前各功能分别组织自己的键。 [分页约定](../../AGENTS.md#list-pagination--列表分页) · [岗位查询和失效](../../apps/web/src/components/features/ats/jobs-page.tsx#L132) · [简历失效](../../apps/web/src/components/features/ats/resumes-page.tsx#L155)
+- **项目列表和下拉选项共用前缀。** 列表键为 `["ats", workspaceId, "projects", query]`，选项键为 `["ats", workspaceId, "projects", "options"]`。新建项目后按 `["ats", workspaceId, "projects"]` 失效，两种缓存都在范围内。 [项目列表](../../apps/web/src/components/features/ats/projects-page.tsx#L84) · [项目写入后的失效](../../apps/web/src/components/features/ats/projects-page.tsx#L118) · [项目下拉](../../apps/web/src/components/features/ats/project-select.tsx#L27)
+- **Workspaces 和 Agent 已经有 `queryOptions`。** 工作区会话复用同一个选项定义，路由用它读取，工作区操作从它取键做失效。Agent 会话也有 `agentSessionsQueryOptions(workspaceId)`，但会话页和回收站仍各自手写 `["agent-sessions", workspaceId]` 来失效。工作区详情和邀请仍分开写数组。 [工作区会话定义](../../apps/web/src/lib/workspaces/session-query.ts#L4) · [路由读取](../../apps/web/src/routes/_a.tsx#L8) · [工作区失效](../../apps/web/src/lib/workspaces/actions.ts#L28) · [Agent 会话定义](../../apps/web/src/lib/agent/queries.ts#L4) · [会话页](../../apps/web/src/components/features/agent/page.tsx#L236) · [回收站](../../apps/web/src/components/features/agent/trash-page.tsx#L25)
 
 ## 官方和社区做法
 
@@ -18,6 +18,6 @@
 
 ## 建议
 
-沿用现有的 `queryOptions`，按业务模块导出需要共享的查询选项，再用小型 TypeScript 工厂定义批量失效所需的前缀。先把 Agent 会话页和回收站的失效调用改成使用 `agentSessionsQueryOptions(workspaceId).queryKey`。ATS 可以先从项目开始，用 `projectKeys.all(workspaceId)` 表达现有项目范围，让 `list(workspaceId, query)` 和 `options(workspaceId)` 都从它派生，保持新建项目后同时刷新列表与下拉选项的语义。 [Agent 会话定义](../../apps/web/src/lib/agent/queries.ts#L4) · [项目写入后的失效](../../apps/web/src/components/ats/projects-page.tsx#L118)
+沿用现有的 `queryOptions`，按业务模块导出需要共享的查询选项，再用小型 TypeScript 工厂定义批量失效所需的前缀。先把 Agent 会话页和回收站的失效调用改成使用 `agentSessionsQueryOptions(workspaceId).queryKey`。ATS 可以先从项目开始，用 `projectKeys.all(workspaceId)` 表达现有项目范围，让 `list(workspaceId, query)` 和 `options(workspaceId)` 都从它派生，保持新建项目后同时刷新列表与下拉选项的语义。 [Agent 会话定义](../../apps/web/src/lib/agent/queries.ts#L4) · [项目写入后的失效](../../apps/web/src/components/features/ats/projects-page.tsx#L118)
 
-接下来按实际需要迁移其他 ATS 资源。普通列表从 URL 解析出工作区、页码、每页条数和筛选，再用同一组参数构造请求与键。无限加载把搜索词放入键，逐页游标或页码由 `pageParam` 管理，简历选择器已有这一结构。当前的复用需求可以由原生助手和 TypeScript 工厂覆盖。 [分页约定](../../AGENTS.md#list-pagination--列表分页) · [简历选择器](../../apps/web/src/components/ats/application-resume-field.tsx#L89) · [Infinite Queries](https://tanstack.com/query/v5/docs/framework/react/guides/infinite-queries)
+接下来按实际需要迁移其他 ATS 资源。普通列表从 URL 解析出工作区、页码、每页条数和筛选，再用同一组参数构造请求与键。无限加载把搜索词放入键，逐页游标或页码由 `pageParam` 管理，简历选择器已有这一结构。当前的复用需求可以由原生助手和 TypeScript 工厂覆盖。 [分页约定](../../AGENTS.md#list-pagination--列表分页) · [简历选择器](../../apps/web/src/components/features/ats/application-resume-field.tsx#L89) · [Infinite Queries](https://tanstack.com/query/v5/docs/framework/react/guides/infinite-queries)

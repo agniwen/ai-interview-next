@@ -1,8 +1,8 @@
 import { AccountPageSkeleton } from "@/components/skeletons/pages/account-page-skeleton";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { AccountPageContent } from "@/components/settings/account-page";
-import { UserMenu } from "@/components/auth/user-menu";
+import { AccountPageContent } from "@/components/features/settings/account-page";
+import { UserMenu } from "@/components/features/auth/user-menu";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { Button } from "@/components/ui/button";

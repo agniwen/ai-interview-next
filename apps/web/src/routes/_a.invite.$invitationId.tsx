@@ -7,10 +7,10 @@ import { getRouteApi, createFileRoute, Link, useNavigate } from "@tanstack/react
 import { authClient } from "@/lib/auth/client";
 import { authData, useWorkspaceAction } from "@/lib/workspaces/actions";
 import { workspaceApi } from "@/lib/workspaces/client";
-import { WorkspaceFeedback } from "@/components/workspaces/workspace-feedback";
+import { WorkspaceFeedback } from "@/components/features/workspaces/workspace-feedback";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UserMenu } from "@/components/auth/user-menu";
+import { UserMenu } from "@/components/features/auth/user-menu";
 import * as m from "@/paraglide/messages";
 
 const routeApi = getRouteApi("/_a/invite/$invitationId");

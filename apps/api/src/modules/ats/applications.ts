@@ -2,6 +2,7 @@ import type { Database } from "@ai-interview/db";
 import {
   application,
   applicationActivity,
+  applicationFeedback,
   applicationResume,
   job,
   resume,
@@ -9,7 +10,7 @@ import {
   resumeProcessingRun as run,
   resumeSubmission as submission,
 } from "@ai-interview/db/schema";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { outboxEntry } from "./outbox";
 import { completedResumeFilter } from "./queries";
 
@@ -50,6 +51,7 @@ function applicationCreationStatements(
   ] as const;
 }
 
+/** 任务与派发消息由调用方同事务保存，材料快照在入队时固定。 / Callers persist the run and dispatch entry atomically, freezing input snapshots at enqueue time. */
 function evaluationStatements(
   db: Database,
   runId: string,
@@ -57,6 +59,7 @@ function evaluationStatements(
     applicationId: string;
     createdAt: Date;
     jobRequirementsSnapshot: string;
+    internalCriteriaSnapshot: string;
     resumeId: string;
     workspaceId: string;
   },
@@ -88,7 +91,7 @@ export async function createApplication(
       .where(and(eq(resume.id, resumeId), completedResumeFilter(db, workspaceId)))
       .get(),
     db
-      .select({ requirements: job.requirements })
+      .select({ internalCriteria: job.internalCriteria, requirements: job.requirements })
       .from(job)
       .where(and(eq(job.workspaceId, workspaceId), eq(job.id, jobId)))
       .get(),
@@ -138,6 +141,7 @@ export async function createApplication(
     ...evaluationStatements(db, runId, {
       applicationId,
       createdAt,
+      internalCriteriaSnapshot: target.internalCriteria,
       jobRequirementsSnapshot: target.requirements,
       resumeId,
       workspaceId,
@@ -226,6 +230,7 @@ export async function matchSubmissionJob(
     ...evaluationStatements(db, runId, {
       applicationId,
       createdAt,
+      internalCriteriaSnapshot: target.internalCriteria,
       jobRequirementsSnapshot: target.requirements,
       resumeId: record.resumeId,
       workspaceId,
@@ -323,6 +328,105 @@ export async function closeApplication(
     }),
   ]);
   return changed.length > 0;
+}
+
+/** 将成员正文和活动记录一起保存，确保消息与操作历史同时可见。 / Save member feedback and its activity together so both timelines become visible atomically. */
+export async function addApplicationFeedback(
+  db: Database,
+  workspaceId: string,
+  applicationId: string,
+  authorUserId: string,
+  body: string,
+) {
+  const record = await db
+    .select({ id: application.id })
+    .from(application)
+    .where(
+      and(
+        eq(application.id, applicationId),
+        eq(application.workspaceId, workspaceId),
+        isNull(application.deletedAt),
+      ),
+    )
+    .get();
+  if (!record) {
+    return null;
+  }
+  const id = crypto.randomUUID();
+  const createdAt = new Date();
+  await db.batch([
+    db.insert(applicationFeedback).values({
+      applicationId,
+      authorUserId,
+      body,
+      createdAt,
+      id,
+      workspaceId,
+    }),
+    db.insert(applicationActivity).values({
+      action: "feedback_added",
+      actorId: authorUserId,
+      actorType: "user",
+      applicationId,
+      id: `feedback-${id}`,
+      occurredAt: createdAt,
+      result: { feedbackId: id, outcome: "feedback_added", reason: "manual", version: 1 },
+      workspaceId,
+    }),
+  ]);
+  return { id, version: 1 as const };
+}
+
+/** 使用最近关联且解析完成的可用简历创建新评价，保留旧结果和各次材料快照。 / Evaluate the most recently linked usable parsed resume, preserving prior results and each run's input snapshots. */
+export async function reevaluateApplication(
+  db: Database,
+  workspaceId: string,
+  applicationId: string,
+) {
+  const record = await db
+    .select({
+      internalCriteriaSnapshot: job.internalCriteria,
+      jobRequirementsSnapshot: job.requirements,
+      resumeId: resume.id,
+    })
+    .from(application)
+    .innerJoin(job, eq(job.id, application.jobId))
+    .innerJoin(
+      applicationResume,
+      and(
+        eq(applicationResume.applicationId, application.id),
+        eq(applicationResume.workspaceId, workspaceId),
+        eq(applicationResume.status, "available"),
+      ),
+    )
+    .innerJoin(
+      resume,
+      and(eq(resume.id, applicationResume.resumeId), eq(resume.parseStatus, "succeeded")),
+    )
+    .where(
+      and(
+        eq(application.id, applicationId),
+        eq(application.workspaceId, workspaceId),
+        isNull(application.closedAt),
+        isNull(application.deletedAt),
+      ),
+    )
+    .orderBy(desc(applicationResume.createdAt), desc(applicationResume.id))
+    .limit(1)
+    .get();
+  if (!record) {
+    return null;
+  }
+  const runId = crypto.randomUUID();
+  await db.batch(
+    evaluationStatements(db, runId, {
+      ...record,
+      applicationId,
+      createdAt: new Date(),
+      workspaceId,
+    }),
+  );
+  return { runId, version: 1 as const };
 }
 
 export async function deleteApplication(

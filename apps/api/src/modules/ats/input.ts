@@ -35,6 +35,11 @@ export const jobInput = projectInput.extend({
 
 export const updateJobInput = jobInput.extend({ projectId: z.uuid().nullable() });
 
+export const applicationFeedbackInput = z.strictObject({
+  body: z.string().trim().min(1).max(30_000),
+  version: z.literal(1),
+});
+
 export const applicationListQuery = jobListQuery.extend({
   status: z.enum(["open", "closed"]).optional(),
 });

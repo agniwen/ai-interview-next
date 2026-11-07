@@ -1,7 +1,7 @@
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { useQuery } from "@tanstack/react-query";
-import { atsKeys } from "@/components/ats/query-keys";
-import { atsApi, readResumeProfile } from "@/components/ats/client";
+import { atsKeys } from "@/components/features/ats/query-keys";
+import { atsApi, readResumeProfile } from "@/components/features/ats/client";
 import { ResumeProfileSkeleton } from "@/components/skeletons/components/resume-profile-skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { HomePage } from "@/components/home/home-page";
+import { HomePage } from "@/components/features/home/home-page";
 import * as m from "@/paraglide/messages";
 
 export const Route = createFileRoute("/")({

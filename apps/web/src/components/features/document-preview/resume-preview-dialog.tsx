@@ -1,8 +1,8 @@
 import { createClientOnlyFn } from "@tanstack/react-start";
 import { lazy, Suspense, useState } from "react";
 import type { ReactNode } from "react";
-import { atsApi } from "@/components/ats/client";
-import { ReparseResumeButton } from "@/components/ats/reparse-resume-button";
+import { atsApi } from "@/components/features/ats/client";
+import { ReparseResumeButton } from "@/components/features/ats/reparse-resume-button";
 import { DocumentPreviewSkeleton } from "@/components/skeletons/components/document-preview-skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";

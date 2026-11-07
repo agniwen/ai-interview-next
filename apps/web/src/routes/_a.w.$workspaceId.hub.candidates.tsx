@@ -1,6 +1,6 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
-import { CandidatesPage } from "@/components/ats/candidates-page";
-import { listSearch } from "@/components/ats/list-search";
+import { CandidatesPage } from "@/components/features/ats/candidates-page";
+import { listSearch } from "@/components/features/ats/list-search";
 import * as m from "@/paraglide/messages";
 
 const routeApi = getRouteApi("/_a/w/$workspaceId/hub/candidates");

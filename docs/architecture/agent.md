@@ -33,7 +33,7 @@
 - `apps/api/src/modules/agent/cloudflare.ts`：每聊天一个 Durable Object，隔离 SQLite、alarm 和后台工作生命周期。
 - `apps/api/src/lib/redis`：Redis 风格的会话目录接口及 Cloudflare 实现。
 - `apps/api/src/middleware`：外层统一 CSRF、登录校验，工作区路由校验成员关系；目录和聊天对象均按工作区与创建者隔离。
-- `apps/web/src/components/agent`：聊天、队列和个人中心回收站；`lib/agent` 处理请求和 SSE。
+- `apps/web/src/components/features/agent`：聊天、队列和个人中心回收站；`lib/agent` 处理请求和 SSE。
 - 回收站入口在个人中心，路径为 `/w/$workspaceId/account/trash`，聊天侧栏仅显示正常会话。
 
 本地在 `apps/api/.env` 配置 `AGENT_CHAT_KEY`，模型和地址使用 Wrangler vars。运行项目已有开发命令，API 和 Web 必须使用相同的开发服务注册目录。部署使用既有脚本，DO 的 SQLite 类迁移已写入 Wrangler 配置。

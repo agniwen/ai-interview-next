@@ -1,7 +1,7 @@
 import { IconUser } from "@tabler/icons-react";
 import { AccountPageSkeleton } from "@/components/skeletons/pages/account-page-skeleton";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
-import { AccountPageContent } from "@/components/settings/account-page";
+import { AccountPageContent } from "@/components/features/settings/account-page";
 import { PageHeaderContent } from "@/components/layout/page-header";
 import * as m from "@/paraglide/messages";
 

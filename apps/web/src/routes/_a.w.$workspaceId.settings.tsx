@@ -1,7 +1,7 @@
 import { IconSettings } from "@tabler/icons-react";
 import { WorkspaceSettingsPageSkeleton } from "@/components/skeletons/pages/workspace-settings-page-skeleton";
 import { getRouteApi, createFileRoute } from "@tanstack/react-router";
-import { WorkspaceSettings } from "@/components/workspaces/workspace-settings";
+import { WorkspaceSettings } from "@/components/features/workspaces/workspace-settings";
 import { PageHeaderContent } from "@/components/layout/page-header";
 import * as m from "@/paraglide/messages";
 

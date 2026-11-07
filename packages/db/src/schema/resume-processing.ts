@@ -58,6 +58,8 @@ export const resumeProcessingRun = sqliteTable(
     evaluationId: text("evaluationId").references(() => applicationEvaluation.id),
     executionId: text("executionId").notNull(),
     id: text("id").primaryKey(),
+    /** 排队时固定内部标准，重试沿用相同依据。 / Freeze internal criteria when queued so retries use the same input. */
+    internalCriteriaSnapshot: text("internalCriteriaSnapshot").notNull().default(""),
     jobRequirementsSnapshot: text("jobRequirementsSnapshot"),
     kind: text("kind", { enum: ["parse", "evaluate"] }).notNull(),
     resumeId: text("resumeId").references(() => resume.id),
@@ -141,7 +143,9 @@ export const resumeProcessingOutbox = sqliteTable(
 export const applicationActivity = sqliteTable(
   "application_activity",
   {
-    action: text("action", { enum: ["created", "closed"] }).notNull(),
+    action: text("action", {
+      enum: ["created", "closed", "evaluation_completed", "feedback_added"],
+    }).notNull(),
     actorId: text("actorId").notNull(),
     actorType: text("actorType", { enum: ["user", "system"] }).notNull(),
     applicationId: text("applicationId").notNull(),
@@ -153,6 +157,10 @@ export const applicationActivity = sqliteTable(
         outcome: string;
         reason: string;
         nextApplicationId?: string;
+        /** AI 完成事件关联具体评价版本。 / AI completion events reference a specific evaluation version. */
+        evaluationId?: string;
+        /** 人工评价事件引用已保存的正文，不复制另一份内容。 / Member feedback events reference the saved body without duplicating it. */
+        feedbackId?: string;
       }>()
       .notNull(),
     workspaceId: workspace(),

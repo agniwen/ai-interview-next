@@ -1,6 +1,6 @@
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { expect, it } from "vitest";
-import { atsKeys } from "../src/components/ats/query-keys";
+import { atsKeys } from "../src/components/features/ats/query-keys";
 
 it("invalidates project pages and picker options only in the affected workspace", async () => {
   const client = new QueryClient();

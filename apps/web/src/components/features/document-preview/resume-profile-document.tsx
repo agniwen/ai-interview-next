@@ -1,6 +1,6 @@
 import { IconLink, IconMail, IconMapPin, IconPhone } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import type { readResumeProfile } from "@/components/ats/client";
+import type { readResumeProfile } from "@/components/features/ats/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { BadgeProps } from "@/components/ui/badge";
@@ -266,21 +266,30 @@ function ResumeEntryBody({ entry }: { entry: ResumeEntry }) {
 
 function profileContacts(identity: ResumeProfile["identity"]) {
   return [
-    { detail: "", icon: IconMapPin, label: m.resume_profile_city(), value: identity?.currentCity },
+    {
+      detail: "",
+      href: undefined,
+      icon: IconMapPin,
+      label: m.resume_profile_city(),
+      value: identity?.currentCity,
+    },
     ...(identity?.phones ?? []).map((contact) => ({
       detail: contactDetail(contact),
+      href: `tel:${contact.value}`,
       icon: IconPhone,
       label: m.resume_profile_phone(),
       value: contact.value,
     })),
     ...(identity?.emails ?? []).map((contact) => ({
       detail: contactDetail(contact),
+      href: `mailto:${contact.value}`,
       icon: IconMail,
       label: m.resume_profile_email(),
       value: contact.value,
     })),
     ...(identity?.links ?? []).map((value) => ({
       detail: "",
+      href: undefined,
       icon: IconLink,
       label: m.resume_profile_link(),
       value,

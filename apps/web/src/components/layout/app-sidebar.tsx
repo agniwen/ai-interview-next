@@ -14,7 +14,7 @@ import {
 } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "@/components/brand-mark";
-import { UserMenu } from "@/components/auth/user-menu";
+import { UserMenu } from "@/components/features/auth/user-menu";
 import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
 import {
   Sidebar,

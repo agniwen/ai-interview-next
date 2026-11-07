@@ -16,12 +16,15 @@ import type { AuthenticatedEnv } from "../../middleware/authenticated";
 import { requireWorkspace } from "../../middleware/workspace";
 import {
   closeApplication,
+  addApplicationFeedback,
+  reevaluateApplication,
   createApplication,
   deleteApplication,
   matchSubmissionJob,
 } from "./applications";
 import {
   applicationListQuery,
+  applicationFeedbackInput,
   departmentInput,
   jobInput,
   jobListQuery,
@@ -161,6 +164,32 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       return c.json({ error: "APPLICATION_NOT_AVAILABLE", version: 1 as const }, 404);
     }
     return c.json(result, 200);
+  })
+  .post(
+    "/:workspaceId/applications/:id/feedback",
+    applicationParams,
+    sValidator("json", applicationFeedbackInput),
+    async (c) => {
+      const result = await addApplicationFeedback(
+        c.get("database"),
+        c.get("workspaceId"),
+        c.req.valid("param").id,
+        c.get("userId"),
+        c.req.valid("json").body,
+      );
+      return result
+        ? c.json(result, 201)
+        : c.json({ error: "APPLICATION_NOT_AVAILABLE", version: 1 as const }, 404);
+    },
+  )
+  .post("/:workspaceId/applications/:id/reevaluate", applicationParams, async (c) => {
+    const db = c.get("database");
+    const result = await reevaluateApplication(db, c.get("workspaceId"), c.req.valid("param").id);
+    if (!result) {
+      return c.json({ error: "APPLICATION_NOT_EVALUABLE", version: 1 as const }, 409);
+    }
+    c.executionCtx.waitUntil(flushResumeOutbox(c.env, db, result.runId));
+    return c.json(result, 202);
   })
   .delete("/:workspaceId/applications/:id", applicationParams, async (c) => {
     const deleted = await deleteApplication(

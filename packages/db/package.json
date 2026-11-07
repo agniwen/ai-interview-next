@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./application-evaluation": "./src/application-evaluation.ts",
     "./resume-profile": "./src/resume-profile.ts",
     "./schema": "./src/schema/index.ts"
   },

@@ -43,10 +43,11 @@ export function ApplicationDetailSkeleton() {
       </div>
       <div
         aria-hidden="true"
-        className="sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] mx-auto mb-[env(safe-area-inset-bottom)] flex w-fit gap-2 rounded-xl border bg-card p-1.5"
+        className="sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] mx-auto mb-[env(safe-area-inset-bottom)] flex w-fit gap-1 rounded-xl border bg-card p-1.5 md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]"
       >
-        <Skeleton className="h-8 w-20 rounded-lg sm:h-7" />
-        <Skeleton className="h-8 w-20 rounded-lg sm:h-7" />
+        <Skeleton className="size-8 rounded-lg sm:size-7" />
+        <Skeleton className="h-8 w-24 rounded-lg sm:h-7" />
+        <Skeleton className="h-8 w-24 rounded-lg sm:h-7" />
       </div>
     </div>
   );

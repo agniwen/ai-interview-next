@@ -1,7 +1,7 @@
 import { WorkspacesPageSkeleton } from "@/components/skeletons/pages/workspaces-page-skeleton";
 import { getRouteApi, createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
-import { WorkspacePicker } from "@/components/workspaces/workspace-picker";
+import { WorkspacePicker } from "@/components/features/workspaces/workspace-picker";
 import * as m from "@/paraglide/messages";
 
 const routeApi = getRouteApi("/_a/workspaces");

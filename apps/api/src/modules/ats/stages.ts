@@ -2,6 +2,7 @@
 import type { Database } from "@ai-interview/db";
 import {
   application,
+  applicationActivity,
   applicationEvaluation,
   resume,
   resumeProcessingAttempt as attempt,
@@ -31,7 +32,7 @@ export interface ResumeStageDependencies {
   extract: (transport: typeof fetch) => PdfTextExtractor;
   structure: (transport: typeof fetch) => ResumeStructurer;
   evaluate: (
-    input: { requirements: string; profile: unknown },
+    input: { requirements: string; internalCriteria: string; profile: unknown },
     transport: typeof fetch,
   ) => Promise<Evaluation>;
   extractParameters: ModelParameters;
@@ -326,21 +327,49 @@ export async function consumeResumeStage(
       return;
     }
     const result = await deps.evaluate(
-      { profile: pdf!.parsedProfile, requirements: entry!.jobRequirementsSnapshot! },
+      {
+        internalCriteria: entry!.internalCriteriaSnapshot,
+        profile: pdf!.parsedProfile,
+        requirements: entry!.jobRequirementsSnapshot!,
+      },
       transport,
     );
+    const evaluatedAt = Date.now();
     await db.batch([
       db.insert(applicationEvaluation).select(
         db
           .select({
             applicationId: sql<string>`${entry!.applicationId!}`.as("applicationId"),
-            createdAt: sql<Date>`${Date.now()}`.as("createdAt"),
+            createdAt: sql<Date>`${evaluatedAt}`.as("createdAt"),
             id: attempt.id,
+            internalCriteriaSnapshot: sql<string>`${entry!.internalCriteriaSnapshot}`.as(
+              "internalCriteriaSnapshot",
+            ),
             jobRequirementsSnapshot: sql<string>`${entry!.jobRequirementsSnapshot!}`.as(
               "jobRequirementsSnapshot",
             ),
             result: sql<Evaluation>`${JSON.stringify(result)}`.as("result"),
             resumeId: sql<string>`${pdf!.id}`.as("resumeId"),
+            workspaceId: sql<string>`${entry!.workspaceId}`.as("workspaceId"),
+          })
+          .from(attempt)
+          .where(active),
+      ),
+      db.insert(applicationActivity).select(
+        db
+          .select({
+            action: sql<"evaluation_completed">`'evaluation_completed'`.as("action"),
+            actorId: sql<string>`'sainoa-agent'`.as("actorId"),
+            actorType: sql<"system">`'system'`.as("actorType"),
+            applicationId: sql<string>`${entry!.applicationId!}`.as("applicationId"),
+            id: sql<string>`${`evaluated-${message.attemptId}`}`.as("id"),
+            occurredAt: sql<Date>`${evaluatedAt}`.as("occurredAt"),
+            result: sql<typeof applicationActivity.$inferInsert.result>`${JSON.stringify({
+              evaluationId: message.attemptId,
+              outcome: "evaluation_completed",
+              reason: "ai",
+              version: 1,
+            })}`.as("result"),
             workspaceId: sql<string>`${entry!.workspaceId}`.as("workspaceId"),
           })
           .from(attempt)

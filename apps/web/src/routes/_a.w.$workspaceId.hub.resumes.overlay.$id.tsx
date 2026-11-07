@@ -1,5 +1,5 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
-import { ResumeProcessingPage } from "@/components/ats/resume-processing-page";
+import { ResumeProcessingPage } from "@/components/features/ats/resume-processing-page";
 import { ResumeProcessingSkeleton } from "@/components/skeletons/pages/resume-processing-skeleton";
 import * as m from "@/paraglide/messages";
 

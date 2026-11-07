@@ -129,4 +129,6 @@ API 构建及两个应用的部署脚本设置 `WRANGLER_NO_SKILLS_UPDATE_PROMPT
 
 首页布局与交互演示迁自旧项目 `ai-interview`，保留暖白背景色调、Tabler 图标和整个首页的 ScrollArea。演示包括招聘台、候选人详情、AI 面试、人工面试及评估流程，数据均为本地示例，不调用业务后端。筛选简历和工作台入口暂时禁用，标注“即将上线”；登录入口已接入 Better Auth + Google，认证数据使用 Cloudflare D1，配置见 [Google 登录](docs/auth/google-login.md)。
 
-首页组件位于 `apps/web/src/components/home`；`screens` 包含交互演示及自动播放，`support` 包含迁移所需的展示组件与示例配置。通用控件复用本项目 `components/ui`，语言入口继续使用全局路由方案。
+业务组件统一放在 `apps/web/src/components/features/`，按 `ats`、`agent`、`auth`、`home`、`settings`、`workspaces`、`document-preview` 划分；同一模块的页面、辅助组件和测试就近组织。`ui`、`ai-elements`、`layout`、`skeletons`、`i18n`、`theme`、`shaders` 保留为共享组件目录。
+
+首页组件位于 `apps/web/src/components/features/home`；`screens` 包含交互演示及自动播放，`support` 包含迁移所需的展示组件与示例配置。通用控件复用本项目 `components/ui`，语言入口继续使用全局路由方案。

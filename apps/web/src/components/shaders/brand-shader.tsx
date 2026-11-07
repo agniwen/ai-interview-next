@@ -9,7 +9,7 @@ import {
   Swirl,
 } from "shaders/react";
 import { useTheme } from "next-themes";
-import { useReducedMotion } from "@/components/home/support/reduced-motion";
+import { useReducedMotion } from "@/components/features/home/support/reduced-motion";
 
 const BEAM_GROUP_ID = "sainoa_brand_beams";
 

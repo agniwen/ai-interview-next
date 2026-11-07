@@ -57,7 +57,7 @@
 
 ## Sainoa 现状和演进顺序
 
-当前 `Job` 存在工作区内，包含 ID、名称、岗位要求和创建时间，创建表单要求名称和岗位要求。`Application` 必须关联同一工作区中的候选人和岗位，同一候选人在同一岗位同时只有一条进行中的应聘。简历可以先上传和解析，建立应聘后再进行岗位评价。评价保留实际使用的简历版本和岗位要求快照。 [岗位表单](../../apps/web/src/components/ats/jobs-page.tsx#L38) · [ATS 数据结构](../../packages/db/src/schema/ats.ts#L120) · [应聘与面试 ADR](../adr/0004-ats-candidates-resumes-and-applications.md#应聘与面试)
+当前 `Job` 存在工作区内，包含 ID、名称、岗位要求和创建时间，创建表单要求名称和岗位要求。`Application` 必须关联同一工作区中的候选人和岗位，同一候选人在同一岗位同时只有一条进行中的应聘。简历可以先上传和解析，建立应聘后再进行岗位评价。评价保留实际使用的简历版本和岗位要求快照。 [岗位表单](../../apps/web/src/components/features/ats/jobs-page.tsx#L38) · [ATS 数据结构](../../packages/db/src/schema/ats.ts#L120) · [应聘与面试 ADR](../adr/0004-ats-candidates-resumes-and-applications.md#应聘与面试)
 
 1. **先完善岗位流程。** 沿用工作区直接建岗和简历先入库的路径。有暂停接收新应聘或隐藏历史岗位的需求时，先定义开放、关闭或归档各自对现有应聘的影响。招聘人员可以把岗位要求作为简历评价和面试准备的共同输入，并继续保留每次评价的依据。 [Greenhouse 关闭岗位](https://support.greenhouse.io/hc/en-us/articles/360025499691-Close-a-job) · [Sainoa 应聘与面试 ADR](../adr/0004-ats-candidates-resumes-and-applications.md#应聘与面试)
 2. **按实际使用增加归属和协作。** 有跨部门筛选或统计时，可以先让每个岗位选填一个工作区内的主部门。需要让用人经理看进度、让面试官填反馈时，按岗位定义招聘团队和访问范围。客户明确要按部门审批时，再决定哪一步要求选定部门，例如提交审批或开放招聘。 [Greenhouse 部门与办公地点](https://support.greenhouse.io/hc/en-us/articles/360029591631-Office-and-department-dependent-workflows) · [Metaview 筛选权限](https://support.metaview.ai/application-review/application-review-setup)

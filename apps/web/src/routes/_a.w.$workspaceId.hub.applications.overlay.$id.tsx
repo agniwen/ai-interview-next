@@ -1,5 +1,5 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
-import { ApplicationDetailPage } from "@/components/ats/application-detail-page";
+import { ApplicationDetailPage } from "@/components/features/ats/application-detail-page";
 import * as m from "@/paraglide/messages";
 
 const routeApi = getRouteApi("/_a/w/$workspaceId/hub/applications/overlay/$id");

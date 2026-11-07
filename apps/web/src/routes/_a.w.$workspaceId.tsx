@@ -7,7 +7,7 @@ import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { WorkspaceSwitcher } from "@/components/workspaces/workspace-switcher";
+import { WorkspaceSwitcher } from "@/components/features/workspaces/workspace-switcher";
 
 import { useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,8 +15,8 @@ import { getRouteApi, createFileRoute, Outlet, useMatchRoute } from "@tanstack/r
 import * as m from "@/paraglide/messages";
 import { workspaceSessionQueryOptions } from "@/lib/workspaces/session-query";
 import { workspaceApi } from "@/lib/workspaces/client";
-import { WorkspaceFeedback } from "@/components/workspaces/workspace-feedback";
-import { WorkspacePicker } from "@/components/workspaces/workspace-picker";
+import { WorkspaceFeedback } from "@/components/features/workspaces/workspace-feedback";
+import { WorkspacePicker } from "@/components/features/workspaces/workspace-picker";
 
 const routeApi = getRouteApi("/_a/w/$workspaceId");
 
