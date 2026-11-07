@@ -1,10 +1,10 @@
 import { linkOptions } from "@tanstack/react-router";
-import type { ApplicationListSearch, ResumeListSearch } from "./list-search";
+import type { ApplicationListSearch, ApplicationTab, ResumeListSearch } from "./list-search";
 
 export function applicationDetailLinkOptions(
   workspaceId: string,
   id: string,
-  search: ApplicationListSearch,
+  search: ApplicationListSearch & { tab?: ApplicationTab },
 ) {
   return linkOptions({
     mask: {

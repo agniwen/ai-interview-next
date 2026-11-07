@@ -1,7 +1,10 @@
+import { LocalTime } from "@/components/local-time";
+import { SkeletonSuspense } from "@/components/skeletons/skeleton-suspense";
+import { InterviewListSkeleton } from "@/components/skeletons/components/interview-list-skeleton";
 import { IconArrowLeft, IconCircleOff, IconTrash, IconX } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useCanGoBack, useLocation, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { lazy, useState } from "react";
 import { MessageResponse } from "@/components/ai-elements/message-response";
 import {
   getResumeProfileBasics,
@@ -47,9 +50,14 @@ import { ProjectPreviewCard } from "./project-preview-card";
 import { JobPreviewCard } from "./job-preview-card";
 import { ApplicationEvaluations } from "./application-evaluations";
 import { ApplicationEvaluationComposer } from "./application-evaluation-composer";
-import { atsApi, atsDate, readAts } from "./client";
-import type { ApplicationListSearch } from "./list-search";
+import { atsApi, readAts } from "./client";
+import type { ApplicationDetailSearch, ApplicationTab } from "./list-search";
 import { atsKeys } from "./query-keys";
+
+const ApplicationInterviews = lazy(async () => {
+  const module = await import("../interviews/application-interviews");
+  return { default: module.ApplicationInterviews };
+});
 
 async function readApplicationDetail(
   param: { id: string; workspaceId: string },
@@ -306,7 +314,7 @@ function ApplicationHeader({
         <div>
           <dt>{m.ats_date()}</dt>
           <dd>
-            <time dateTime={createdAt}>{atsDate(createdAt, "short")}</time>
+            <LocalTime value={createdAt} />
           </dd>
         </div>
         <div>
@@ -356,9 +364,7 @@ function ApplicationActivityItem({
       <p className="text-sm font-medium">{label}</p>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
         <ApplicationActor actor={actor} />
-        <time className="text-xs" dateTime={occurredAt}>
-          {atsDate(occurredAt, "short")}
-        </time>
+        <LocalTime className="text-xs" value={occurredAt} />
       </div>
       {body && (
         <MessageResponse className="mt-1 rounded-md bg-muted/50 px-2.5 py-2 text-muted-foreground">
@@ -424,9 +430,15 @@ function ApplicationDetailContent({
   resume,
   resumeProfile,
   workspaceId,
-}: ApplicationDetail & { onDeleted: () => Promise<void>; workspaceId: string }) {
+  tab,
+  onTabChange,
+}: ApplicationDetail & {
+  onDeleted: () => Promise<void>;
+  workspaceId: string;
+  tab: ApplicationTab;
+  onTabChange: (tab: ApplicationTab) => void;
+}) {
   const profile = resumeProfile?.version === 1 ? resumeProfile : null;
-  const [tab, setTab] = useState("overview");
   return (
     <>
       <ApplicationHeader
@@ -437,7 +449,7 @@ function ApplicationDetailContent({
       />
       <Tabs
         value={tab}
-        onValueChange={(value) => setTab(String(value))}
+        onValueChange={(value) => onTabChange(value as ApplicationTab)}
         className="w-full min-w-0 flex-1 gap-4"
       >
         <TabsList
@@ -451,10 +463,13 @@ function ApplicationDetailContent({
           <TabsTab className="grow-0" value="evaluation">
             {m.ats_evaluation()}
           </TabsTab>
+          <TabsTab className="grow-0" value="interviews">
+            {m.interviews_title()}
+          </TabsTab>
         </TabsList>
         <div className={applicationColumnsClassName}>
-          <div className="min-w-0">
-            <TabsPanel value="overview">
+          <div className="relative min-w-0">
+            <TabsPanel motion="page" value="overview">
               {profile ? (
                 <ResumeProfileDocument profile={profile} layout="inline" />
               ) : (
@@ -465,7 +480,16 @@ function ApplicationDetailContent({
                 </Empty>
               )}
             </TabsPanel>
-            <TabsPanel value="evaluation" keepMounted>
+            <TabsPanel motion="page" value="interviews" keepMounted>
+              <SkeletonSuspense fallback={<InterviewListSkeleton />}>
+                <ApplicationInterviews
+                  workspaceId={workspaceId}
+                  applicationId={application.id}
+                  closed={Boolean(application.closedAt)}
+                />
+              </SkeletonSuspense>
+            </TabsPanel>
+            <TabsPanel motion="page" value="evaluation" keepMounted>
               <ApplicationEvaluations
                 application={application}
                 evaluations={evaluations}
@@ -527,11 +551,14 @@ export function ApplicationDetailPage({
   id,
   search,
   workspaceId,
+  onTabChange,
 }: {
   id: string;
-  search: ApplicationListSearch;
+  search: ApplicationDetailSearch;
+  onTabChange: (tab: ApplicationTab) => void;
   workspaceId: string;
 }) {
+  const { tab, ...listSearch } = search;
   const router = useRouter();
   const masked = useLocation({ select: (location) => Boolean(location.maskedLocation) });
   const canGoBack = useCanGoBack();
@@ -554,11 +581,13 @@ export function ApplicationDetailPage({
         <ApplicationDetailContent
           key={id}
           {...data}
+          tab={tab}
+          onTabChange={onTabChange}
           onDeleted={() =>
             router.navigate({
               params: { workspaceId },
               replace: true,
-              search,
+              search: listSearch,
               to: "/w/$workspaceId/hub/applications",
             })
           }
@@ -605,7 +634,7 @@ export function ApplicationDetailPage({
               <Link
                 to="/w/$workspaceId/hub/applications"
                 params={{ workspaceId }}
-                search={search}
+                search={listSearch}
               />
             )
           }

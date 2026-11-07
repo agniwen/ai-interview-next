@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { resumeDetailLinkOptions } from "./detail-navigation";
 import { Link } from "@tanstack/react-router";
 import { TableFilterSelect } from "@/components/layout/table-filters";
@@ -41,7 +42,7 @@ import { UserColumn } from "@/components/user-column";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, atsStatus, getResumeCandidateDisplay, readAts } from "./client";
+import { atsApi, atsStatus, getResumeCandidateDisplay, readAts } from "./client";
 import { CreateApplicationDialog } from "./create-application-dialog";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
@@ -334,7 +335,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
             </Badge>,
             { manual_upload: m.ats_source_manual_upload() }[row.source],
             <UserColumn key="creator" user={row.creator} />,
-            atsDate(row.createdAt),
+            <LocalTime key="date" value={row.createdAt} format="date" />,
           ],
           id: row.id,
         };

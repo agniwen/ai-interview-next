@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { SessionListSkeleton } from "@/components/skeletons/components/session-list-skeleton";
 import { useEffect, useRef, useState } from "react";
@@ -17,7 +18,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Menu, MenuTrigger, MenuPopup, MenuItem } from "@/components/ui/menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getLocale } from "@/paraglide/runtime";
 import { Button } from "@/components/ui/button";
 import * as m from "@/paraglide/messages";
 
@@ -185,15 +185,11 @@ export function AgentSidebar({
                             >
                               <span>{session.title}</span>
                             </SidebarMenuButton>
-                            <time
-                              dateTime={new Date(session.lastSentAt).toISOString()}
+                            <LocalTime
+                              value={session.lastSentAt}
+                              format="monthDay"
                               className="pointer-events-none absolute top-2 right-2 text-[11px] tabular-nums text-muted-foreground/65 transition-opacity group-hover/session:opacity-0 group-focus-within/session:opacity-0 max-md:hidden"
-                            >
-                              {new Intl.DateTimeFormat(getLocale(), {
-                                day: "numeric",
-                                month: "numeric",
-                              }).format(session.lastSentAt)}
-                            </time>
+                            />
                             <Menu
                               onOpenChangeComplete={(open) => {
                                 if (!open && pendingRename.current === session.id) {

@@ -6,6 +6,7 @@ export const questionSetKeys = createQueryKeys("question-sets", {
     contextQueries: {
       detail: (id: string) => [id],
       list: (query: QuestionSetListSearch) => [query],
+      options: (kind: "form" | "conversation", search: string) => [{ kind, search }],
     },
     queryKey: [workspaceId],
   }),

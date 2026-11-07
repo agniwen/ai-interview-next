@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { applicationDetailLinkOptions } from "./detail-navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -10,7 +11,7 @@ import { DialogCreateHandle as createDialogHandle, DialogTrigger } from "@/compo
 import { UserColumn } from "@/components/user-column";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, atsStatus, getResumeCandidateDisplay, readAts } from "./client";
+import { atsApi, atsStatus, getResumeCandidateDisplay, readAts } from "./client";
 import { CreateApplicationDialog } from "./create-application-dialog";
 import { JobPreviewCard } from "./job-preview-card";
 import { AtsListPage } from "./list-page";
@@ -93,7 +94,7 @@ export function ApplicationsPage({
             {row.closedAt ? m.ats_closed() : m.ats_open()}
           </Badge>,
           atsStatus(row.evaluationStatus),
-          atsDate(row.createdAt),
+          <LocalTime key="date" value={row.createdAt} format="date" />,
         ],
         id: row.id,
       }))}

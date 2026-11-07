@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { IconArrowLeft, IconRefresh, IconX } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useCanGoBack, useLocation, useRouter } from "@tanstack/react-router";
@@ -15,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
-import { atsApi, atsDate, readResumeProcessing } from "./client";
+import { atsApi, readResumeProcessing } from "./client";
 import type { ResumeListSearch } from "./list-search";
 import { atsKeys } from "./query-keys";
 import {
@@ -43,7 +44,9 @@ function AttemptHistory({ detail, step }: { detail: ProcessingDetail; step: Proc
             <ProcessingStatus status={attempt.status} />
           </div>
           {attempt.startedAt && (
-            <p className="text-muted-foreground">{atsDate(attempt.startedAt, "short")}</p>
+            <p className="text-muted-foreground">
+              <LocalTime value={attempt.startedAt} />
+            </p>
           )}
           {attempt.startedAt && attempt.finishedAt && (
             <p>

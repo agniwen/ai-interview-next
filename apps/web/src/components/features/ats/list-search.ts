@@ -29,6 +29,12 @@ export const applicationListSearch = jobListSearch.extend({
   status: z.enum(applicationStatuses).optional().catch(undefined),
 });
 
+export const applicationDetailSearch = applicationListSearch.extend({
+  tab: z.enum(["overview", "evaluation", "interviews"]).catch("overview").default("overview"),
+});
+export type ApplicationDetailSearch = z.output<typeof applicationDetailSearch>;
+export type ApplicationTab = ApplicationDetailSearch["tab"];
+
 export const resumeListSearch = listSearch.extend({
   status: z.enum(resumeStatuses).optional().catch(undefined),
 });

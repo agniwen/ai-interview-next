@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { questionSetEditorLinkOptions } from "./navigation";
 import { IconListCheck } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
@@ -5,7 +6,6 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
 import * as m from "@/paraglide/messages";
-import { atsDate } from "../ats/client";
 import { AtsListPage } from "../ats/list-page";
 import type { AtsPageProps } from "../ats/list-page";
 import { questionSetsQuery } from "./client";
@@ -82,7 +82,7 @@ export function QuestionSetsPage({
             )}
           </div>,
           row.questionCount,
-          atsDate(row.updatedAt, "short"),
+          <LocalTime key="date" value={row.updatedAt} />,
         ],
         id: row.id,
       }))}

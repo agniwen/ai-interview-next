@@ -66,3 +66,33 @@ it("uses the resume link's native mask and supports direct visits with filters",
   expect(direct.state.matches.at(-1)?.routeId).toBe("/_a/w/$workspaceId/hub/resumes_/$id");
   expect(direct.state.location.search).toEqual(query);
 });
+
+it.each(["evaluation", "interviews"] as const)(
+  "preserves the %s tab and list filters in masked links and after refresh",
+  async (tab) => {
+    const router = routerAt(`${listPath}?page=2&pageSize=10&search=Engineer&status=open`);
+    await router.load();
+    const detail = router.buildLocation(
+      applicationDetailLinkOptions(workspaceId, id, { ...search, tab }),
+    );
+    ok(detail.maskedLocation);
+    expect(detail.search).toEqual({ ...search, tab });
+    expect(detail.maskedLocation.search).toEqual({ ...search, tab });
+
+    const refreshed = routerAt(detail.maskedLocation.href);
+    await refreshed.load();
+    expect(refreshed.state.matches.at(-1)?.search).toEqual({ ...search, tab });
+    const next = refreshed.buildLocation(
+      applicationDetailLinkOptions(workspaceId, id, { ...search, tab: "overview" }),
+    );
+    expect(next.search).toEqual(search);
+  },
+);
+
+it("defaults absent or unsupported tabs to overview at the route boundary", () => {
+  const router = routerAt(detailPath);
+  for (const tab of [undefined, "unsupported"]) {
+    const matches = router.matchRoutes(detailPath, { ...search, tab });
+    expect(matches.at(-1)?.search).toEqual({ ...search, tab: "overview" });
+  }
+});

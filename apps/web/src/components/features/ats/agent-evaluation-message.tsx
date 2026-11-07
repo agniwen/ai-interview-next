@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { IconChevronLeft, IconChevronRight, IconRefresh } from "@tabler/icons-react";
 import { useState } from "react";
 import { BrandMark } from "@/components/brand-mark";
@@ -8,7 +9,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import * as m from "@/paraglide/messages";
 import type { ApplicationDetail } from "./application-detail-page";
-import { atsDate } from "./client";
 import { EvaluationResult } from "./evaluation-result";
 
 export function AgentEvaluationMessage({
@@ -105,9 +105,7 @@ export function AgentEvaluationMessage({
               </Tooltip>
             )}
           </div>
-          {evaluation && (
-            <time dateTime={evaluation.createdAt}>{atsDate(evaluation.createdAt, "short")}</time>
-          )}
+          {evaluation && <LocalTime value={evaluation.createdAt} />}
         </MessageHeader>
         <Bubble variant="muted" className="w-full max-w-full">
           <BubbleContent className="flex w-full flex-col gap-4 px-4 py-3">

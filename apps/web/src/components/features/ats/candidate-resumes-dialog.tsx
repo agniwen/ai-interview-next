@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -24,7 +25,7 @@ import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 import { CreateApplicationDialog } from "./create-application-dialog";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, readAts } from "./client";
+import { atsApi, readAts } from "./client";
 
 const resumeRowClassName = "flex min-w-0 flex-1 items-center gap-3 px-2 py-3 text-left";
 
@@ -93,7 +94,7 @@ export function CandidateResumesDialog({
                       {filename}
                     </span>
                     <time className="text-xs text-muted-foreground" dateTime={row.createdAt}>
-                      {atsDate(row.createdAt)}
+                      <LocalTime value={row.createdAt} format="date" />
                     </time>
                   </span>
                 </>

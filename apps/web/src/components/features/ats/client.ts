@@ -1,6 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
 import { workspaceApi } from "@/lib/workspaces/client";
-import { getLocale } from "@/paraglide/runtime";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
 
@@ -71,12 +70,6 @@ export function projectDetailsQuery(workspaceId: string, id: string) {
     queryKey: atsKeys.projects(workspaceId)._ctx.detail(id).queryKey,
     staleTime: 30_000,
   });
-}
-
-export function atsDate(value: string | Date, timeStyle?: "short") {
-  return new Intl.DateTimeFormat(getLocale(), { dateStyle: "medium", timeStyle }).format(
-    new Date(value),
-  );
 }
 
 export function atsStatus(status: string | null) {

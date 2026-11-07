@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { MessageResponse } from "@/components/ai-elements/message-response";
 import { MarkdownEditorSkeleton } from "@/components/skeletons/components/markdown-editor-skeleton";
 import { SkeletonSuspense } from "@/components/skeletons/skeleton-suspense";
@@ -20,7 +21,7 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import * as m from "@/paraglide/messages";
-import { atsApi, atsDate, readAts } from "./client";
+import { atsApi, readAts } from "./client";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { listParams } from "./list-search";
@@ -169,7 +170,9 @@ export function DepartmentsPage({ workspaceId, query, onQueryChange }: AtsPagePr
           <RecordPreviewCard key="department" title={row.name}>
             <dl className="text-xs">
               <dt className="text-muted-foreground">{m.ats_date()}</dt>
-              <dd>{atsDate(row.createdAt, "short")}</dd>
+              <dd>
+                <LocalTime value={row.createdAt} />
+              </dd>
             </dl>
             {row.description && (
               <div className="flex min-w-0 flex-col gap-1.5 border-t pt-3">
@@ -180,7 +183,7 @@ export function DepartmentsPage({ workspaceId, query, onQueryChange }: AtsPagePr
               </div>
             )}
           </RecordPreviewCard>,
-          atsDate(row.createdAt),
+          <LocalTime key="date" value={row.createdAt} format="date" />,
         ],
         id: row.id,
       }))}

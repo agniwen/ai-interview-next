@@ -1,10 +1,11 @@
+import { LocalTime } from "@/components/local-time";
 import { IconBriefcase } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, readAts } from "./client";
+import { atsApi, readAts } from "./client";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { listParams } from "./list-search";
@@ -67,7 +68,7 @@ export function JobsPage({ workspaceId, query, onQueryChange }: AtsPageProps<Job
           ) : (
             "—"
           ),
-          atsDate(row.createdAt),
+          <LocalTime key="date" value={row.createdAt} format="date" />,
         ],
         id: row.id,
       }))}

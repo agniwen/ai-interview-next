@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { IconFolders } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { lazy, useId, useMemo, useState } from "react";
@@ -22,7 +23,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, projectDetailsQuery, readAts } from "./client";
+import { atsApi, projectDetailsQuery, readAts } from "./client";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { ProjectPreviewCard } from "./project-preview-card";
@@ -206,7 +207,7 @@ export function ProjectsPage({ workspaceId, query, onQueryChange }: AtsPageProps
             title={row.title}
             workspaceId={workspaceId}
           />,
-          atsDate(row.createdAt),
+          <LocalTime key="date" value={row.createdAt} format="date" />,
         ],
         id: row.id,
       }))}

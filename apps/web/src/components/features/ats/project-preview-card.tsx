@@ -1,9 +1,10 @@
+import { LocalTime } from "@/components/local-time";
 import { MessageResponse } from "@/components/ai-elements/message-response";
 import { useQuery } from "@tanstack/react-query";
 import { ProjectPreviewSkeleton } from "@/components/skeletons/components/project-preview-skeleton";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
-import { atsDate, projectDetailsQuery } from "./client";
+import { projectDetailsQuery } from "./client";
 import { RecordPreviewCard } from "./record-preview-card";
 
 function ProjectPreviewContent({ id, workspaceId }: { id: string; workspaceId: string }) {
@@ -23,7 +24,9 @@ function ProjectPreviewContent({ id, workspaceId }: { id: string; workspaceId: s
       <dl className="grid grid-cols-2 gap-3 text-xs">
         <div className="min-w-0">
           <dt className="text-muted-foreground">{m.ats_date()}</dt>
-          <dd>{atsDate(data.createdAt, "short")}</dd>
+          <dd>
+            <LocalTime value={data.createdAt} />
+          </dd>
         </div>
         <div className="min-w-0">
           <dt className="text-muted-foreground">{m.ats_project_job_count()}</dt>

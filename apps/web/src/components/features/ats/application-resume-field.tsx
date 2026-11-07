@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { UserColumn } from "@/components/user-column";
 import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, readAts } from "./client";
+import { atsApi, readAts } from "./client";
 
 async function readResumeOptions(
   workspaceId: string,
@@ -56,7 +57,7 @@ function ResumeOptionContent({ row }: { row: ApplicationResumeOption }) {
         <div className="contents">
           <dt className="text-muted-foreground">{m.ats_date()}</dt>
           <dd className="whitespace-nowrap">
-            <time dateTime={row.createdAt}>{atsDate(row.createdAt)}</time>
+            <LocalTime value={row.createdAt} format="date" />
           </dd>
         </div>
         <div className="contents">

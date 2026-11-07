@@ -1,4 +1,4 @@
-import { getLocale } from "@/paraglide/runtime";
+import { LocalTime } from "@/components/local-time";
 
 export function TimeDisplay({
   value,
@@ -12,13 +12,11 @@ export function TimeDisplay({
   options?: string;
 }) {
   return (
-    <Tag>
-      {value === null || value === undefined
-        ? emptyText
-        : new Intl.DateTimeFormat(getLocale(), {
-            dateStyle: "short",
-            timeStyle: options ? undefined : "short",
-          }).format(new Date(value))}
-    </Tag>
+    <LocalTime
+      as={Tag}
+      value={value}
+      emptyText={emptyText}
+      format={options ? "shortDate" : "dateTime"}
+    />
   );
 }

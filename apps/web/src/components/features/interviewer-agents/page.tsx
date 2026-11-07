@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { IconRobot } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { lazy, useId, useMemo, useState } from "react";
@@ -21,7 +22,6 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
-import { atsDate } from "../ats/client";
 import { AtsListPage } from "../ats/list-page";
 import type { AtsPageProps } from "../ats/list-page";
 import {
@@ -219,7 +219,7 @@ export function InterviewerAgentsPage({ workspaceId, query, onQueryChange }: Ats
               </span>
             )}
           </div>,
-          atsDate(row.updatedAt, "short"),
+          <LocalTime key="date" value={row.updatedAt} />,
         ],
         id: row.id,
       }))}

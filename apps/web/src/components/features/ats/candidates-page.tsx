@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { useQuery } from "@tanstack/react-query";
 import { IconMail, IconPhone, IconUsers } from "@tabler/icons-react";
 import { useMemo } from "react";
@@ -10,7 +11,7 @@ import {
 import * as m from "@/paraglide/messages";
 import { CandidateResumesDialog } from "./candidate-resumes-dialog";
 import { atsKeys } from "./query-keys";
-import { atsApi, atsDate, readAts } from "./client";
+import { atsApi, readAts } from "./client";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { listParams } from "./list-search";
@@ -76,7 +77,7 @@ export function CandidatesPage({ workspaceId, query, onQueryChange }: AtsPagePro
               key="contact"
               phoneNormalized={row.phoneNormalized}
             />,
-            atsDate(row.createdAt),
+            <LocalTime key="date" value={row.createdAt} format="date" />,
           ],
           id: row.id,
         }))}

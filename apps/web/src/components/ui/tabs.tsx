@@ -88,10 +88,19 @@ export function TabsTab({
   );
 }
 
-export function TabsPanel({ className, ...props }: TabsPrimitive.Panel.Props): React.ReactElement {
+export function TabsPanel({
+  className,
+  motion,
+  ...props
+}: TabsPrimitive.Panel.Props & { motion?: "page" }): React.ReactElement {
   return (
     <TabsPrimitive.Panel
-      className={cn("flex-1 outline-none", className)}
+      className={cn(
+        "flex-1 outline-none",
+        motion === "page" &&
+          "transition-[opacity,translate,filter] duration-200 ease-out data-ending-style:absolute data-ending-style:inset-0 data-ending-style:pointer-events-none data-[activation-direction=left]:data-ending-style:translate-x-2 data-[activation-direction=right]:data-ending-style:-translate-x-2 data-ending-style:opacity-0 data-ending-style:blur-xs data-[activation-direction=left]:data-starting-style:-translate-x-2 data-[activation-direction=right]:data-starting-style:translate-x-2 data-starting-style:opacity-0 data-starting-style:blur-xs motion-reduce:transition-none motion-reduce:data-ending-style:translate-x-0 motion-reduce:data-starting-style:translate-x-0 motion-reduce:data-ending-style:blur-none motion-reduce:data-starting-style:blur-none",
+        className,
+      )}
       data-slot="tabs-content"
       {...props}
     />

@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageResponse } from "@/components/ai-elements/message-response";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -7,7 +8,7 @@ import { Message, MessageAvatar, MessageContent, MessageHeader } from "@/compone
 import { authClient } from "@/lib/auth/client";
 import * as m from "@/paraglide/messages";
 import type { ApplicationDetail } from "./application-detail-page";
-import { atsApi, atsDate, readAts } from "./client";
+import { atsApi, readAts } from "./client";
 import { evaluationMessages } from "./evaluation-messages";
 import { AgentEvaluationMessage } from "./agent-evaluation-message";
 import { atsKeys } from "./query-keys";
@@ -65,7 +66,7 @@ export function ApplicationEvaluations({
                 <MessageContent>
                   <MessageHeader className="flex-wrap gap-2">
                     <span>{message.authorName}</span>
-                    <time dateTime={message.createdAt}>{atsDate(message.createdAt, "short")}</time>
+                    <LocalTime value={message.createdAt} />
                   </MessageHeader>
                   <Bubble
                     align={own ? "end" : "start"}

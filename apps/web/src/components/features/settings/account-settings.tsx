@@ -1,3 +1,4 @@
+import { LocalTime } from "@/components/local-time";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { AccountSettingsSkeleton } from "@/components/skeletons/components/account-settings-skeleton";
 import { useTheme } from "next-themes";
@@ -18,7 +19,6 @@ import { authData } from "@/lib/workspaces/actions";
 import { SettingsGroup, SettingsRow } from "./settings-group";
 import { AutoSaveInput } from "./auto-save-input";
 import * as m from "@/paraglide/messages";
-import { getLocale } from "@/paraglide/runtime";
 
 function ThemeSelect() {
   const { theme, setTheme } = useTheme();
@@ -95,9 +95,7 @@ export function AccountSettings() {
         </SettingsRow>
         <SettingsRow title={m.account_created()}>
           <span className="text-sm">
-            {new Intl.DateTimeFormat(getLocale(), { dateStyle: "medium" }).format(
-              new Date(user.createdAt),
-            )}
+            <LocalTime value={user.createdAt} format="date" />
           </span>
         </SettingsRow>
       </SettingsGroup>

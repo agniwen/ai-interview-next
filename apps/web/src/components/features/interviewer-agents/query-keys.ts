@@ -6,6 +6,7 @@ export const interviewerAgentKeys = createQueryKeys("interviewer-agents", {
     contextQueries: {
       detail: (id: string) => [id],
       list: (query: ListSearch) => [query],
+      options: (search: string) => [search],
     },
     queryKey: [workspaceId],
   }),
