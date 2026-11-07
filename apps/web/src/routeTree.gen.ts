@@ -27,11 +27,14 @@ import { Route as AWWorkspaceIdAgentSessionIdRouteImport } from './routes/_a.w.$
 import { Route as AWWorkspaceIdHubApplicationsRouteImport } from './routes/_a.w.$workspaceId.hub.applications'
 import { Route as AWWorkspaceIdHubCandidatesRouteImport } from './routes/_a.w.$workspaceId.hub.candidates'
 import { Route as AWWorkspaceIdHubDashboardRouteImport } from './routes/_a.w.$workspaceId.hub.dashboard'
+import { Route as AWWorkspaceIdHubDepartmentsRouteImport } from './routes/_a.w.$workspaceId.hub.departments'
 import { Route as AWWorkspaceIdHubJobsRouteImport } from './routes/_a.w.$workspaceId.hub.jobs'
 import { Route as AWWorkspaceIdHubProjectsRouteImport } from './routes/_a.w.$workspaceId.hub.projects'
 import { Route as AWWorkspaceIdHubResumesRouteImport } from './routes/_a.w.$workspaceId.hub.resumes'
 import { Route as AWWorkspaceIdHubApplicationsIdRouteImport } from './routes/_a.w.$workspaceId.hub.applications_.$id'
+import { Route as AWWorkspaceIdHubResumesIdRouteImport } from './routes/_a.w.$workspaceId.hub.resumes_.$id'
 import { Route as AWWorkspaceIdHubApplicationsOverlayIdRouteImport } from './routes/_a.w.$workspaceId.hub.applications.overlay.$id'
+import { Route as AWWorkspaceIdHubResumesOverlayIdRouteImport } from './routes/_a.w.$workspaceId.hub.resumes.overlay.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -127,6 +130,12 @@ const AWWorkspaceIdHubDashboardRoute =
     path: '/dashboard',
     getParentRoute: () => AWWorkspaceIdHubRoute,
   } as any)
+const AWWorkspaceIdHubDepartmentsRoute =
+  AWWorkspaceIdHubDepartmentsRouteImport.update({
+    id: '/departments',
+    path: '/departments',
+    getParentRoute: () => AWWorkspaceIdHubRoute,
+  } as any)
 const AWWorkspaceIdHubJobsRoute = AWWorkspaceIdHubJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
@@ -149,11 +158,23 @@ const AWWorkspaceIdHubApplicationsIdRoute =
     path: '/applications/$id',
     getParentRoute: () => AWWorkspaceIdHubRoute,
   } as any)
+const AWWorkspaceIdHubResumesIdRoute =
+  AWWorkspaceIdHubResumesIdRouteImport.update({
+    id: '/resumes_/$id',
+    path: '/resumes/$id',
+    getParentRoute: () => AWWorkspaceIdHubRoute,
+  } as any)
 const AWWorkspaceIdHubApplicationsOverlayIdRoute =
   AWWorkspaceIdHubApplicationsOverlayIdRouteImport.update({
     id: '/overlay/$id',
     path: '/overlay/$id',
     getParentRoute: () => AWWorkspaceIdHubApplicationsRoute,
+  } as any)
+const AWWorkspaceIdHubResumesOverlayIdRoute =
+  AWWorkspaceIdHubResumesOverlayIdRouteImport.update({
+    id: '/overlay/$id',
+    path: '/overlay/$id',
+    getParentRoute: () => AWWorkspaceIdHubResumesRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -174,11 +195,14 @@ export interface FileRoutesByFullPath {
   '/w/$workspaceId/hub/applications': typeof AWWorkspaceIdHubApplicationsRouteWithChildren
   '/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
+  '/w/$workspaceId/hub/departments': typeof AWWorkspaceIdHubDepartmentsRoute
   '/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRoute
   '/w/$workspaceId/hub/projects': typeof AWWorkspaceIdHubProjectsRoute
-  '/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRoute
+  '/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRouteWithChildren
   '/w/$workspaceId/hub/applications/$id': typeof AWWorkspaceIdHubApplicationsIdRoute
+  '/w/$workspaceId/hub/resumes/$id': typeof AWWorkspaceIdHubResumesIdRoute
   '/w/$workspaceId/hub/applications/overlay/$id': typeof AWWorkspaceIdHubApplicationsOverlayIdRoute
+  '/w/$workspaceId/hub/resumes/overlay/$id': typeof AWWorkspaceIdHubResumesOverlayIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -197,11 +221,14 @@ export interface FileRoutesByTo {
   '/w/$workspaceId/hub/applications': typeof AWWorkspaceIdHubApplicationsRouteWithChildren
   '/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
+  '/w/$workspaceId/hub/departments': typeof AWWorkspaceIdHubDepartmentsRoute
   '/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRoute
   '/w/$workspaceId/hub/projects': typeof AWWorkspaceIdHubProjectsRoute
-  '/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRoute
+  '/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRouteWithChildren
   '/w/$workspaceId/hub/applications/$id': typeof AWWorkspaceIdHubApplicationsIdRoute
+  '/w/$workspaceId/hub/resumes/$id': typeof AWWorkspaceIdHubResumesIdRoute
   '/w/$workspaceId/hub/applications/overlay/$id': typeof AWWorkspaceIdHubApplicationsOverlayIdRoute
+  '/w/$workspaceId/hub/resumes/overlay/$id': typeof AWWorkspaceIdHubResumesOverlayIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -223,11 +250,14 @@ export interface FileRoutesById {
   '/_a/w/$workspaceId/hub/applications': typeof AWWorkspaceIdHubApplicationsRouteWithChildren
   '/_a/w/$workspaceId/hub/candidates': typeof AWWorkspaceIdHubCandidatesRoute
   '/_a/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
+  '/_a/w/$workspaceId/hub/departments': typeof AWWorkspaceIdHubDepartmentsRoute
   '/_a/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRoute
   '/_a/w/$workspaceId/hub/projects': typeof AWWorkspaceIdHubProjectsRoute
-  '/_a/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRoute
+  '/_a/w/$workspaceId/hub/resumes': typeof AWWorkspaceIdHubResumesRouteWithChildren
   '/_a/w/$workspaceId/hub/applications_/$id': typeof AWWorkspaceIdHubApplicationsIdRoute
+  '/_a/w/$workspaceId/hub/resumes_/$id': typeof AWWorkspaceIdHubResumesIdRoute
   '/_a/w/$workspaceId/hub/applications/overlay/$id': typeof AWWorkspaceIdHubApplicationsOverlayIdRoute
+  '/_a/w/$workspaceId/hub/resumes/overlay/$id': typeof AWWorkspaceIdHubResumesOverlayIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -249,11 +279,14 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/hub/applications'
     | '/w/$workspaceId/hub/candidates'
     | '/w/$workspaceId/hub/dashboard'
+    | '/w/$workspaceId/hub/departments'
     | '/w/$workspaceId/hub/jobs'
     | '/w/$workspaceId/hub/projects'
     | '/w/$workspaceId/hub/resumes'
     | '/w/$workspaceId/hub/applications/$id'
+    | '/w/$workspaceId/hub/resumes/$id'
     | '/w/$workspaceId/hub/applications/overlay/$id'
+    | '/w/$workspaceId/hub/resumes/overlay/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -272,11 +305,14 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/hub/applications'
     | '/w/$workspaceId/hub/candidates'
     | '/w/$workspaceId/hub/dashboard'
+    | '/w/$workspaceId/hub/departments'
     | '/w/$workspaceId/hub/jobs'
     | '/w/$workspaceId/hub/projects'
     | '/w/$workspaceId/hub/resumes'
     | '/w/$workspaceId/hub/applications/$id'
+    | '/w/$workspaceId/hub/resumes/$id'
     | '/w/$workspaceId/hub/applications/overlay/$id'
+    | '/w/$workspaceId/hub/resumes/overlay/$id'
   id:
     | '__root__'
     | '/'
@@ -297,11 +333,14 @@ export interface FileRouteTypes {
     | '/_a/w/$workspaceId/hub/applications'
     | '/_a/w/$workspaceId/hub/candidates'
     | '/_a/w/$workspaceId/hub/dashboard'
+    | '/_a/w/$workspaceId/hub/departments'
     | '/_a/w/$workspaceId/hub/jobs'
     | '/_a/w/$workspaceId/hub/projects'
     | '/_a/w/$workspaceId/hub/resumes'
     | '/_a/w/$workspaceId/hub/applications_/$id'
+    | '/_a/w/$workspaceId/hub/resumes_/$id'
     | '/_a/w/$workspaceId/hub/applications/overlay/$id'
+    | '/_a/w/$workspaceId/hub/resumes/overlay/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -439,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AWWorkspaceIdHubDashboardRouteImport
       parentRoute: typeof AWWorkspaceIdHubRoute
     }
+    '/_a/w/$workspaceId/hub/departments': {
+      id: '/_a/w/$workspaceId/hub/departments'
+      path: '/departments'
+      fullPath: '/w/$workspaceId/hub/departments'
+      preLoaderRoute: typeof AWWorkspaceIdHubDepartmentsRouteImport
+      parentRoute: typeof AWWorkspaceIdHubRoute
+    }
     '/_a/w/$workspaceId/hub/jobs': {
       id: '/_a/w/$workspaceId/hub/jobs'
       path: '/jobs'
@@ -467,12 +513,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AWWorkspaceIdHubApplicationsIdRouteImport
       parentRoute: typeof AWWorkspaceIdHubRoute
     }
+    '/_a/w/$workspaceId/hub/resumes_/$id': {
+      id: '/_a/w/$workspaceId/hub/resumes_/$id'
+      path: '/resumes/$id'
+      fullPath: '/w/$workspaceId/hub/resumes/$id'
+      preLoaderRoute: typeof AWWorkspaceIdHubResumesIdRouteImport
+      parentRoute: typeof AWWorkspaceIdHubRoute
+    }
     '/_a/w/$workspaceId/hub/applications/overlay/$id': {
       id: '/_a/w/$workspaceId/hub/applications/overlay/$id'
       path: '/overlay/$id'
       fullPath: '/w/$workspaceId/hub/applications/overlay/$id'
       preLoaderRoute: typeof AWWorkspaceIdHubApplicationsOverlayIdRouteImport
       parentRoute: typeof AWWorkspaceIdHubApplicationsRoute
+    }
+    '/_a/w/$workspaceId/hub/resumes/overlay/$id': {
+      id: '/_a/w/$workspaceId/hub/resumes/overlay/$id'
+      path: '/overlay/$id'
+      fullPath: '/w/$workspaceId/hub/resumes/overlay/$id'
+      preLoaderRoute: typeof AWWorkspaceIdHubResumesOverlayIdRouteImport
+      parentRoute: typeof AWWorkspaceIdHubResumesRoute
     }
   }
 }
@@ -492,14 +552,31 @@ const AWWorkspaceIdHubApplicationsRouteWithChildren =
     AWWorkspaceIdHubApplicationsRouteChildren,
   )
 
+interface AWWorkspaceIdHubResumesRouteChildren {
+  AWWorkspaceIdHubResumesOverlayIdRoute: typeof AWWorkspaceIdHubResumesOverlayIdRoute
+}
+
+const AWWorkspaceIdHubResumesRouteChildren: AWWorkspaceIdHubResumesRouteChildren =
+  {
+    AWWorkspaceIdHubResumesOverlayIdRoute:
+      AWWorkspaceIdHubResumesOverlayIdRoute,
+  }
+
+const AWWorkspaceIdHubResumesRouteWithChildren =
+  AWWorkspaceIdHubResumesRoute._addFileChildren(
+    AWWorkspaceIdHubResumesRouteChildren,
+  )
+
 interface AWWorkspaceIdHubRouteChildren {
   AWWorkspaceIdHubApplicationsRoute: typeof AWWorkspaceIdHubApplicationsRouteWithChildren
   AWWorkspaceIdHubCandidatesRoute: typeof AWWorkspaceIdHubCandidatesRoute
   AWWorkspaceIdHubDashboardRoute: typeof AWWorkspaceIdHubDashboardRoute
+  AWWorkspaceIdHubDepartmentsRoute: typeof AWWorkspaceIdHubDepartmentsRoute
   AWWorkspaceIdHubJobsRoute: typeof AWWorkspaceIdHubJobsRoute
   AWWorkspaceIdHubProjectsRoute: typeof AWWorkspaceIdHubProjectsRoute
-  AWWorkspaceIdHubResumesRoute: typeof AWWorkspaceIdHubResumesRoute
+  AWWorkspaceIdHubResumesRoute: typeof AWWorkspaceIdHubResumesRouteWithChildren
   AWWorkspaceIdHubApplicationsIdRoute: typeof AWWorkspaceIdHubApplicationsIdRoute
+  AWWorkspaceIdHubResumesIdRoute: typeof AWWorkspaceIdHubResumesIdRoute
 }
 
 const AWWorkspaceIdHubRouteChildren: AWWorkspaceIdHubRouteChildren = {
@@ -507,10 +584,12 @@ const AWWorkspaceIdHubRouteChildren: AWWorkspaceIdHubRouteChildren = {
     AWWorkspaceIdHubApplicationsRouteWithChildren,
   AWWorkspaceIdHubCandidatesRoute: AWWorkspaceIdHubCandidatesRoute,
   AWWorkspaceIdHubDashboardRoute: AWWorkspaceIdHubDashboardRoute,
+  AWWorkspaceIdHubDepartmentsRoute: AWWorkspaceIdHubDepartmentsRoute,
   AWWorkspaceIdHubJobsRoute: AWWorkspaceIdHubJobsRoute,
   AWWorkspaceIdHubProjectsRoute: AWWorkspaceIdHubProjectsRoute,
-  AWWorkspaceIdHubResumesRoute: AWWorkspaceIdHubResumesRoute,
+  AWWorkspaceIdHubResumesRoute: AWWorkspaceIdHubResumesRouteWithChildren,
   AWWorkspaceIdHubApplicationsIdRoute: AWWorkspaceIdHubApplicationsIdRoute,
+  AWWorkspaceIdHubResumesIdRoute: AWWorkspaceIdHubResumesIdRoute,
 }
 
 const AWWorkspaceIdHubRouteWithChildren =

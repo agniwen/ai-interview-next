@@ -1,6 +1,7 @@
+import { Link } from "@tanstack/react-router";
 import { TableFilterSelect } from "@/components/layout/table-filters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { IconAlertCircle, IconFileCv } from "@tabler/icons-react";
 import { ResumePreviewDialog } from "@/components/features/document-preview/resume-preview-dialog";
 import {
@@ -24,7 +25,6 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { PreviewCard, PreviewCardPopup, PreviewCardTrigger } from "@/components/ui/preview-card";
 import {
   Select,
   SelectGroup,
@@ -54,52 +54,6 @@ const statusVariants: Partial<Record<string, BadgeProps["variant"]>> = {
   succeeded: "success",
   upload_failed: "error",
 };
-
-function ResumeStatusBadge({
-  status,
-  progress,
-  error,
-}: {
-  status: string;
-  progress?: string;
-  error?: string | null;
-}) {
-  const [open, setOpen] = useState(false);
-  const descriptionId = useId();
-  const variant = statusVariants[status] ?? "outline";
-  const label = atsStatus(status);
-
-  if (!progress && !error) {
-    return <Badge variant={variant}>{label}</Badge>;
-  }
-
-  return (
-    <PreviewCard open={open} onOpenChange={setOpen}>
-      <PreviewCardTrigger
-        aria-describedby={descriptionId}
-        aria-expanded={open}
-        delay={200}
-        onClick={() => setOpen(true)}
-        render={<Badge render={<button aria-label={label} type="button" />} variant={variant} />}
-      >
-        {label}
-      </PreviewCardTrigger>
-      <span className="sr-only" id={descriptionId}>
-        {[progress, error].filter(Boolean).join(" ")}
-      </span>
-      <PreviewCardPopup
-        align="start"
-        className="max-w-[calc(100vw-2rem)] text-left text-xs"
-        panelClassName="flex flex-col gap-2 p-3"
-      >
-        {progress && <p className="text-muted-foreground">{progress}</p>}
-        {error && (
-          <p className="wrap-anywhere whitespace-pre-wrap text-destructive-foreground">{error}</p>
-        )}
-      </PreviewCardPopup>
-    </PreviewCard>
-  );
-}
 
 function ResumeCandidateDialog({
   submissionId,
@@ -281,6 +235,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
         m.ats_filename(),
         m.ats_candidate(),
         m.ats_status(),
+        m.ats_source(),
         m.ats_creator(),
         m.ats_date(),
       ]}
@@ -289,15 +244,6 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
         const candidate = getResumeCandidateDisplay(workspaceId, row);
         const recruitmentResumeId = recruitmentResumes.get(row.id);
         const previewPayload = { filename: row.filename, id: row.id };
-        const batch = data.batches.find((entry) => entry.id === row.batchId);
-        const progress =
-          batch && batch.total > 1
-            ? m.ats_batch_progress({
-                complete: String(batch.complete),
-                failed: String(batch.failed),
-                total: String(batch.total),
-              })
-            : undefined;
         const filename = (
           <>
             <ResumeDocumentFileIcon
@@ -372,12 +318,22 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
             ) : (
               <UserColumn key="candidate" user={candidate} />
             ),
-            <ResumeStatusBadge
-              error={row.parseStatus === "failed" ? row.error : undefined}
+            <Badge
               key="status"
-              progress={progress}
-              status={row.parseStatus ?? row.status}
-            />,
+              variant={statusVariants[row.parseStatus ?? row.status] ?? "outline"}
+              render={
+                <Link
+                  to="/w/$workspaceId/hub/resumes/overlay/$id"
+                  params={{ id: row.id, workspaceId }}
+                  search={query}
+                  aria-label={`${atsStatus(row.parseStatus ?? row.status)} · ${m.resume_processing_title()} · ${row.filename}`}
+                />
+              }
+              className="cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {atsStatus(row.parseStatus ?? row.status)}
+            </Badge>,
+            { manual_upload: m.ats_source_manual_upload() }[row.source],
             <UserColumn key="creator" user={row.creator} />,
             atsDate(row.createdAt),
           ],

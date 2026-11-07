@@ -5,6 +5,7 @@ export {
   candidate,
   candidateNote,
   candidatePhoneHistory,
+  department,
   interviewFeedback,
   interviewRound,
   job,

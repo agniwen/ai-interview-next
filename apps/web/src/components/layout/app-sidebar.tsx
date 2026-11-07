@@ -1,6 +1,7 @@
 import { SidebarPageTarget } from "./sidebar-page";
 import {
   IconBriefcase,
+  IconBuilding,
   IconChartBar,
   IconFileCv,
   IconFolders,
@@ -137,12 +138,17 @@ export function AppSidebar({
                       label: m.ats_applications(),
                       to: "/w/$workspaceId/hub/applications",
                     },
-                    { icon: IconBriefcase, label: m.ats_job(), to: "/w/$workspaceId/hub/jobs" },
                     {
                       icon: IconFolders,
                       label: m.ats_projects(),
                       to: "/w/$workspaceId/hub/projects",
                     },
+                    {
+                      icon: IconBuilding,
+                      label: m.ats_departments(),
+                      to: "/w/$workspaceId/hub/departments",
+                    },
+                    { icon: IconBriefcase, label: m.ats_job(), to: "/w/$workspaceId/hub/jobs" },
                   ] as const
                 ).map(({ icon: Icon, label, to }) => (
                   <SidebarMenuItem key={to}>

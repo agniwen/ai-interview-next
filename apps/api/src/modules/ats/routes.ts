@@ -1,5 +1,6 @@
 import {
   candidate,
+  department as departmentTable,
   job,
   recruitmentProject,
   resume,
@@ -21,6 +22,7 @@ import {
 } from "./applications";
 import {
   applicationListQuery,
+  departmentInput,
   jobInput,
   jobListQuery,
   listQuery,
@@ -34,10 +36,13 @@ import {
   applicationOptions,
   applicationResumeOptions,
   findRecruitmentProject,
+  findDepartment,
   getUploadResumeProfile,
+  getUploadProcessing,
   listApplications,
   listCandidateResumes,
   listCandidates,
+  listDepartments,
   listJobs,
   listRecruitmentProjects,
   listResumes,
@@ -181,6 +186,49 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     }
     return c.json({ version: 1 as const }, 200);
   })
+  .get("/:workspaceId/departments", paginatedList, async (c) =>
+    c.json(
+      await listDepartments(c.get("database"), c.get("workspaceId"), c.req.valid("query")),
+      200,
+    ),
+  )
+  .post("/:workspaceId/departments", sValidator("json", departmentInput), async (c) => {
+    const { name, description } = c.req.valid("json");
+    const id = crypto.randomUUID();
+    await c
+      .get("database")
+      .insert(departmentTable)
+      .values({
+        createdAt: new Date(),
+        createdBy: c.get("userId"),
+        description,
+        id,
+        name,
+        workspaceId: c.get("workspaceId"),
+      });
+    return c.json({ id, version: 1 as const }, 201);
+  })
+  .put(
+    "/:workspaceId/departments/:id",
+    applicationParams,
+    sValidator("json", departmentInput),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const { name, description } = c.req.valid("json");
+      const [record] = await c
+        .get("database")
+        .update(departmentTable)
+        .set({ description, name })
+        .where(
+          and(eq(departmentTable.id, id), eq(departmentTable.workspaceId, c.get("workspaceId"))),
+        )
+        .returning({ id: departmentTable.id });
+      if (!record) {
+        return c.json({ error: "DEPARTMENT_UNAVAILABLE", version: 1 as const }, 404);
+      }
+      return c.json({ id: record.id, version: 1 as const }, 200);
+    },
+  )
   .get("/:workspaceId/jobs", sValidator("query", jobListQuery), async (c) =>
     c.json(await listJobs(c.get("database"), c.get("workspaceId"), c.req.valid("query")), 200),
   )
@@ -205,6 +253,7 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       .get("database")
       .select({
         createdAt: recruitmentProject.createdAt,
+        createdBy: recruitmentProject.createdBy,
         description: recruitmentProject.description,
         id: recruitmentProject.id,
         jobCount: count(job.id),
@@ -235,6 +284,7 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       .insert(recruitmentProject)
       .values({
         createdAt: new Date(),
+        createdBy: c.get("userId"),
         description,
         id,
         title,
@@ -258,17 +308,22 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     return c.json({ id: project.id, version: 1 as const }, 200);
   })
   .post("/:workspaceId/jobs", sValidator("json", jobInput), async (c) => {
-    const { department, projectId, requirements, title } = c.req.valid("json");
+    const { departmentId, projectId, requirements, internalCriteria, title } = c.req.valid("json");
     const db = c.get("database");
     const workspaceId = c.get("workspaceId");
+    if (departmentId && !(await findDepartment(db, workspaceId, departmentId))) {
+      return c.json({ error: "DEPARTMENT_UNAVAILABLE", version: 1 as const }, 404);
+    }
     if (projectId && !(await findRecruitmentProject(db, workspaceId, projectId))) {
       return c.json({ error: "PROJECT_UNAVAILABLE", version: 1 as const }, 404);
     }
     const id = crypto.randomUUID();
     await db.insert(job).values({
       createdAt: new Date(),
-      department,
+      createdBy: c.get("userId"),
+      departmentId,
       id,
+      internalCriteria,
       projectId,
       requirements,
       title,
@@ -280,8 +335,11 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     const record = await c
       .get("database")
       .select({
-        department: job.department,
+        createdBy: job.createdBy,
+        department: departmentTable.name,
+        departmentId: job.departmentId,
         id: job.id,
+        internalCriteria: job.internalCriteria,
         projectId: job.projectId,
         projectTitle: recruitmentProject.title,
         requirements: job.requirements,
@@ -295,6 +353,13 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
           eq(recruitmentProject.workspaceId, job.workspaceId),
         ),
       )
+      .leftJoin(
+        departmentTable,
+        and(
+          eq(departmentTable.id, job.departmentId),
+          eq(departmentTable.workspaceId, job.workspaceId),
+        ),
+      )
       .where(and(eq(job.id, c.req.param("id")), eq(job.workspaceId, c.get("workspaceId"))))
       .get();
     if (!record) {
@@ -303,16 +368,19 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     return c.json({ ...record, version: 1 as const }, 200);
   })
   .put("/:workspaceId/jobs/:id", sValidator("json", updateJobInput), async (c) => {
-    const { department, projectId, requirements, title } = c.req.valid("json");
+    const { departmentId, projectId, requirements, internalCriteria, title } = c.req.valid("json");
     const db = c.get("database");
     const workspaceId = c.get("workspaceId");
     const id = c.req.param("id");
+    if (departmentId && !(await findDepartment(db, workspaceId, departmentId))) {
+      return c.json({ error: "DEPARTMENT_UNAVAILABLE", version: 1 as const }, 404);
+    }
     if (projectId && !(await findRecruitmentProject(db, workspaceId, projectId))) {
       return c.json({ error: "PROJECT_UNAVAILABLE", version: 1 as const }, 404);
     }
     const [record] = await db
       .update(job)
-      .set({ department, projectId, requirements, title })
+      .set({ departmentId, internalCriteria, projectId, requirements, title })
       .where(and(eq(job.id, id), eq(job.workspaceId, workspaceId)))
       .returning({ id: job.id });
     if (!record) {
@@ -333,6 +401,11 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       ),
       201,
     );
+  })
+  .get("/:workspaceId/uploads/:id/processing", applicationParams, async (c) => {
+    const { id } = c.req.valid("param");
+    const result = await getUploadProcessing(c.get("database"), c.get("workspaceId"), id);
+    return result ? c.json(result, 200) : c.json({ error: "NOT_FOUND", version: 1 as const }, 404);
   })
   .get("/:workspaceId/uploads/:id/profile", async (c) => {
     const result = await getUploadResumeProfile(

@@ -9,6 +9,7 @@ export function JobFormSkeleton() {
       <Skeleton aria-hidden="true" className="h-13 w-full" />
       <Skeleton aria-hidden="true" className="h-13 w-full" />
       <MarkdownEditorSkeleton />
+      <MarkdownEditorSkeleton />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   applicationEvaluation,
   applicationResume,
   candidate,
+  department,
   job,
   recruitmentProject,
   resume,
@@ -150,6 +151,28 @@ export async function applicationResumeOptions(
   };
 }
 
+export async function listDepartments(
+  db: Database,
+  workspaceId: string,
+  { page, pageSize, search }: ListQuery,
+) {
+  const where = and(
+    eq(department.workspaceId, workspaceId),
+    search ? includesText(department.name, search) : undefined,
+  );
+  const [rows, [result]] = await Promise.all([
+    db
+      .select()
+      .from(department)
+      .where(where)
+      .orderBy(desc(department.createdAt), desc(department.id))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db.select({ count: count() }).from(department).where(where),
+  ]);
+  return { page, pageSize, rows, total: result?.count ?? 0, version: 1 as const };
+}
+
 export async function listJobs(
   db: Database,
   workspaceId: string,
@@ -164,6 +187,7 @@ export async function listJobs(
     db
       .select({
         createdAt: job.createdAt,
+        createdBy: job.createdBy,
         id: job.id,
         projectId: recruitmentProject.id,
         projectTitle: recruitmentProject.title,
@@ -178,6 +202,14 @@ export async function listJobs(
     db.select({ count: count() }).from(job).where(where),
   ]);
   return { page, pageSize, rows, total: result?.count ?? 0, version: 1 as const };
+}
+
+export function findDepartment(db: Database, workspaceId: string, id: string) {
+  return db
+    .select({ id: department.id })
+    .from(department)
+    .where(and(eq(department.id, id), eq(department.workspaceId, workspaceId)))
+    .get();
 }
 
 export function findRecruitmentProject(db: Database, workspaceId: string, id: string) {
@@ -334,6 +366,7 @@ export async function listResumes(
         parseStatus: run.status,
         resumeId: resume.id,
         runId: item.runId,
+        source: batch.source,
         status: item.status,
         submissionId: item.submissionId,
       })
@@ -382,6 +415,48 @@ export async function listResumes(
     total: result?.count ?? 0,
     version: 1 as const,
   };
+}
+
+export async function getUploadProcessing(db: Database, workspaceId: string, id: string) {
+  const record = await db
+    .select({
+      resume: {
+        hasAvatar: sql<boolean>`(${resume.avatarObjectKey} is not null)`.mapWith(Boolean),
+        id: resume.id,
+        markdown: resume.markdown,
+        profile: resume.parsedProfile,
+      },
+      run: { executionId: run.executionId, id: run.id, stage: run.stage, status: run.status },
+      upload: { filename: item.filename, id: item.id, size: item.size, status: item.status },
+    })
+    .from(item)
+    .leftJoin(run, and(eq(run.id, item.runId), eq(run.workspaceId, workspaceId)))
+    .leftJoin(resume, and(eq(resume.id, run.resumeId), eq(resume.workspaceId, workspaceId)))
+    .where(and(eq(item.id, id), eq(item.workspaceId, workspaceId)))
+    .get();
+  if (!record) {
+    return null;
+  }
+  const attempts = record.run
+    ? await db
+        .select({
+          createdAt: attempt.createdAt,
+          error: attempt.error,
+          finishedAt: attempt.finishedAt,
+          id: attempt.id,
+          ordinal: attempt.ordinal,
+          parameters: attempt.parameters,
+          stage: attempt.stage,
+          startedAt: attempt.startedAt,
+          status: attempt.status,
+        })
+        .from(attempt)
+        .where(
+          and(eq(attempt.runId, record.run.id), eq(attempt.executionId, record.run.executionId)),
+        )
+        .orderBy(asc(attempt.createdAt), asc(attempt.ordinal), asc(attempt.id))
+    : [];
+  return { ...record, attempts, version: 1 as const };
 }
 
 export async function getUploadResumeProfile(db: Database, workspaceId: string, id: string) {

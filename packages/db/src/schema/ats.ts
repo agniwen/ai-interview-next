@@ -1,5 +1,12 @@
 import { sql } from "drizzle-orm";
-import { foreignKey, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  foreignKey,
+  index,
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 import type { ResumeParsedProfile } from "../resume-profile";
 import { user } from "./auth";
 import { organization } from "./organization";
@@ -121,11 +128,29 @@ export const resume = sqliteTable(
 /** 工作区内的一批招聘岗位。 / A group of recruiting jobs in a workspace. */
 export const recruitmentProject = sqliteTable("recruitment_project", {
   createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+  /** 创建人 ID，历史记录未保存时为空。 / Creator ID; null for historical records without attribution. */
+  createdBy: text("createdBy"),
   description: text("description").notNull().default(""),
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   workspaceId: workspaceIdColumn(),
 });
+
+export const department = sqliteTable(
+  "department",
+  {
+    createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+    /** 历史岗位导入的部门可能没有创建人记录。 / Departments imported from historical jobs may lack creator attribution. */
+    createdBy: text("createdBy"),
+    description: text("description").notNull().default(""),
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    workspaceId: workspaceIdColumn(),
+  },
+  (table) => [
+    index("department_workspace_created_idx").on(table.workspaceId, table.createdAt, table.id),
+  ],
+);
 
 /** 工作区内的招聘岗位。 / A job opening in a workspace. */
 export const job = sqliteTable(
@@ -133,10 +158,14 @@ export const job = sqliteTable(
   {
     /** 岗位建立时间。 / Job creation time. */
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
-    /** 所属部门的名称。 / Name of the department that owns the job. */
+    /** 创建人 ID，历史记录未保存时为空。 / Creator ID; null for historical records without attribution. */
+    createdBy: text("createdBy"),
+    /** 保留旧部门名称用于历史数据迁移，新写入使用 departmentId。 / Retain legacy department names for migration; new writes use departmentId. */
     department: text("department"),
+    departmentId: text("departmentId").references(() => department.id),
     /** 岗位 ID。 / Job ID. */
     id: text("id").primaryKey(),
+    internalCriteria: text("internalCriteria").notNull().default(""),
     projectId: text("projectId").references(() => recruitmentProject.id),
     /** 当前岗位要求。 / Current job requirements. */
     requirements: text("requirements").notNull(),

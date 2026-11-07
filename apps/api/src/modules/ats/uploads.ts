@@ -41,7 +41,13 @@ export async function createUploadBatch(
     }),
   );
   await db.batch([
-    db.insert(batch).values({ createdAt: new Date(), createdBy: userId, id, workspaceId }),
+    db.insert(batch).values({
+      createdAt: new Date(),
+      createdBy: userId,
+      id,
+      source: "manual_upload",
+      workspaceId,
+    }),
     db.insert(item).values(items),
   ]);
   return { id, uploads, version: 1 as const };

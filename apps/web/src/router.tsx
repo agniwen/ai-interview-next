@@ -14,6 +14,15 @@ const applicationDetailMask = createRouteMask({
   unmaskOnReload: true,
 });
 
+const resumeProcessingMask = createRouteMask({
+  from: "/w/$workspaceId/hub/resumes/overlay/$id",
+  params: true,
+  routeTree,
+  search: true,
+  to: "/w/$workspaceId/hub/resumes/$id",
+  unmaskOnReload: true,
+});
+
 export function getRouter() {
   const context = getContext();
 
@@ -22,7 +31,7 @@ export function getRouter() {
     defaultPendingMinMs: skeletonMinVisibleMs,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
-    routeMasks: [applicationDetailMask],
+    routeMasks: [applicationDetailMask, resumeProcessingMask],
     routeTree,
     scrollRestoration: true,
   });

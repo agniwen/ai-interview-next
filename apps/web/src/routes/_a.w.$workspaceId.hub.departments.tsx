@@ -1,0 +1,27 @@
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { DepartmentsPage } from "@/components/ats/departments-page";
+import { listSearch } from "@/components/ats/list-search";
+import * as m from "@/paraglide/messages";
+
+const routeApi = getRouteApi("/_a/w/$workspaceId/hub/departments");
+
+function Page() {
+  const { workspaceId } = routeApi.useParams();
+  const query = routeApi.useSearch();
+  const navigate = routeApi.useNavigate();
+  return (
+    <DepartmentsPage
+      workspaceId={workspaceId}
+      query={query}
+      onQueryChange={(changes) => {
+        void navigate({ search: (prev) => ({ ...prev, ...changes }) });
+      }}
+    />
+  );
+}
+
+export const Route = createFileRoute("/_a/w/$workspaceId/hub/departments")({
+  component: Page,
+  head: () => ({ meta: [{ title: `${m.ats_departments()} — Sainoa` }] }),
+  validateSearch: listSearch,
+});

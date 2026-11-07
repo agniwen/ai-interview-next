@@ -30,6 +30,22 @@ it.each([{ missingAvatar: true }, { missingAvatar: false }])(
     );
     const [upload] = created.uploads;
     expect(upload.contentType).toBe("image/png");
+    expect(await read(owner.ats(`uploads/${upload.id}/processing`))).toMatchObject({
+      attempts: [],
+      resume: null,
+      run: null,
+      upload: { filename: "resume.png", id: upload.id, status: "waiting" },
+      version: 1,
+    });
+    const forbidden = await outsider.call(
+      `ats/${owner.workspaceId}/uploads/${upload.id}/processing`,
+    );
+    expect(forbidden.status).toBe(404);
+    const crossWorkspace = await outsider.ats(`uploads/${upload.id}/processing`);
+    expect(crossWorkspace.status).toBe(404);
+    const missing = await owner.ats(`uploads/${crypto.randomUUID()}/processing`);
+    expect(missing.status).toBe(404);
+
     const uploaded = await owner.request(upload.url, {
       body: new Uint8Array(bytes),
       headers: { "content-type": upload.contentType },
@@ -156,6 +172,12 @@ it.each([{ missingAvatar: true }, { missingAvatar: false }])(
       parseStatus: "queued",
       profile: { identity: { name: "Old name" } },
     });
+
+    expect(await read(owner.ats(`uploads/${upload.id}/processing`))).toMatchObject({
+      attempts: [],
+      resume: { markdown: "# Resume 1", profile: { identity: { name: "Old name" } } },
+      run: { executionId: restartedRun?.executionId, status: "queued" },
+    });
     await runResumeWorkflow(
       atsTest.platform.database,
       {
@@ -186,6 +208,32 @@ it.each([{ missingAvatar: true }, { missingAvatar: false }])(
       .from(resumeProcessingAttempt)
       .where(eq(resumeProcessingAttempt.runId, runId));
     expect(attempts).toHaveLength(3);
+    const processing = await read(owner.ats(`uploads/${upload.id}/processing`));
+    expect(processing).toMatchObject({
+      attempts: [
+        {
+          finishedAt: expect.any(String),
+          ordinal: 1,
+          parameters: { model: "test", version: 1 },
+          stage: "extract_text",
+          startedAt: expect.any(String),
+          status: "succeeded",
+        },
+        { ordinal: 1, stage: "structure", status: "succeeded" },
+      ],
+      resume: {
+        hasAvatar: true,
+        id: runId,
+        markdown: "# Resume 2",
+        profile: { identity: { name: "Reparsed name" }, version: 1 },
+      },
+      run: { executionId: restartedRun?.executionId, stage: "structure", status: "succeeded" },
+      upload: { id: upload.id, status: "accepted" },
+      version: 1,
+    });
+    expect(processing.attempts).toHaveLength(2);
+    expect(processing.resume).not.toHaveProperty("avatarObjectKey");
+
     expect(attempts.every((entry) => entry.status === "succeeded")).toBe(true);
   },
 );

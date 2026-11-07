@@ -63,8 +63,18 @@ it("retries one failed upload in its original batch while other files enter proc
   expect(await read(owner.ats("resumes"))).toMatchObject({
     batches: [{ failed: 0, id: batch.id, total: 2 }],
     rows: expect.arrayContaining([
-      expect.objectContaining({ id: first.id, runId: first.id, status: "accepted" }),
-      expect.objectContaining({ id: second.id, runId: second.id, status: "accepted" }),
+      expect.objectContaining({
+        id: first.id,
+        runId: first.id,
+        source: "manual_upload",
+        status: "accepted",
+      }),
+      expect.objectContaining({
+        id: second.id,
+        runId: second.id,
+        source: "manual_upload",
+        status: "accepted",
+      }),
     ]),
     total: 2,
   });
@@ -397,8 +407,12 @@ it("edits projects and jobs within the workspace and can unlink a job", async ()
   };
   const { id: projectId } = await read(owner.ats("projects", projectInput));
   const { id: otherProjectId } = await read(other.ats("projects", projectInput));
+  const { id: departmentId } = await read(
+    owner.ats("departments", { name: "Engineering", version: 1 }),
+  );
   const jobInput = {
-    department: "Engineering",
+    departmentId,
+    internalCriteria: "## Internal criteria\n\n- Product ownership",
     projectId,
     requirements: "Original JD",
     title: "Engineer",
@@ -416,7 +430,8 @@ it("edits projects and jobs within the workspace and can unlink a job", async ()
   const jobPath = `jobs/${jobId}`;
   const newProject = { description: "**Updated** project", title: "Renamed project", version: 1 };
   const newJob = {
-    department: " ",
+    departmentId: null,
+    internalCriteria: "## Internal criteria\n\n- Leads a team",
     projectId: null,
     requirements: "## Responsibilities\n\n- Build features",
     title: "Senior engineer",
@@ -431,8 +446,10 @@ it("edits projects and jobs within the workspace and can unlink a job", async ()
     404, 404, 404,
   ]);
   expect(await read(owner.ats(jobPath))).toEqual({
+    createdBy: owner.userId,
     id: jobId,
     ...jobInput,
+    department: "Engineering",
     projectTitle: projectInput.title,
   });
 
@@ -474,11 +491,21 @@ it("edits projects and jobs within the workspace and can unlink a job", async ()
   const updatedJob = await put(jobPath, newJob);
   expect(updatedJob.status).toBe(200);
   expect(await read(owner.ats(jobPath))).toEqual({
+    createdBy: owner.userId,
     id: jobId,
     ...newJob,
     department: null,
     projectTitle: null,
   });
+  const { internalCriteria: _criteria, ...withoutCriteria } = newJob;
+  await put(jobPath, withoutCriteria);
+  expect(await read(owner.ats(jobPath))).toMatchObject({
+    internalCriteria: newJob.internalCriteria,
+  });
+  const tooLongCriteria = await put(jobPath, { ...newJob, internalCriteria: "x".repeat(30_001) });
+  expect(tooLongCriteria.status).toBe(400);
+  await put(jobPath, { ...newJob, internalCriteria: "" });
+  expect(await read(owner.ats(jobPath))).toMatchObject({ internalCriteria: "" });
   expect(await read(owner.ats(projectPath))).toMatchObject({ jobCount: 0 });
   expect(await read(owner.ats(`jobs?projectId=${projectId}`))).toMatchObject({
     rows: [],
@@ -525,7 +552,7 @@ it("filters resume files before pagination and keeps full upload batch totals", 
     batches: [{ failed: 2, id: batchId, total: 3 }],
     page: 1,
     pageSize: 1,
-    rows: [{ filename: "second.pdf" }],
+    rows: [{ filename: "second.pdf", source: "manual_upload" }],
     total: 2,
   });
   expect(await read(ats(`${filter}&page=2`))).toMatchObject({

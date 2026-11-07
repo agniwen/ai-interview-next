@@ -309,7 +309,7 @@ export function SidebarRail({
     <button
       aria-label={m.workspace_toggle_sidebar()}
       className={cn(
-        "absolute inset-y-6 z-20 hidden w-4 -translate-x-1/2 after:pointer-events-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:bg-sidebar-border after:opacity-0 after:transition-opacity after:duration-200 after:mask-[linear-gradient(to_bottom,transparent,black_3rem,black_calc(100%-3rem),transparent)] hover:after:opacity-100 focus-visible:after:opacity-100 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",
+        "absolute inset-y-6 z-20 hidden w-4 -translate-x-1/2 outline-none after:pointer-events-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:bg-sidebar-border after:opacity-0 after:transition-opacity after:duration-200 after:mask-[linear-gradient(to_bottom,transparent,black_3rem,black_calc(100%-3rem),transparent)] hover:after:opacity-100 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",
         "group-data-[variant=inset]:group-data-[side=left]:after:-translate-x-full",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",

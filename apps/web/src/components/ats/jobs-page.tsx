@@ -27,6 +27,8 @@ import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { listParams } from "./list-search";
 import type { JobListSearch } from "./list-search";
+import { DepartmentSelect } from "./department-select";
+import type { DepartmentOption } from "./department-select";
 import { ProjectPreviewCard } from "./project-preview-card";
 import { ProjectFilter, ProjectSelect } from "./project-select";
 
@@ -43,9 +45,11 @@ function JobForm({
 }: {
   job?: {
     department: string | null;
+    departmentId: string | null;
     id: string;
     title: string;
     requirements: string;
+    internalCriteria: string;
     projectId: string | null;
   };
   workspaceId: string;
@@ -53,15 +57,24 @@ function JobForm({
 }) {
   const client = useQueryClient();
   const formId = useId();
-  const [department, setDepartment] = useState(job?.department ?? "");
+  const [department, setDepartment] = useState<DepartmentOption | null>(
+    job?.departmentId && job.department ? { id: job.departmentId, name: job.department } : null,
+  );
   const [projectId, setProjectId] = useState(job?.projectId ?? null);
   const [title, setTitle] = useState(job?.title ?? "");
+  const [internalCriteria, setInternalCriteria] = useState(job?.internalCriteria ?? "");
   const [requirements, setRequirements] = useState(job?.requirements ?? "");
   const validRequirements =
     requirements.trim().length > 0 && requirements.length <= maxJobRequirementsLength;
   const mutation = useMutation({
     mutationFn: async () => {
-      const json = { department, requirements, title, version: 1 as const };
+      const json = {
+        departmentId: department?.id ?? null,
+        internalCriteria,
+        requirements,
+        title,
+        version: 1 as const,
+      };
       return readAts(
         job
           ? await atsApi.jobs[":id"].$put({
@@ -127,11 +140,11 @@ function JobForm({
         </Field>
         <Field>
           <FieldLabel htmlFor={`${formId}-department`}>{m.ats_department()}</FieldLabel>
-          <Input
+          <DepartmentSelect
             id={`${formId}-department`}
-            maxLength={200}
-            onChange={(event) => setDepartment(event.target.value)}
+            onChange={setDepartment}
             value={department}
+            workspaceId={workspaceId}
           />
         </Field>
         <Field>
@@ -154,10 +167,31 @@ function JobForm({
             />
           </SkeletonSuspense>
         </Field>
+        <Field>
+          <FieldLabel
+            id={`${formId}-internal-criteria-label`}
+            htmlFor={`${formId}-internal-criteria`}
+          >
+            {m.ats_internal_criteria()}
+          </FieldLabel>
+          <SkeletonSuspense fallback={<MarkdownEditorSkeleton />}>
+            <MarkdownEditor
+              id={`${formId}-internal-criteria`}
+              aria-labelledby={`${formId}-internal-criteria-label`}
+              value={internalCriteria}
+              onChange={setInternalCriteria}
+              maxLength={maxJobRequirementsLength}
+            />
+          </SkeletonSuspense>
+        </Field>
       </DialogPanel>
       <DialogFooter>
         <Button
-          disabled={!title.trim() || !validRequirements}
+          disabled={
+            !title.trim() ||
+            !validRequirements ||
+            internalCriteria.length > maxJobRequirementsLength
+          }
           form={formId}
           loading={mutation.isPending}
           type="submit"
@@ -268,7 +302,7 @@ export function JobsPage({ workspaceId, query, onQueryChange }: AtsPageProps<Job
     >
       <Dialog handle={dialog}>
         {({ payload }) => (
-          <DialogPopup className="sm:max-w-xl">
+          <DialogPopup className="sm:max-w-4xl">
             <DialogHeader>
               <DialogTitle>{payload ? m.ats_edit_job() : m.ats_create_job()}</DialogTitle>
               {!payload && <DialogDescription>{m.ats_job_help()}</DialogDescription>}

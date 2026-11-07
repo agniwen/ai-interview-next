@@ -11,6 +11,12 @@ export const listQuery = paginationQuery.extend({
 
 export const jobListQuery = listQuery.extend({ projectId: z.uuid().optional() });
 
+export const departmentInput = z.strictObject({
+  description: z.string().trim().max(30_000).optional(),
+  name: z.string().trim().min(1).max(200),
+  version: z.literal(1),
+});
+
 export const projectInput = z.strictObject({
   title: z.string().trim().min(1).max(200),
   version: z.literal(1),
@@ -21,13 +27,8 @@ export const projectDetailsInput = projectInput.extend({
 });
 
 export const jobInput = projectInput.extend({
-  department: z
-    .string()
-    .trim()
-    .max(200)
-    .nullable()
-    .transform((value) => value || null)
-    .optional(),
+  departmentId: z.uuid().nullable().optional(),
+  internalCriteria: z.string().trim().max(30_000).optional(),
   projectId: z.uuid().optional(),
   requirements: z.string().trim().min(1).max(30_000),
 });

@@ -50,6 +50,12 @@ function JobPreviewContent({ id, workspaceId }: { id: string; workspaceId: strin
           <MessageResponse className="text-sm">{data.requirements}</MessageResponse>
         </div>
       )}
+      {data.internalCriteria && (
+        <div className="flex min-w-0 flex-col gap-1.5 border-t pt-3">
+          <h4 className="text-xs font-medium text-muted-foreground">{m.ats_internal_criteria()}</h4>
+          <MessageResponse className="text-sm">{data.internalCriteria}</MessageResponse>
+        </div>
+      )}
     </>
   );
 }

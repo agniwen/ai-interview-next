@@ -58,6 +58,15 @@ wrangler.jsonc
 - `GET /api/ats/:workspaceId/projects/:id` 返回项目预览详情 `{ version: 1, id, title, description, createdAt, jobCount }`，仅限所属工作区成员访问；不存在或不属于当前工作区的项目返回 404。列表不携带长篇说明，Web 在打开项目预览卡或编辑弹窗时加载详情。
 - `POST /api/ats/:workspaceId/projects` 与 `PUT /api/ats/:workspaceId/projects/:id` 接受可选的 Markdown `description`（去除首尾空白，最多 30,000 字符）；创建时省略则保存为空字符串，编辑时省略则保留原说明，提交空字符串可清空说明。
 
+- `GET /api/ats/:workspaceId/uploads/:id/processing` 返回 `{ version: 1, upload, run, attempts, resume }`：本次执行的阶段尝试、状态、时间、错误和模型参数，以及简历最近保存的 Markdown、结构化资料和头像是否存在。仅所属工作区成员可访问，缺失或越权返回 404；重新解析时旧产物保留至替换，不提供历史产物快照。头像属于文本提取阶段，没有独立尝试记录。
+
+- `GET /api/ats/:workspaceId/departments` 使用 `page`、`pageSize`、`search` 返回部门分页列表；`POST /departments` 与 `PUT /departments/:id` 接受 `{ version: 1, name, description? }`，名称去除首尾空白后为 1–200 字符；说明以 Markdown 保存，最多 30,000 字符，创建时省略默认为空，编辑时省略保留原值，空字符串可清空。访问和编辑限定在当前工作区内。
+- 项目、部门和岗位创建时由服务端从当前会话记录 `createdBy`，编辑不会改变创建人。历史项目与岗位没有创建人记录时保留 `null`，Web 暂不显示创建人字段。
+
+- 岗位支持独立的 Markdown `internalCriteria`（内部标准，最多 30,000 字符），创建时省略默认为空，编辑省略保留原值，空字符串可清空；岗位详情返回此字段。
+- 岗位创建和编辑使用可选的 `departmentId` 选择当前工作区部门，`null` 可取消关联；岗位详情返回 `departmentId` 和当前部门名称 `department`。部门改名后详情展示新名称。历史岗位的手填名称通过迁移按工作区归并为部门，无法确定的创建人保留为空。
+- 简历列表返回每条记录的 `source`，目前为 `manual_upload`（人工上传）。来源保存在上传批次中，由上传入口设置，历史批次默认回填为人工上传；增加新渠道时扩展来源类型及对应展示文案。
+
 工作区、成员、邀请及固定角色使用 Better Auth Organization 插件；首次创建用户时自动创建初始工作区和 owner 成员关系。所有 Organization 操作都传入明确的组织标识，Web 页面不依赖共享 session 中的当前组织。设计和页面入口见 [工作区文档](../../docs/architecture/workspaces.md)。
 
 工作区使用服务端生成的 8 位小写字母数字 ID；注册时的初始工作区与 Organization 创建钩子共用生成与查重逻辑，重复时重新生成，slug 与 ID 一致。

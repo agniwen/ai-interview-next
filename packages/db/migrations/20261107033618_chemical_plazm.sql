@@ -1,0 +1,1 @@
+ALTER TABLE `job` ADD `internalCriteria` text DEFAULT '' NOT NULL;

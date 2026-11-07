@@ -36,6 +36,15 @@ function WorkspaceShell() {
       ? "hub"
       : "agent";
 
+  const canvasPage = Boolean(
+    matchRoute({ to: "/w/$workspaceId/hub/resumes/overlay/$id", fuzzy: true }) ||
+    matchRoute({ to: "/w/$workspaceId/hub/resumes/$id", fuzzy: true }),
+  );
+
+  const contentClassName = canvasPage
+    ? "flex min-h-0 flex-1 flex-col"
+    : "flex flex-1 flex-col p-4 md:p-6";
+
   const { mutate: activate, error } = useMutation({
     mutationFn: async (id: string) => {
       const response = await workspaceApi.api.workspaces[":workspaceId"].activate.$post({
@@ -70,12 +79,14 @@ function WorkspaceShell() {
               <ScrollArea
                 className="min-h-0 flex-1 [&>[data-slot=scroll-area-scrollbar]]:z-20"
                 fill
-                viewportClassName={section === "agent" ? "overflow-hidden!" : undefined}
+                viewportClassName={
+                  section === "agent" || canvasPage ? "overflow-hidden!" : undefined
+                }
                 overscrollContain
               >
                 <div
                   className={
-                    section === "agent"
+                    section === "agent" || canvasPage
                       ? "flex h-full min-h-0 flex-col"
                       : "flex min-h-full flex-col"
                   }
@@ -99,9 +110,7 @@ function WorkspaceShell() {
                   </header>
                   <div
                     className={
-                      section === "agent"
-                        ? "-mt-12 flex min-h-0 flex-1 flex-col"
-                        : "flex flex-1 flex-col p-4 md:p-6"
+                      section === "agent" ? "-mt-12 flex min-h-0 flex-1 flex-col" : contentClassName
                     }
                   >
                     <WorkspaceFeedback error={error} />

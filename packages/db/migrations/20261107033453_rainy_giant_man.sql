@@ -1,0 +1,1 @@
+ALTER TABLE `department` ADD `description` text DEFAULT '' NOT NULL;

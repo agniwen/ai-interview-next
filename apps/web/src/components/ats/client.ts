@@ -45,6 +45,14 @@ export async function readResumeProfile(param: { id: string; workspaceId: string
   return readAts(await atsApi.uploads[":id"].profile.$get({ param }));
 }
 
+export async function readResumeProcessing(
+  param: { id: string; workspaceId: string },
+  signal?: AbortSignal,
+) {
+  const response = await atsApi.uploads[":id"].processing.$get({ param }, { init: { signal } });
+  return response.status === 404 ? null : readAts(response);
+}
+
 export function jobDetailsQuery(workspaceId: string, id: string) {
   return queryOptions({
     queryFn: async ({ signal }) =>

@@ -1,0 +1,1 @@
+ALTER TABLE `resume_upload_batch` ADD `source` text DEFAULT 'manual_upload' NOT NULL;

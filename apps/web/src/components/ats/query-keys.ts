@@ -22,6 +22,13 @@ export const atsKeys = createQueryKeys("ats", {
     },
     queryKey: [workspaceId],
   }),
+  departments: (workspaceId: string) => ({
+    contextQueries: {
+      list: (query: ListSearch) => [query],
+      options: (search: string) => [search],
+    },
+    queryKey: [workspaceId],
+  }),
   jobs: (workspaceId: string) => ({
     contextQueries: {
       detail: (id: string) => [id],
@@ -42,6 +49,7 @@ export const atsKeys = createQueryKeys("ats", {
     contextQueries: {
       list: (query: ResumeListSearch) => [query],
       options: (search: string, offsetMinutes: number) => [{ offsetMinutes, search }],
+      processing: (id: string) => [id],
       profile: (id: string) => [id],
     },
     queryKey: [workspaceId],
