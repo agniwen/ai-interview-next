@@ -23,6 +23,10 @@ src/
       input.ts
       routes.ts
       service.ts
+    question-sets/
+      input.ts
+      routes.ts
+      service.ts
 tests/
   auth.test.ts
   examples.test.ts
@@ -62,6 +66,23 @@ wrangler.jsonc
 - `GET /api/interviewer-agents/:workspaceId` 使用 `page`、`pageSize`、`search` 返回 `{ version: 1, rows, page, pageSize, total }`。按名称和说明搜索，按创建时间、ID 倒序排列；列表不携带提示词，`GET /api/interviewer-agents/:workspaceId/:id` 返回完整配置。
 - `POST /api/interviewer-agents/:workspaceId` 与 `PUT /api/interviewer-agents/:workspaceId/:id` 接受 `{ version: 1, name, description?, prompt }`。名称去除首尾空白后为 1–200 字符，提示词为 1–30,000 字符，说明最多 30,000 字符；创建时省略说明则为空，编辑时省略保留原值，空字符串可清空。创建返回 `{ version: 1, id }`（201），编辑返回同格式（200）。创建人来自当前会话，编辑保留创建人并更新修改时间。
 - 面试官配置供当前工作区成员共同管理。上述接口沿用登录与工作区成员校验；配置不存在或属于其他工作区时返回 `{ version: 1, error: "INTERVIEWER_AGENT_UNAVAILABLE" }`（404），输入校验失败返回 `{ version: 1, error: "INVALID_INPUT" }`（400）。本阶段只管理可复用配置，尚未接入面试轮次或启动访谈。
+
+### 题套 / Question sets
+
+- `GET /api/question-sets/:workspaceId` 接受 `page`、`pageSize`、`search` 和可选 `kind=form|conversation`，返回 `{ version: 1, rows, page, pageSize, total }`。按名称与说明搜索，先筛选再分页；按创建时间、ID 倒序排列。列表只返回名称、说明、类型、题数和维护信息，完整内容由 `GET /api/question-sets/:workspaceId/:id` 读取。
+  The list accepts pagination, name/description search and an optional kind filter. Filtering precedes pagination, with creation time and ID descending for stable order. List rows contain summaries and question counts; the detail endpoint returns full content.
+- `POST /api/question-sets/:workspaceId` 与 `PUT /api/question-sets/:workspaceId/:id` 接受 `{ version: 1, name, description?, content }`，创建返回 `{ version: 1, id }`（201），编辑返回同格式（200）。名称去除首尾空白后为 1–200 字符，说明最多 30,000 字符；创建时省略说明为空，编辑省略保留原值，空字符串清空。
+  Create and update accept the complete set. Trimmed names are 1–200 characters and descriptions at most 30,000. An omitted description defaults to empty on creation and preserves the previous value on edits; an empty string clears it.
+- `content` 为 `{ version: 1, kind, questions }`。两类题套分别对应 `form` 和 `conversation`，每套最多 50 题，允许保存空套逐步编辑。题目与选项的数组位置就是顺序，不需要额外排序字段，也不按题干去重；编辑整套替换内容，可增题、删题和调整顺序。
+  Versioned content discriminates between form and conversation sets. Each holds up to 50 questions and may be empty while being edited. Array order determines question and option order without prompt deduplication. Whole-set updates support additions, removals and reordering.
+- 表单题为 `{ type, content, description?, options? }`：`type` 支持 `single_choice`、`multiple_choice`、`text`；题干为 1–1000 字符，辅助说明最多 500 字符。选择题必须有 2–20 个非空选项，每个最多 200 字符；填写题不接受选项。所有表单题均必填，不接受 `required` 字段。
+  Form questions support single choice, multiple choice and text. Prompts contain 1–1000 characters and help text at most 500. Choice questions require 2–20 nonempty options of at most 200 characters each; text questions do not accept options. All questions are required, so a required toggle is not accepted.
+- 沟通题为 `{ content, difficulty, evaluationFocus?, followUpDirections?, evaluationCriteria? }`：题干为 1–1000 字符，难度为 `easy|medium|hard`，考核点最多 500 字符，追问方向最多 1000 字符，评价标准最多 2000 字符。省略的辅助文本保存为空字符串。
+  Conversation questions contain a prompt, difficulty, evaluation focus, follow-up directions and evaluation criteria. Limits are 1000, 500, 1000 and 2000 characters respectively; difficulty is easy, medium or hard. Omitted guidance is stored as an empty string.
+- 读写均要求登录和工作区成员身份；题套不存在或属于其他工作区返回 `{ version: 1, error: "QUESTION_SET_UNAVAILABLE" }`（404），输入不符合格式返回 `{ version: 1, error: "INVALID_INPUT" }`（400）。创建人来自会话，编辑保留创建信息。本步仅提供题套数据与 API，岗位绑定、面试选题、快照与作答按后续步骤实现。
+  Reads and writes require authentication and workspace membership. Missing or foreign-workspace sets return the same 404 error; invalid input returns 400. The session supplies the creator, which edits preserve. Job bindings, interview selection, snapshots and answers belong to subsequent steps.
+
+### 招聘数据 / Recruiting data
 
 - `GET /api/ats/:workspaceId/projects/:id` 返回项目预览详情 `{ version: 1, id, title, description, createdAt, jobCount }`，仅限所属工作区成员访问；不存在或不属于当前工作区的项目返回 404。列表不携带长篇说明，Web 在打开项目预览卡或编辑弹窗时加载详情。
 - `POST /api/ats/:workspaceId/projects` 与 `PUT /api/ats/:workspaceId/projects/:id` 接受可选的 Markdown `description`（去除首尾空白，最多 30,000 字符）；创建时省略则保存为空字符串，编辑时省略则保留原说明，提交空字符串可清空说明。

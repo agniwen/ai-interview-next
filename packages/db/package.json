@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./application-evaluation": "./src/application-evaluation.ts",
+    "./question-set": "./src/question-set.ts",
     "./resume-profile": "./src/resume-profile.ts",
     "./schema": "./src/schema/index.ts"
   },

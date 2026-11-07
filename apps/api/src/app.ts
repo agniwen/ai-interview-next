@@ -8,6 +8,7 @@ import { atsRoutes } from "./modules/ats/routes";
 import { agentRoutes } from "./modules/agent/routes";
 import { authRoutes } from "./modules/auth/routes";
 import { interviewerAgentRoutes } from "./modules/interviewer-agents/routes";
+import { questionSetRoutes } from "./modules/question-sets/routes";
 import { workspaceRoutes } from "./modules/workspaces/routes";
 import type { ApiBindings } from "./env";
 
@@ -17,6 +18,7 @@ const protectedApi = new Hono<AuthenticatedEnv>()
   .route("/agent", agentRoutes)
   .route("/ats", atsRoutes)
   .route("/interviewer-agents", interviewerAgentRoutes)
+  .route("/question-sets", questionSetRoutes)
   .route("/workspaces", workspaceRoutes);
 
 export const app = new Hono<{ Bindings: ApiBindings }>()
