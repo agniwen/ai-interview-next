@@ -1,7 +1,7 @@
 import type { Database } from "@ai-interview/db";
 import type { QuestionSetKind } from "@ai-interview/db/question-set";
-import { questionSet } from "@ai-interview/db/schema";
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { job, questionSet, questionSetJob } from "@ai-interview/db/schema";
+import { and, asc, desc, eq, exists, inArray, or, sql } from "drizzle-orm";
 import type { QuestionSetInput, QuestionSetListQuery } from "./input";
 
 /** 列表只投影摘要；按 version 1 的内容结构读取类型与题数，不加载完整题目。
@@ -9,12 +9,25 @@ import type { QuestionSetInput, QuestionSetListQuery } from "./input";
 export async function listQuestionSets(
   db: Database,
   workspaceId: string,
-  { kind, page, pageSize, search }: QuestionSetListQuery,
+  { jobId, kind, page, pageSize, search }: QuestionSetListQuery,
 ) {
   const kindValue = sql<QuestionSetKind>`json_extract(${questionSet.content}, '$.kind')`;
   const where = and(
     eq(questionSet.workspaceId, workspaceId),
     kind ? eq(kindValue, kind) : undefined,
+    jobId
+      ? exists(
+          db
+            .select({ id: questionSetJob.jobId })
+            .from(questionSetJob)
+            .where(
+              and(
+                eq(questionSetJob.questionSetId, questionSet.id),
+                eq(questionSetJob.jobId, jobId),
+              ),
+            ),
+        )
+      : undefined,
     search
       ? or(
           sql`instr(lower(${questionSet.name}), lower(${search})) > 0`,
@@ -46,12 +59,32 @@ export async function listQuestionSets(
   return { page, pageSize, rows, total, version: 1 as const };
 }
 
-export function getQuestionSet(db: Database, workspaceId: string, id: string) {
-  return db
+export async function getQuestionSet(db: Database, workspaceId: string, id: string) {
+  const record = await db
     .select()
     .from(questionSet)
     .where(and(eq(questionSet.workspaceId, workspaceId), eq(questionSet.id, id)))
     .get();
+  if (!record) {
+    return;
+  }
+  const defaultJobs = await db
+    .select({ id: job.id, title: job.title })
+    .from(questionSetJob)
+    .innerJoin(job, eq(job.id, questionSetJob.jobId))
+    .where(eq(questionSetJob.questionSetId, id))
+    .orderBy(asc(job.title), asc(job.id));
+  return { ...record, defaultJobs };
+}
+
+async function jobsBelongToWorkspace(db: Database, workspaceId: string, ids: string[] = []) {
+  if (ids.length === 0) {
+    return true;
+  }
+  return (
+    (await db.$count(job, and(eq(job.workspaceId, workspaceId), inArray(job.id, ids)))) ===
+    ids.length
+  );
 }
 
 /** 空题套可用于逐步编辑；是否能用于面试由创建面试的入口决定。
@@ -60,11 +93,14 @@ export async function createQuestionSet(
   db: Database,
   workspaceId: string,
   userId: string,
-  { content, description, name }: QuestionSetInput,
+  { content, defaultJobIds, description, name }: QuestionSetInput,
 ) {
+  if (!(await jobsBelongToWorkspace(db, workspaceId, defaultJobIds))) {
+    return { error: "JOB_UNAVAILABLE" as const, version: 1 as const };
+  }
   const id = crypto.randomUUID();
   const now = new Date();
-  await db.insert(questionSet).values({
+  const insert = db.insert(questionSet).values({
     content,
     createdAt: now,
     createdBy: userId,
@@ -74,21 +110,47 @@ export async function createQuestionSet(
     updatedAt: now,
     workspaceId,
   });
+  await db.batch([
+    insert,
+    ...(defaultJobIds ?? []).map((jobId) =>
+      db.insert(questionSetJob).values({ jobId, questionSetId: id }),
+    ),
+  ]);
   return { id, version: 1 as const };
 }
 
-/** 单条更新同时替换名称、内容和顺序，保留创建信息，并限定到已授权的工作区。
- * One update replaces metadata, content and order together, preserving creation details within the authorized workspace. */
+/** 题套和默认岗位在同一批次保存，避免部分写入。
+ * Save the set and its default jobs in one batch to avoid partial writes. */
 export async function updateQuestionSet(
   db: Database,
   workspaceId: string,
   id: string,
-  { content, description, name }: QuestionSetInput,
+  { content, defaultJobIds, description, name }: QuestionSetInput,
 ) {
-  const [record] = await db
-    .update(questionSet)
-    .set({ content, description, name, updatedAt: new Date() })
+  const record = await db
+    .select({ id: questionSet.id })
+    .from(questionSet)
     .where(and(eq(questionSet.workspaceId, workspaceId), eq(questionSet.id, id)))
-    .returning({ id: questionSet.id });
+    .get();
+  if (!record) {
+    return;
+  }
+  if (!(await jobsBelongToWorkspace(db, workspaceId, defaultJobIds))) {
+    return { error: "JOB_UNAVAILABLE" as const, version: 1 as const };
+  }
+  await db.batch([
+    db
+      .update(questionSet)
+      .set({ content, description, name, updatedAt: new Date() })
+      .where(eq(questionSet.id, id)),
+    ...(defaultJobIds === undefined
+      ? []
+      : [
+          db.delete(questionSetJob).where(eq(questionSetJob.questionSetId, id)),
+          ...defaultJobIds.map((jobId) =>
+            db.insert(questionSetJob).values({ jobId, questionSetId: id }),
+          ),
+        ]),
+  ]);
   return record;
 }

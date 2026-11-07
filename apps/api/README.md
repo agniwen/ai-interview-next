@@ -218,3 +218,5 @@ API 的 `.env` 用于本地开发，`.env.production` 用于生产发布，二�
 仓库根目录的 `bun run deploy` 先发布 API，再构建并发布 Web；也可分别执行 `bun run deploy:api` 和 `bun run deploy:web`。数据库迁移仍通过 `make db-migrate` / `make db-migrate-remote` 显式应用。
 
 Web 不需要这些认证 env，通过 Service Binding 调用 API；Web 与 API 的开发脚本使用同一服务注册目录。Google 配置、已有环境的密钥迁移及完整部署步骤统一见 [Google 登录](../../docs/auth/google-login.md)。
+
+题套支持可选的 `defaultJobIds`：创建时省略则无绑定，编辑时省略保留原绑定，传空数组清空；重复 ID 合并。岗位必须属于当前工作区，否则返回 `JOB_UNAVAILABLE`（400），不改变题套内容或绑定。详情返回 `defaultJobs: [{ id, title }]`；列表可用 `jobId` 查询默认绑定该岗位的题套，与题型和关键词筛选共同作用于分页和总数。绑定仅为创建面试提供初始选择，不限制题套的使用范围。

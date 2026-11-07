@@ -382,3 +382,74 @@ it("validates versioned type-specific content once at the HTTP boundary without 
   expect(await read(owner.call(`${path}/${id}`))).toEqual(initial);
   expect(await read(owner.call(path))).toMatchObject({ rows: [{ id }], total: 1 });
 });
+
+it("binds multiple jobs, filters sets before paging, replaces and clears defaults without crossing workspaces", async () => {
+  const owner = await account("question-defaults@example.com");
+  const other = await account("question-defaults-other@example.com");
+  const jobs = await Promise.all(
+    ["Frontend", "Backend"].map((title) =>
+      read(owner.ats("jobs", { requirements: "Experience", title, version: 1 })),
+    ),
+  );
+  const foreign = await read(
+    other.ats("jobs", { requirements: "Experience", title: "Other", version: 1 }),
+  );
+  const path = `question-sets/${owner.workspaceId}`;
+  const input = {
+    content: formContent,
+    defaultJobIds: [jobs[0].id, jobs[1].id, jobs[0].id],
+    name: "Defaults",
+    version: 1,
+  };
+  const response = await owner.call(path, input);
+  expect(await response.clone().json()).toMatchObject({ id: expect.any(String) });
+  const { id } = await read(response);
+  const detail = () => read(owner.call(`${path}/${id}`));
+  const firstDetail = await detail();
+  expect(firstDetail.defaultJobs.map((row: { id: string }) => row.id).toSorted()).toEqual(
+    jobs.map((row) => row.id).toSorted(),
+  );
+  await owner.call(path, { ...input, content: conversationContent, name: "Second" });
+  expect(await read(owner.call(`${path}?jobId=${jobs[0].id}&pageSize=1&page=2`))).toMatchObject({
+    rows: [{ id }],
+    total: 2,
+  });
+  expect(await read(owner.call(`${path}?jobId=${jobs[0].id}&pageSize=1&page=3`))).toMatchObject({
+    rows: [],
+    total: 2,
+  });
+  expect(await read(owner.call(`${path}?jobId=${jobs[0].id}&kind=conversation`))).toMatchObject({
+    total: 1,
+  });
+  const put = (body: object) =>
+    owner.request(`${path}/${id}`, {
+      body: JSON.stringify(body),
+      headers: { "content-type": "application/json" },
+      method: "PUT",
+    });
+  const initial = await detail();
+  await Promise.all(
+    [foreign.id, "missing-job"].map(async (jobId) => {
+      expect(await owner.call(path, { ...input, defaultJobIds: [jobId] })).toMatchObject({
+        status: 400,
+      });
+      expect(await put({ ...input, defaultJobIds: [jobId], name: "Invalid change" })).toMatchObject(
+        {
+          status: 400,
+        },
+      );
+    }),
+  );
+  expect(await detail()).toEqual(initial);
+  expect(await put({ ...input, defaultJobIds: [jobs[1].id] })).toMatchObject({ status: 200 });
+  const replaced = await detail();
+  expect(replaced.defaultJobs).toEqual([{ id: jobs[1].id, title: "Backend" }]);
+  expect(await put({ content: formContent, name: "Keep bindings", version: 1 })).toMatchObject({
+    status: 200,
+  });
+  const kept = await detail();
+  expect(kept.defaultJobs).toHaveLength(1);
+  expect(await put({ ...input, defaultJobIds: [] })).toMatchObject({ status: 200 });
+  const cleared = await detail();
+  expect(cleared.defaultJobs).toEqual([]);
+});

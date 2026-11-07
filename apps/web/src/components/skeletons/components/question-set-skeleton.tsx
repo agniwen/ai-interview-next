@@ -9,6 +9,7 @@ export function QuestionSetSkeleton() {
         <div className="flex min-w-0 flex-col gap-6">
           <Skeleton aria-hidden="true" className="h-14 w-full" />
           <MarkdownEditorSkeleton compact />
+          <Skeleton aria-hidden="true" className="h-20 w-full" />
         </div>
         <div className="flex min-w-0 flex-col gap-3">
           <Skeleton aria-hidden="true" className="h-5 w-24" />

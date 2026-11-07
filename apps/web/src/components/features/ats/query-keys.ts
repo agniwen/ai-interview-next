@@ -34,6 +34,7 @@ export const atsKeys = createQueryKeys("ats", {
       detail: (id: string) => [id],
       list: (query: JobListSearch) => [query],
       options: null,
+      picker: (search: string) => [search],
     },
     queryKey: [workspaceId],
   }),

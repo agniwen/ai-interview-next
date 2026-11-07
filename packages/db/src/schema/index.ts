@@ -17,7 +17,7 @@ export {
 } from "./ats";
 export { account, rateLimit, session, user, verification } from "./auth";
 export { interviewerAgent } from "./interviewer-agents";
-export { questionSet } from "./question-sets";
+export { questionSet, questionSetJob } from "./question-sets";
 export { invitation, member, organization } from "./organization";
 export {
   applicationActivity,

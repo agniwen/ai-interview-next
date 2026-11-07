@@ -593,5 +593,9 @@
   "question_sets_follow_up": "追加質問の方針（任意）",
   "question_sets_evaluation_criteria": "評価基準（任意）",
   "question_sets_evaluation_help": "回答の質をどのように評価するかを記述してください。",
-  "question_sets_back": "質問セット一覧に戻る"
+  "question_sets_back": "質問セット一覧に戻る",
+  "question_sets_default_jobs": "デフォルトの職種",
+  "question_sets_default_jobs_help": "これらの職種の AI 面接では、この問題セットが初期選択されます。面接作成時に変更できます。",
+  "question_sets_unbind_job": "解除",
+  "ats_back_jobs": "職種一覧に戻る"
 }

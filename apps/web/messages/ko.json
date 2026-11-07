@@ -593,5 +593,9 @@
   "question_sets_follow_up": "후속 질문 방향 (선택)",
   "question_sets_evaluation_criteria": "평가 기준 (선택)",
   "question_sets_evaluation_help": "답변의 질을 어떻게 평가할지 설명해 주세요.",
-  "question_sets_back": "질문 세트 목록으로 돌아가기"
+  "question_sets_back": "질문 세트 목록으로 돌아가기",
+  "question_sets_default_jobs": "기본 연결 직무",
+  "question_sets_default_jobs_help": "이 직무의 AI 면접에서 이 질문 세트가 기본 선택됩니다. 면접 생성 시 변경할 수 있습니다.",
+  "question_sets_unbind_job": "연결 해제",
+  "ats_back_jobs": "직무 목록으로 돌아가기"
 }

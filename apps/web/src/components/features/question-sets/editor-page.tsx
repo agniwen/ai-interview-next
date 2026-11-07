@@ -118,7 +118,7 @@ export function QuestionSetEditorPage({
           {m.question_sets_back()}
         </Button>
       </PageHeaderContent>
-      <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col gap-6 py-2 md:py-4">
+      <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col gap-6 pt-2 md:pt-4">
         <PageHeader
           title={isNew ? createLabel : editLabel}
           description={

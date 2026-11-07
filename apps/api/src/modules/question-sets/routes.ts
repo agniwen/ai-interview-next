@@ -30,17 +30,18 @@ export const questionSetRoutes = new Hono<AuthenticatedEnv>()
       200,
     ),
   )
-  .post("/:workspaceId", setInput, async (c) =>
-    c.json(
-      await createQuestionSet(
-        c.get("database"),
-        c.get("workspaceId"),
-        c.get("userId"),
-        c.req.valid("json"),
-      ),
-      201,
-    ),
-  )
+  .post("/:workspaceId", setInput, async (c) => {
+    const result = await createQuestionSet(
+      c.get("database"),
+      c.get("workspaceId"),
+      c.get("userId"),
+      c.req.valid("json"),
+    );
+    if ("error" in result) {
+      return c.json(result, 400);
+    }
+    return c.json(result, 201);
+  })
   .get("/:workspaceId/:id", setParams, async (c) => {
     const record = await getQuestionSet(
       c.get("database"),
@@ -61,6 +62,9 @@ export const questionSetRoutes = new Hono<AuthenticatedEnv>()
     );
     if (!record) {
       return c.json({ error: "QUESTION_SET_UNAVAILABLE", version: 1 as const }, 404);
+    }
+    if ("error" in record) {
+      return c.json(record, 400);
     }
     return c.json({ id: record.id, version: 1 as const }, 200);
   });

@@ -593,5 +593,9 @@
   "question_sets_follow_up": "追问方向（选填）",
   "question_sets_evaluation_criteria": "评价标准（选填）",
   "question_sets_evaluation_help": "描述如何判断回答质量。",
-  "question_sets_back": "返回题套列表"
+  "question_sets_back": "返回题套列表",
+  "question_sets_default_jobs": "默认绑定岗位",
+  "question_sets_default_jobs_help": "为这些岗位创建 AI 面试时默认勾选此题套，可在创建面试时调整。",
+  "question_sets_unbind_job": "取消绑定",
+  "ats_back_jobs": "返回岗位列表"
 }

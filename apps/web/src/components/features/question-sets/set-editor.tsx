@@ -1,3 +1,5 @@
+import { JobSelect } from "../ats/job-select";
+import type { JobOption } from "../ats/job-select";
 import { IconDeviceFloppy, IconPlus } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { lazy, useId, useState } from "react";
@@ -29,7 +31,13 @@ const MarkdownEditor = lazy(async () => {
 });
 
 export interface QuestionSetEditorProps<Content extends QuestionSetInput["content"]> {
-  record?: { id: string; name: string; description: string; content: Content };
+  record?: {
+    id: string;
+    name: string;
+    description: string;
+    defaultJobs?: JobOption[];
+    content: Content;
+  };
   workspaceId: string;
   onSuccess: () => void;
 }
@@ -63,6 +71,7 @@ export function QuestionSetEditor<
   const formId = useId();
   const client = useQueryClient();
   const mutation = useMutation(saveQuestionSetMutation(client, workspaceId, record?.id));
+  const [defaultJobs, setDefaultJobs] = useState<JobOption[]>(record?.defaultJobs ?? []);
   const [name, setName] = useState(record?.name ?? "");
   const [description, setDescription] = useState(record?.description ?? "");
   const [questions, setQuestions] = useState(() => (record ? config.drafts(record.content) : []));
@@ -78,7 +87,13 @@ export function QuestionSetEditor<
       id={formId}
       onSubmit={(event) => {
         event.preventDefault();
-        mutation.mutate(config.toInput(name, description, questions), { onSuccess });
+        mutation.mutate(
+          {
+            ...config.toInput(name, description, questions),
+            defaultJobIds: defaultJobs.map((job) => job.id),
+          },
+          { onSuccess },
+        );
       }}
     >
       {mutation.isError && (
@@ -116,6 +131,17 @@ export function QuestionSetEditor<
             </SkeletonSuspense>
           </Field>
         </div>
+        <Field>
+          <FieldLabel htmlFor={`${formId}-jobs`}>{m.question_sets_default_jobs()}</FieldLabel>
+          <JobSelect
+            id={`${formId}-jobs`}
+            workspaceId={workspaceId}
+            value={defaultJobs}
+            onChange={setDefaultJobs}
+            disabled={mutation.isPending}
+          />
+          <p className="text-xs text-muted-foreground">{m.question_sets_default_jobs_help()}</p>
+        </Field>
         <section
           aria-label={isForm ? m.question_sets_form() : m.question_sets_conversation()}
           className="flex min-w-0 flex-col gap-3"
@@ -227,7 +253,7 @@ export function QuestionSetEditor<
         <ToolbarButton
           form={formId}
           type="submit"
-          render={<Button size="sm" loading={mutation.isPending} />}
+          render={<Button size="sm" variant="outline" loading={mutation.isPending} />}
           disabled={
             mutation.isPending ||
             !name.trim() ||

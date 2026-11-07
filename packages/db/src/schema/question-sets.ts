@@ -1,5 +1,6 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { QuestionSetContent } from "../question-set";
+import { job } from "./ats";
 import { user } from "./auth";
 import { organization } from "./organization";
 
@@ -26,5 +27,23 @@ export const questionSet = sqliteTable(
   },
   (table) => [
     index("question_set_workspace_created_idx").on(table.workspaceId, table.createdAt, table.id),
+  ],
+);
+
+/** 默认岗位只提供选题初始值，不限制题套的使用范围。
+ * Default jobs seed question selection without restricting where sets can be used. */
+export const questionSetJob = sqliteTable(
+  "question_set_job",
+  {
+    jobId: text("jobId")
+      .notNull()
+      .references(() => job.id, { onDelete: "cascade" }),
+    questionSetId: text("questionSetId")
+      .notNull()
+      .references(() => questionSet.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.questionSetId, table.jobId] }),
+    index("question_set_job_job_idx").on(table.jobId),
   ],
 );

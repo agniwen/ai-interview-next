@@ -593,5 +593,9 @@
   "question_sets_follow_up": "Follow-up directions (optional)",
   "question_sets_evaluation_criteria": "Evaluation criteria (optional)",
   "question_sets_evaluation_help": "Describe how to assess the quality of an answer.",
-  "question_sets_back": "Back to question sets"
+  "question_sets_back": "Back to question sets",
+  "question_sets_default_jobs": "Default jobs",
+  "question_sets_default_jobs_help": "Preselect this set for AI interviews for these jobs. You can change the selection when creating an interview.",
+  "question_sets_unbind_job": "Unbind",
+  "ats_back_jobs": "Back to jobs"
 }
