@@ -24,6 +24,7 @@ export function MeetingPanel({
   return (
     <Dialog
       modal={false}
+      disablePointerDismissal
       open={open}
       onOpenChange={(value) => {
         if (!value) {
