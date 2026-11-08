@@ -47,7 +47,9 @@ Sainoa 在工作区内分别管理候选人、简历和应聘记录。同一个�
 
 面试是一个大阶段，在应聘详情中使用一个 Tab 承载，可包含多个轮次。每轮仅按「第几轮」标识，初面、复面、终面等称呼通过自由填写的标签表达，不设为固定轮次类别。
 
-首轮面试由招聘人员手动创建，不因进入面试阶段而自动创建。后续轮次同样手动创建，须等前一轮正式评价全部提交或确认，且整体评价为通过或待定。新建时重新选择面试官和标签，真人面试另设参加时间，轮次编号自动递增。
+首轮面试由招聘人员手动创建，不因进入面试阶段而自动创建。后续轮次同样手动创建：AI 面试须完成一次正式确认且结论为通过；真人面试须由全部指定面试官提交正式评价，且整体结论为通过或待定。新建时重新选择面试官和标签，真人面试另设参加时间，轮次编号自动递增。
+
+Rounds are created manually. A subsequent AI round requires one confirmed passing evaluation; a human round requires all assigned interviewers to submit, with an overall pass or pending verdict. Each new round selects its own interviewers and label, human rounds also select their schedule, and sequence numbers increase automatically.
 
 创建面试时指定面试官。选择系统中的用户对应真人面试，可继续添加其他真人面试官；选择面试官 Agent 对应 AI 面试，只能选择一个 Agent。同一轮不能混选用户和 Agent。面试类型、标签及 Agent ID 使用轮次表普通字段；真人面试官与 AI 评价确认人保存到带职责的人员关联表，按工作区与用户建立索引，支持概览查询当前用户负责的面试。题套选择单独保存为版本化 JSON，不重复存储人员关系。
 
@@ -67,23 +69,35 @@ The interview type is fixed after creation; human and AI interviews cannot be co
 
 真人面试中，候选人或任一指定面试官首次进入房间即视为实际开始，无需另点开始按钮，也不要求双方到齐。因此即使仅面试官提前入房，面试也已开始，时间和面试官设置随即锁定。AI 面试由候选人在完成介绍、表单题及设备准备后点击开始，启动 Agent 并标记为进行中；介绍、表单填写和设备准备不算实际开始。预约时间到达本身不触发开始。
 
-结束面试只能由面试官侧确定，候选人只能离开房间，不能结束整场面试。真人面试由任一指定面试官点击结束，AI 面试由 Agent 完成访谈后执行结束。AI 面试结束后生成评价，再交指定确认人审阅，确认人无需在线等待整场面试。
+真人面试由任一指定面试官点击结束，候选人只能暂时离开。AI 面试允许候选人主动点击「结束面试」，也允许 Agent 完成访谈后执行结束；「暂时离开」只断开连接，不结束本轮。AI 面试结束后可根据本轮材料与访谈记录生成评价草稿，再由有确认权限的成员审阅；没有可用采集报告时也可直接手动填写，确认人无需在线等待整场面试。
+
+After an AI interview ends, available materials and interview records can generate an evaluation draft for an eligible reviewer. Missing collection reports do not block manual evaluation, and reviewers need not attend the interview live.
 
 面试官 Agent 是具有名称、说明和提示词的可复用配置，可供不同面试选择。它与某次面试会话分别存在。
 
 系统可控制的接口路径、字段、响应、错误信息与用户文案统一使用业务名称，不暴露底层音视频或模型服务的技术选型。供应商专属配置和协议保留在内部集成边界。
 
-AI 面试产生「通过／不通过／待定」结论，必须由创建面试时指定的确认人确认，默认确认人为创建者。确认人可以保留或修正 AI 结论，系统保留原始结论及修正记录。真人面试结束后，每位指定面试官提交本人评价即视为确认。其他成员的普通留言不计入必须完成的评价。
+AI 面试的正式结论只有「通过／不通过」。确认人可选：创建表单预选创建者，但可以清空；未传入确认人时不自动指定创建者。指定确认人时仅该成员可确认；未指定时，任一具有本工作区访问权限的成员都可填写草稿并确认，首个正式确认即完成本轮评价并锁定，其他成员不能再次提交或覆盖。系统记录实际确认人。真人面试仍由每位指定面试官提交本人评价，其他成员的普通留言不计入正式评价。
 
-真人面试评价格式参考旧项目 `ai-interview`，包含结论、评级 A/B/C/D、专业技能（优／良／中／差）、整体评价、角色定位和薪资建议。结论和整体评价必填，其余选填；结论为「通过／待定／不通过」，判断理由写在整体评价中，不单设理由输入框。
+AI final verdicts are pass or fail. The creation form preselects its creator but allows clearing that choice; omitting the reviewer does not implicitly assign the creator. An assigned reviewer has exclusive confirmation authority. Otherwise, any member with access to the workspace may draft and confirm; the first formal confirmation completes and locks the round evaluation for everyone, recording the actual reviewer. Human interviews still require each assigned interviewer to submit, and ordinary comments do not count.
 
-AI 面试输出相同的评价字段，结论和整体评价必填，其他字段有依据时填写，无依据时允许留空。指定确认人可以修正这些字段后确认，保留原始 AI 输出与人工修正记录。
+真人面试评价仅保留必填的结论与整体评价。结论为「通过／待定／不通过」，判断理由写在整体评价中；不再单列评级、专业技能、角色定位和薪资建议。
+
+Human evaluations contain only a required verdict and overall evaluation. Verdicts remain pass, pending, or fail, with reasoning in the overall text; separate grade, skills, role, and salary fields are removed.
+
+AI 面试同样仅保留结论与整体评价，正式提交时二者必填。模型只建议通过或不通过；证据不足时草稿不预选结论，并在整体评价中说明缺失证据，由确认人最终选择通过或不通过。不存在正式的待定选项，也不因报告缺失而自动判为不通过。保留原始 AI 草稿与人工确认内容，已有 AI 草稿不是人工填写或确认的前提。
+
+AI evaluations also contain only a verdict and overall text, both required on submission. The model can suggest pass or fail; insufficient evidence leaves the draft verdict unset and explains the gaps for human judgment. There is no final pending option, and a missing report does not imply failure. Original AI drafts and human-confirmed content are retained separately; an AI draft is optional for manual evaluation.
 
 只有一位真人面试官时，该面试官的评价作为整体评价；有多位面试官时，按正式提交时间取首个非待定评价作为整体评价。先提交通过、后提交不通过时，整体仍为通过；先提交待定、后提交不通过时，整体为不通过。所有面试官均已提交且全部待定时，整体也为待定。
 
-所有正式评价均提交或确认之后，才能推进下一轮面试或下一个大阶段。整体为通过或已确认的待定时允许继续推进；未提交或未确认的评价阻塞推进。整体评价为不通过时直接结束招聘流程，不允许继续推进；后续某一人的不通过不会覆盖此前已确定的整体通过结论。AI 面试以人工确认后的结论作为整体评价。
+正式评价要求满足后才能推进下一轮：AI 面试需要一人完成有权限的确认，且结论为通过；真人面试需要所有指定面试官均提交，且整体结论为通过或待定。草稿和未确认的模型建议不能推进。整体结论为不通过时直接结束招聘流程；真人面试后续某一人的不通过不会覆盖此前已确定的整体通过结论。AI 面试以人工确认后的结论作为整体评价。
 
-真人面试评价允许保存和修改草稿，正式提交即确认并锁定，之后不能修改。AI 评价允许在人工确认前修正，确认后锁定，并保留 AI 原始结论与人工修正记录。
+Progression requires one authorized passing confirmation for AI interviews, or all assigned human evaluations with an overall pass or pending verdict. Drafts and unconfirmed model suggestions never unlock progression. An overall fail closes the application; a later human failure does not overwrite an already established overall pass. AI rounds use the human-confirmed verdict.
+
+两类面试均可保存和修改本人草稿。真人评价正式提交后锁定本人评价；AI 面试完成一次正式确认后锁定本轮评价，包括未指定确认人的情况。AI 原始草稿与人工确认内容分别保存。
+
+Both kinds allow personal drafts. A human submission locks that interviewer’s evaluation; one authorized AI confirmation locks the round evaluation, including unassigned rounds. Original AI drafts and confirmed human content are stored separately.
 
 面试后的大阶段命名为「入职」，暂不实现。本轮不采用此前讨论中建议的独立 Offer 阶段。
 
@@ -118,3 +132,6 @@ AI 面试候选人可随时打开链接查看介绍、填写表单，并在完�
 沟通开始时，将候选人已提交并锁定的表单答案提供给面试官 Agent。Agent 可以据此追问，避免重复询问表单中已明确填写的信息。
 
 Agent 按合并后的顺序覆盖全部沟通题，并根据候选人的回答及配置的追问方向按需追加追问。候选人明确表示「不知道」或「没有相关经历」时，记录该回答并继续下一题。
+
+面试生命周期的操作记录与刷新重连规则见 [ADR-0006](0006-interview-lifecycle-and-reconnection.md)。
+Interview lifecycle activity and refresh recovery are specified in [ADR-0006](0006-interview-lifecycle-and-reconnection.md).

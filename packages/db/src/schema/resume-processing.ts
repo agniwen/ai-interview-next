@@ -144,10 +144,19 @@ export const applicationActivity = sqliteTable(
   "application_activity",
   {
     action: text("action", {
-      enum: ["created", "closed", "evaluation_completed", "feedback_added"],
+      enum: [
+        "created",
+        "closed",
+        "evaluation_completed",
+        "feedback_added",
+        "interview_created",
+        "interview_started",
+        "interview_ended",
+        "interview_evaluation_submitted",
+      ],
     }).notNull(),
     actorId: text("actorId").notNull(),
-    actorType: text("actorType", { enum: ["user", "system"] }).notNull(),
+    actorType: text("actorType", { enum: ["user", "system", "candidate"] }).notNull(),
     applicationId: text("applicationId").notNull(),
     id: text("id").primaryKey(),
     occurredAt: time("occurredAt").notNull(),
@@ -161,6 +170,9 @@ export const applicationActivity = sqliteTable(
         evaluationId?: string;
         /** 人工评价事件引用已保存的正文，不复制另一份内容。 / Member feedback events reference the saved body without duplicating it. */
         feedbackId?: string;
+        /** 面试事件保留轮次信息，删除未开始的面试也不改写历史。
+         * Interview events retain round details even when an unstarted interview is deleted. */
+        interview?: { id: string; kind: "ai" | "human"; sequence: number; label: string };
       }>()
       .notNull(),
     workspaceId: workspace(),

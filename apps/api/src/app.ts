@@ -9,6 +9,7 @@ import { agentRoutes } from "./modules/agent/routes";
 import { authRoutes } from "./modules/auth/routes";
 import { interviewerAgentRoutes } from "./modules/interviewer-agents/routes";
 import { interviewRoutes } from "./modules/interviews/routes";
+import { interviewSessionRoutes } from "./modules/interview-sessions/routes";
 import { candidateInterviewRoutes } from "./modules/candidate-interviews/routes";
 import { questionSetRoutes } from "./modules/question-sets/routes";
 import { workspaceRoutes } from "./modules/workspaces/routes";
@@ -27,6 +28,7 @@ const protectedApi = new Hono<AuthenticatedEnv>()
 export const app = new Hono<{ Bindings: ApiBindings }>()
   .route("/api/auth", authRoutes)
   .route("/api/candidate-interviews", candidateInterviewRoutes)
+  .route("/api/interview-sessions", interviewSessionRoutes)
   .route("/api", protectedApi)
   .get("/health", sValidator("query", z.strictObject({}).optional()), (c) =>
     c.json({ status: "ok" as const }, 200),

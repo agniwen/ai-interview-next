@@ -17,6 +17,11 @@ declare global {
 
 export type ApiBindings = ApiEnv & {
   AGENT_CHAT_KEY: string;
+  INTERVIEW_AGENT_API_URL?: string;
+  LIVEKIT_URL?: string;
+  LIVEKIT_API_KEY?: string;
+  LIVEKIT_API_SECRET?: string;
+  LIVEKIT_AGENT_NAME?: string;
   RESUME_S3_ACCESS_KEY_ID?: string;
   RESUME_S3_SECRET_ACCESS_KEY?: string;
   RESUME_S3_ENDPOINT?: string;

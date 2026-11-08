@@ -1,3 +1,4 @@
+import type { CandidateInterviewFeedback } from "../interview-report";
 import { sql } from "drizzle-orm";
 import {
   foreignKey,
@@ -320,9 +321,14 @@ export const interviewRound = sqliteTable(
     admissionDeadline: integer("admissionDeadline", { mode: "timestamp_ms" }),
     /** 面试所在的应聘。 / Application that owns the interview. */
     applicationId: text("applicationId").notNull(),
+    candidateFeedback: text("candidateFeedback", {
+      mode: "json",
+    }).$type<CandidateInterviewFeedback>(),
     /** 面试轮次建立时间。 / Interview round creation time. */
     createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
     createdBy: text("createdBy").references(() => user.id),
+    /** 面试官正式结束本轮的时间，断线和刷新不写入。 / Time the interviewer formally ended the round; disconnects and refreshes never set it. */
+    endedAt: integer("endedAt", { mode: "timestamp_ms" }),
     /** 面试轮次 ID。 / Interview round ID. */
     id: text("id").primaryKey(),
     interviewerAgentId: text("interviewerAgentId").references(() => interviewerAgent.id),
@@ -337,6 +343,8 @@ export const interviewRound = sqliteTable(
     scheduledAt: integer("scheduledAt", { mode: "timestamp_ms" }),
     /** 本次应聘中的轮次序号。 / Round number within this application. */
     sequence: integer("sequence").notNull(),
+    /** 候选人点击开始时记录，不由预约时间或连接令牌请求触发。 / Recorded on explicit start, never by scheduling or token requests. */
+    startedAt: integer("startedAt", { mode: "timestamp_ms" }),
     /** 面试轮次的当前状态。 / Current state of the interview round. */
     status: text("status").notNull(),
     /** 面试轮次所属工作区。 / Workspace that owns the interview round. */

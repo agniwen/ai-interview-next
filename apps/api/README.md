@@ -65,7 +65,7 @@ wrangler.jsonc
 
 - `GET /api/interviewer-agents/:workspaceId` 使用 `page`、`pageSize`、`search` 返回 `{ version: 1, rows, page, pageSize, total }`。按名称和说明搜索，按创建时间、ID 倒序排列；列表不携带提示词，`GET /api/interviewer-agents/:workspaceId/:id` 返回完整配置。
 - `POST /api/interviewer-agents/:workspaceId` 与 `PUT /api/interviewer-agents/:workspaceId/:id` 接受 `{ version: 1, name, description?, prompt }`。名称去除首尾空白后为 1–200 字符，提示词为 1–30,000 字符，说明最多 30,000 字符；创建时省略说明则为空，编辑时省略保留原值，空字符串可清空。创建返回 `{ version: 1, id }`（201），编辑返回同格式（200）。创建人来自当前会话，编辑保留创建人并更新修改时间。
-- 面试官配置供当前工作区成员共同管理。上述接口沿用登录与工作区成员校验；配置不存在或属于其他工作区时返回 `{ version: 1, error: "INTERVIEWER_AGENT_UNAVAILABLE" }`（404），输入校验失败返回 `{ version: 1, error: "INVALID_INPUT" }`（400）。本阶段只管理可复用配置，尚未接入面试轮次或启动访谈。
+- 面试官配置供当前工作区成员共同管理。上述接口沿用登录与工作区成员校验；配置不存在或属于其他工作区时返回 `{ version: 1, error: "INTERVIEWER_AGENT_UNAVAILABLE" }`（404），输入校验失败返回 `{ version: 1, error: "INVALID_INPUT" }`（400）。这些接口管理可复用配置，面试轮次在实际开始时读取并固定配置。
 
 ### 题套 / Question sets
 
@@ -235,7 +235,7 @@ Web 不需要这些认证 env，通过 Service Binding 调用 API；Web 与 API 
 - `GET /api/interviews/:workspaceId/:id` 返回轮次字段与 `assignments`（用户信息及 `interviewer`／`reviewer` 职责）。`kind`、`label`、`interviewerAgentId` 为普通列；`questionSelection` 是版本化 JSON，仅保存两类题套的有序 ID。创建不复制题目、Agent 提示词或招聘材料。
 - 创建要求招聘记录仍开放，所选真人面试官或 Agent、题套和确认人均属于当前工作区。关闭的招聘记录返回 `APPLICATION_CLOSED`（409），已有轮次返回 `INTERVIEW_ALREADY_EXISTS`（409）。本步只开放首轮，后续轮次将在正式评价确认规则接入后开放。
 - 资源不可用返回 `APPLICATION_UNAVAILABLE`／`INTERVIEW_UNAVAILABLE`（404）；所选 Agent、确认人或题套不可用返回 `INTERVIEWER_AGENT_UNAVAILABLE`／`CONFIRMATION_USER_UNAVAILABLE`／`QUESTION_SET_UNAVAILABLE`（400）；沟通题全部为空返回 `CONVERSATION_QUESTIONS_REQUIRED`（400）；真人面试官不属于当前工作区返回 `INTERVIEWER_USER_UNAVAILABLE`（400）；格式错误返回 `INVALID_INPUT`（400）。业务错误响应均含 `version: 1`。
-- 本步不生成邀请链接，不开放候选人访问、房间入场或面试启动，也不改变招聘阶段。招聘流程详情的「面试」Tab 已接入创建表单，邀请与快照按后续步骤分别接入。
+- 创建轮次不隐式开始面试，也不改变招聘阶段。邀请、候选人准备和实际开始通过下述独立接口完成。
 - `DELETE /api/interviews/:workspaceId/:id` 仅允许轮次创建者删除仍为 `scheduled` 的轮次，返回 `{ version: 1, id }`。按轮次状态而非预约时刻判断是否开始；非创建者返回 `INTERVIEW_DELETE_FORBIDDEN`（403），非预约状态返回 `INTERVIEW_NOT_DELETABLE`（409）。删除不影响面试官或题套。列表行返回当前用户的 `canDelete`，前端据此展示操作。
   Only the round creator can delete a round while its status is `scheduled`; the response is `{ version: 1, id }`. Eligibility follows the round status rather than the scheduled time. A different creator receives 403, and other statuses receive 409. Agents and question sets are retained. List rows expose the current user's `canDelete` permission for the UI.
 
@@ -262,5 +262,52 @@ Web 不需要这些认证 env，通过 Service Binding 调用 API；Web 与 API 
   First AI entry captures current selected questions in set and question order, retaining duplicates, independent IDs, and source positions. Later visits reuse the snapshot. Human entry does not capture questions, and opening either preparation page does not start the interview or freeze recruiting materials or agent settings.
 - 题目绑定后，编辑详情返回 `questionsBoundAt`；改变题套选择或顺序返回 `INTERVIEW_QUESTIONS_LOCKED`（409）。Agent 和确认人仍可编辑，题库后续变化不会阻止编辑；编辑器的题数来自快照。删除轮次级联删除邀请凭证及题目快照。
   After binding, edit details expose `questionsBoundAt`; changing selections or order returns 409. Agent and reviewer edits remain available even if source sets change. Editor counts come from the snapshot. Deleting the round cascades to its invitation and question snapshot.
-- Web 使用 TanStack Start 的 `ssr: false` 和骨架屏回退，在浏览器实际渲染入口时发送进入请求，避免 SSR 或预加载提前固定题目。候选人介绍页展示岗位、轮次、题数及录音转录说明；真人面试另外展示设备本地时区的预约时间。点击下一步进入表单阶段外壳，无表单时直接进入沟通准备。表单作答、实际设备检查及房间入场按后续步骤实现。真人入场时间限制不用于阻止打开准备页面。
-  Web uses selective SSR with a skeleton fallback and sends the entry request only when the browser renders the page. The introduction shows the role, round, question counts, and recording/transcription notice; human interviews also show appointment times in the device time zone. Next opens the form-stage shell, or preparation directly when no forms exist. Form answers, actual device checks, and room admission follow in subsequent steps. Human admission windows do not prevent opening preparation pages.
+- Web 使用 TanStack Start 的 `ssr: false` 和骨架屏回退，在浏览器实际渲染入口时发送进入请求，避免 SSR 或预加载提前固定题目。候选人介绍页展示岗位、轮次、题数及录音转录说明；真人面试另外展示设备本地时区的预约时间。点击下一步进入表单阶段外壳，无表单时直接进入沟通准备。AI 表单作答、设备检查及两类面试的房间入场已接入。真人入场时间限制不用于阻止打开准备页面。
+  Web uses selective SSR with a skeleton fallback and sends the entry request only when the browser renders the page. The introduction shows the role, round, question counts, and recording/transcription notice; human interviews also show appointment times in the device time zone. Next opens the form-stage shell, or preparation directly when no forms exist. AI form answers, device checks, and admission for both interview kinds are implemented. Human admission windows do not prevent opening preparation pages.
+
+### AI 面试启动与连接 / AI interview start and connection
+
+- `POST /api/candidate-interviews/:token/start` 接受 `{ version: 1 }`。只有候选人明确点击开始时调用；AI 面试没有预约时间限制。要求已进入准备流程，存在表单题时必须已提交答案。实际开始时，在同一 D1 批事务中保存 `interview_session` 快照、`startedAt` 和 `in_progress` 状态，现有表单及轮次编辑接口随即锁定。重复请求复用首次开始的时间和材料。
+  Call start only on an explicit candidate action. AI interviews have no admission schedule. Preparation must exist and all form answers must be submitted. One D1 batch persists the session snapshot, actual start time and running status, locking form and round edits. Repeated starts preserve the original evidence and timestamp.
+- 快照包含岗位要求及内部标准、候选人姓名、当前可用简历的原文与结构化资料、面试官 Agent 配置、已绑定题目和已提交答案；待确认和已移除材料不参与。后续岗位、简历、题库或 Agent 编辑不改变本轮依据。
+  The snapshot includes job requirements and internal criteria, candidate name, currently available resume text and profiles, interviewer configuration, bound questions and submitted answers. Pending and removed materials are excluded. Later edits do not alter this round's evidence.
+- `POST /api/candidate-interviews/:token/connection` 只允许已开始且仍有效的 AI 面试，返回 `{ version: 1, serverUrl, participantToken }`，前端通过官方 `TokenSource.literal` 使用这些连接信息。它不隐式开始面试；浏览器提交的房间、参与者身份与 Agent 配置不作为权限依据。15 分钟令牌仅允许本轮房间的麦克风、摄像头、音频接收和数据通信，不授予房间管理或屏幕共享权限。
+  Connection requests only serve valid running AI interviews and return the official endpoint-compatible connection shape. They never implicitly start an interview or trust client-supplied room, identity or agent settings. Fifteen-minute tokens grant the round's microphone, camera, subscription and data access, without room administration or screen sharing.
+- 服务端使用 LiveKit SDK 显式调度指定 Agent，重连复用现有调度；房间不存在时按原房间名重新建立。调度元数据为 `{ version: 1, contextUrl, contextToken }`。Agent 使用 `Authorization: Bearer <contextToken>` 请求 `GET /api/interview-sessions/:id/context`，读取 `{ version: 1, interviewId, roomName, participantIdentity, startedAt, content }`。上下文仅限本轮仍在进行时读取，不接受邀请凭证或工作区登录代替；私有材料与上下文凭证不进入候选人的连接响应或 JWT。
+  The server explicitly dispatches the configured agent, reusing an existing dispatch on reconnect and recreating an absent room under the same name. Dispatch metadata supplies a versioned context URL and credential. The agent reads the context with its dedicated Bearer credential while the round is running; candidate invitations and workspace logins do not authorize this endpoint. Private evidence and context credentials never enter browser responses or JWTs.
+- API 配置 `LIVEKIT_URL`、`LIVEKIT_API_KEY`、`LIVEKIT_API_SECRET`、`LIVEKIT_AGENT_NAME`、`INTERVIEW_AGENT_API_URL`，模板见 `.env.example` / `.env.production.example`。凭据与语音服务使用同一个项目，Agent 名称必须与实际注册名称一致，上下文地址必须能被 Agent 访问。缺少配置时启动返回 503，保持准备状态；连接服务失败可重试，已固定的材料不重置。默认示例名称 `ainterviewer-interview-agent` 专供正式面试，避免误调度现有 `sainoa-voice-agent` 演示服务。
+  Configure the five variables above using the environment templates. API and voice service must share a project, the agent name must match its registration, and the context URL must be reachable from that agent. Missing configuration returns 503 before starting; connection failures can be retried without resetting evidence. The formal interview agent uses a separate example name from the existing demo.
+
+前端使用官方 `TokenSource.literal`、`useSession`、`SessionProvider` 和 `RoomAudioRenderer`：首次点击开始调用业务启动接口，再获取连接信息并调用 `session.start()`；刷新恢复不再调用启动接口。候选人暂时离开只执行 `session.end()`。Python Agent 已读取上下文并默认中文对话；正式结束见下节。此实现尚未部署。
+The frontend uses official session components and a literal token source. Explicit first start calls the business endpoint before connecting; refresh only fetches connection information. Temporary departure calls `session.end()` without completing the interview. The Python Agent consumes frozen context and defaults to Chinese. Formal completion is described below. These changes are not deployed.
+
+参考 / References: [official React starter](https://github.com/livekit-examples/agent-starter-react), [session lifecycle](https://docs.livekit.io/frontends/build/sessions/), [explicit agent dispatch](https://docs.livekit.io/agents/server/agent-dispatch/).
+
+## 面试生命周期与恢复 / Interview lifecycle and recovery
+
+发起两类面试时写入 `interview_created`；AI 首次开始写入 `interview_started`，正式结束写入 `interview_ended`。记录与状态同事务提交，重试保留首次时间和执行者。获取连接凭证与刷新重连不写生命周期记录。
+Both interview kinds record creation; AI records its first start and formal completion. Activity and state commit atomically, retaining original timestamps and actors on retries. Credentials and reconnections create no lifecycle events.
+
+- `POST /api/candidate-interviews/:token/end` 接收 `{ version: 1 }`，允许候选人正式结束 AI 面试并关闭房间。关闭失败返回 503，重试只重做清理；结束状态已保存。
+  Accepts `{ version: 1 }`, allows candidates to complete AI interviews, and closes the room. Cleanup failures return 503; retries retain committed completion and repeat cleanup.
+- `POST /api/interview-sessions/:id/end` 使用本轮私有 Bearer 凭证和 `{ version: 1 }`，记录 Agent 结束。Agent 在提交成功后告别并通过 SDK 关闭房间。
+  Uses the round's private Bearer credential and `{ version: 1 }` to record Agent completion. The Agent delivers its farewell after commit and closes the room through the SDK.
+- 已结束轮次不再签发连接凭证。两类面试的生命周期与重连约定见 [ADR-0006](../../docs/adr/0006-interview-lifecycle-and-reconnection.md)。
+  Completed rounds issue no connection credentials. Both interview lifecycles and recovery follow ADR-0006.
+
+## 真人面试会议 / Human interview meetings
+
+- 候选人通过邀请页入场；面试官入口为 `/meet/:workspaceId/:roundId`，要求登录、工作区成员身份及本轮指定面试官身份。轮次卡片仅向指定面试官显示入场按钮，登录后保留会议目标。
+  Candidates join through their invitation. Interviewers use `/meet/:workspaceId/:roundId`, requiring authentication, workspace membership and assignment to the round. Only assigned interviewers see the join action, and sign-in preserves the meeting destination.
+- `GET /api/interviews/:workspaceId/:id/meeting` 返回准备信息和本轮材料；开始前读当前材料，开始后读会话快照。`GET /meeting/resumes/:resumeId` 在相同权限下通过 Files SDK 流式返回快照关联的 PDF。候选人入口不返回内部标准、简历或评价。
+  The meeting GET returns preparation details and materials, using current data before the start and frozen evidence afterward. The resume endpoint streams the snapshot's PDF through Files SDK under the same permissions. Candidates never receive internal criteria, resumes or evaluations.
+- `POST /api/candidate-interviews/:token/meeting` 和 `POST /api/interviews/:workspaceId/:id/meeting` 取得房间媒体凭证，不调度 AI Agent，也不开始面试。浏览器连接成功后调用各自的 `/meeting/entered`，首次调用固定材料并记录实际开始及执行者；再次入场保留首次材料、房间、时间和活动记录。这些写入接受 `{ version: 1 }`。
+  Both meeting POST endpoints issue media credentials without dispatching an AI agent or starting the interview. After connection succeeds, the client calls its `/meeting/entered` endpoint to freeze evidence and record the first start and actor. Re-entry preserves the original snapshot, room, time and activity. These writes accept `{ version: 1 }`.
+- 入场时间为预约开始前 10 分钟至入场截止；过期仅阻止新入场，不强制结束现有连接。候选人只能暂时离开；指定面试官可调用 `POST /api/interviews/:workspaceId/:id/meeting/end` 正式结束并关闭房间。
+  Admission opens ten minutes before the appointment and closes at its deadline. Expiry blocks new entry without terminating existing connections. Candidates may leave temporarily; assigned interviewers formally complete the interview and close the room through the meeting end endpoint.
+- 真人面试进行中可保存本人评价草稿，结束后才可正式提交。界面提供设备切换、摄像头、屏幕共享、主画面切换、候选人材料、原始简历和评价入口，移动端使用紧凑底栏。
+  Interviewers can save personal evaluation drafts during a human interview and submit only after completion. The UI supports device selection, camera, screen sharing, focused video, candidate materials, original resumes and evaluation, with compact mobile controls.
+- 房间聊天使用官方 `useChat`，页面明确说明消息在刷新后清空。目前真人房间未接入录音归档或服务端逐字转录，因此不显示录制或字幕入口；这一点与旧项目仍有差异。
+  Room chat uses the official `useChat`, with a visible notice that refresh clears messages. Human-room audio archival and server transcription are not connected yet, so recording and captions controls are absent; these remain differences from the previous project.
+
+参考 / References: [LiveKitRoom](https://docs.livekit.io/reference/components/react/component/livekitroom/), [useTracks](https://docs.livekit.io/reference/components/react/hook/usetracks/), [useChat](https://docs.livekit.io/reference/components/react/hook/usechat/), [access tokens and grants](https://docs.livekit.io/frontends/reference/tokens-grants/).

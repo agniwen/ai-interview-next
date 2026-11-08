@@ -40,7 +40,4 @@ export const createInterviewInput = z
 
 export type CreateInterviewInput = z.output<typeof createInterviewInput>;
 
-export const updateInterviewInput = createInterviewInput.refine(
-  (input) => input.kind === "human" || input.confirmationUserId !== undefined,
-  { message: "Select a confirmation user", path: ["confirmationUserId"] },
-);
+export const updateInterviewInput = createInterviewInput;

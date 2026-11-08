@@ -138,6 +138,8 @@ it("binds latest questions once in selected order, preserving duplicates and kee
   expect(response.headers.get("cache-control")).toBe("private, no-store");
   const entry = await response.json();
   expect(entry).toMatchObject({
+    candidateName: "Candidate",
+    jobDescription: "Skills",
     jobTitle: "Engineer",
     kind: "ai",
     questions: {
@@ -153,6 +155,7 @@ it("binds latest questions once in selected order, preserving duplicates and kee
     status: "scheduled",
     version: 1,
   });
+  expect(entry).not.toHaveProperty("internalCriteria");
   expect(entry).not.toHaveProperty("assignments");
   expect(entry).not.toHaveProperty("interviewerAgentId");
   const serialized = JSON.stringify(entry);

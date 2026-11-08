@@ -1,0 +1,1 @@
+ALTER TABLE `interview_round` ADD `candidateFeedback` text;

@@ -36,6 +36,7 @@
     "files-sdk": "3.1.2",
     "hono": "catalog:",
     "jpeg-js": "0.4.4",
+    "livekit-server-sdk": "2.19.2",
     "pngjs": "7.0.0",
     "zod": "catalog:"
   },

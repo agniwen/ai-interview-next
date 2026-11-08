@@ -1,0 +1,1 @@
+ALTER TABLE `interview_round` ADD `endedAt` integer;

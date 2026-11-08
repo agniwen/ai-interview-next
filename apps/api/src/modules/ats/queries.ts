@@ -2,6 +2,7 @@ import type { Database } from "@ai-interview/db";
 import {
   application,
   applicationActivity,
+  interviewerAgent,
   applicationEvaluation,
   applicationFeedback,
   applicationResume,
@@ -620,9 +621,32 @@ export async function applicationDetail(
 
   const [activity, evaluations, feedback, [latestRun]] = await Promise.all([
     db
-      .select({ actorImage: user.image, actorName: user.name, event: applicationActivity })
+      .select({
+        actorImage: user.image,
+        actorName: sql<
+          string | null
+        >`coalesce(${user.name}, ${candidate.name}, ${interviewerAgent.name})`,
+        event: applicationActivity,
+      })
       .from(applicationActivity)
-      .leftJoin(user, eq(user.id, applicationActivity.actorId))
+      .leftJoin(
+        user,
+        and(eq(user.id, applicationActivity.actorId), eq(applicationActivity.actorType, "user")),
+      )
+      .leftJoin(
+        candidate,
+        and(
+          eq(candidate.id, applicationActivity.actorId),
+          eq(applicationActivity.actorType, "candidate"),
+        ),
+      )
+      .leftJoin(
+        interviewerAgent,
+        and(
+          eq(interviewerAgent.id, applicationActivity.actorId),
+          eq(applicationActivity.actorType, "system"),
+        ),
+      )
       .where(
         and(
           eq(applicationActivity.workspaceId, workspaceId),

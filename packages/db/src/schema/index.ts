@@ -18,6 +18,7 @@ export {
 } from "./ats";
 export { account, rateLimit, session, user, verification } from "./auth";
 export { interviewerAgent } from "./interviewer-agents";
+export { interviewEvaluation, interviewEvaluationReport } from "./interview-evaluation";
 export {
   interviewInvitation,
   interviewQuestionSnapshot,
@@ -33,3 +34,10 @@ export {
   resumeUploadBatch,
   resumeUploadItem,
 } from "./resume-processing";
+
+export {
+  interviewSession,
+  interviewReport,
+  interviewTranscript,
+  interviewEvent,
+} from "./interview-session";

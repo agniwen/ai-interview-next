@@ -35,7 +35,7 @@ it("creates the first AI round through the typed API, preserving selection order
   const detail = await read(f.owner.call(detailPath));
   expect(detail).toMatchObject({
     admissionDeadline: null,
-    assignments: [{ id: f.owner.userId, role: "reviewer" }],
+    assignments: [],
     createdBy: f.owner.userId,
     interviewerAgentId: f.agent.id,
     kind: "ai",
@@ -358,6 +358,17 @@ it.each([1, 2])(
       throw new Error("Expected created human interview");
     }
     const { id } = await response.json();
+    const applicationDetail = await read(f.owner.ats(`applications/${f.applicationId}`));
+    expect(applicationDetail.activity).toEqual([
+      expect.objectContaining({
+        action: "interview_created",
+        actorId: f.owner.userId,
+        actorType: "user",
+        result: expect.objectContaining({
+          interview: { id, kind: "human", label: "技术复面", sequence: 1 },
+        }),
+      }),
+    ]);
     const detail = await read(f.owner.call(`interviews/${f.owner.workspaceId}/${id}`));
     expect(detail).toMatchObject({
       interviewerAgentId: null,
@@ -653,7 +664,6 @@ it("rejects invalid edits without changing the round or its assignments", async 
   const before = await read(f.owner.call(path));
   const input = { ...f.input, confirmationUserId: f.owner.userId };
   const invalid = [
-    f.input,
     { ...input, confirmationUserId: other.owner.userId },
     { ...input, interviewerAgentId: other.agent.id },
     { ...input, conversationQuestionSetIds: [other.conversation.id] },
@@ -697,3 +707,13 @@ it.each(["human", "ai"] as const)(
     expect(await read(f.owner.call(path))).toEqual(before);
   },
 );
+
+it("clears an AI confirmation assignee when editing without a reviewer", async () => {
+  const f = await fixture("clear-reviewer@example.com");
+  const { id } = await read(
+    f.owner.call(f.path, { ...f.input, confirmationUserId: f.owner.userId }),
+  );
+  const path = `interviews/${f.owner.workspaceId}/${id}`;
+  expect(await editRound(f.owner, path, f.input)).toMatchObject({ status: 200 });
+  expect(await read(f.owner.call(path))).toMatchObject({ assignments: [] });
+});

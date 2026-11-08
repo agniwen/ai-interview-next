@@ -1,17 +1,21 @@
 import type { Database } from "@ai-interview/db";
 import {
   application,
+  applicationActivity,
   interviewerAgent,
   interviewRound,
   interviewAssignment,
   interviewQuestionSnapshot,
+  interviewEvaluation,
   member,
   user,
   questionSet,
 } from "@ai-interview/db/schema";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import type { CreateInterviewInput } from "./input";
+import { interviewActivityValues } from "./activity";
 import type { ListQuery } from "../ats/input";
+import { canConfirmEvaluation, evaluationSummary, readEvaluationSummary } from "./evaluation-state";
 
 /** 已删除及其他工作区的招聘记录不作为面试入口。
  * Deleted applications and applications in other workspaces are unavailable as interview entry points. */
@@ -33,7 +37,6 @@ async function selectionError(
   db: Database,
   workspaceId: string,
   input: Extract<CreateInterviewInput, { kind: "ai" }>,
-  confirmationUserId: string,
   questionsBound: boolean,
 ) {
   const ids = [...input.formQuestionSetIds, ...input.conversationQuestionSetIds];
@@ -48,11 +51,18 @@ async function selectionError(
         ),
       )
       .get(),
-    db
-      .select({ id: member.id })
-      .from(member)
-      .where(and(eq(member.organizationId, workspaceId), eq(member.userId, confirmationUserId)))
-      .get(),
+    input.confirmationUserId
+      ? db
+          .select({ id: member.id })
+          .from(member)
+          .where(
+            and(
+              eq(member.organizationId, workspaceId),
+              eq(member.userId, input.confirmationUserId),
+            ),
+          )
+          .get()
+      : undefined,
     db
       .select({ content: questionSet.content, id: questionSet.id })
       .from(questionSet)
@@ -61,7 +71,7 @@ async function selectionError(
   if (!agent) {
     return "INTERVIEWER_AGENT_UNAVAILABLE" as const;
   }
-  if (!reviewer) {
+  if (input.confirmationUserId && !reviewer) {
     return "CONFIRMATION_USER_UNAVAILABLE" as const;
   }
   if (questionsBound) {
@@ -83,7 +93,6 @@ async function interviewSelectionError(
   db: Database,
   workspaceId: string,
   input: CreateInterviewInput,
-  userId: string,
   questionsBound = false,
 ) {
   if (input.kind === "human") {
@@ -101,8 +110,7 @@ async function interviewSelectionError(
     }
     return;
   }
-  const confirmationUserId = input.confirmationUserId ?? userId;
-  return selectionError(db, workspaceId, input, confirmationUserId, questionsBound);
+  return selectionError(db, workspaceId, input, questionsBound);
 }
 
 function roundSettings(input: CreateInterviewInput) {
@@ -120,14 +128,11 @@ function roundSettings(input: CreateInterviewInput) {
   };
 }
 
-function assignmentValues(
-  workspaceId: string,
-  id: string,
-  input: CreateInterviewInput,
-  userId: string,
-) {
-  const assignees =
-    input.kind === "human" ? input.interviewerUserIds : [input.confirmationUserId ?? userId];
+function assignmentValues(workspaceId: string, id: string, input: CreateInterviewInput) {
+  const assignees = input.kind === "human" ? input.interviewerUserIds : [];
+  if (input.kind === "ai" && input.confirmationUserId) {
+    assignees.push(input.confirmationUserId);
+  }
   return assignees.map((assigneeId, position) => ({
     interviewRoundId: id,
     position,
@@ -146,8 +151,35 @@ async function isWorkspaceManager(db: Database, workspaceId: string, userId: str
   return membership?.role === "admin" || membership?.role === "owner";
 }
 
-/** 只开放首轮创建；后续轮次须接入正式评价确认规则后开放。
- * Only first-round creation is available; later rounds require formal evaluation confirmation rules. */
+export async function interviewCreationState(
+  db: Database,
+  workspaceId: string,
+  applicationId: string,
+) {
+  const previous = await db
+    .select()
+    .from(interviewRound)
+    .where(
+      and(
+        eq(interviewRound.workspaceId, workspaceId),
+        eq(interviewRound.applicationId, applicationId),
+      ),
+    )
+    .orderBy(desc(interviewRound.sequence), desc(interviewRound.id))
+    .get();
+  if (!previous) {
+    return { allowed: true, sequence: 1 };
+  }
+  const evaluation = await readEvaluationSummary(db, workspaceId, previous.id, previous.kind);
+  return {
+    allowed:
+      previous.status === "completed" && evaluation.complete && evaluation.conclusion !== "fail",
+    sequence: previous.sequence + 1,
+  };
+}
+
+/** 后续轮次需要上一轮的正式评价全部确认，并采用人工确认后的结论。
+ * Later rounds require all formal evaluations of the previous round and follow the human-confirmed verdict. */
 export async function createInterview(
   db: Database,
   workspaceId: string,
@@ -162,36 +194,44 @@ export async function createInterview(
   if (record.closedAt) {
     return { error: "APPLICATION_CLOSED" as const, status: 409 as const };
   }
-  const previous = await db
-    .select({ id: interviewRound.id })
-    .from(interviewRound)
-    .where(
-      and(
-        eq(interviewRound.workspaceId, workspaceId),
-        eq(interviewRound.applicationId, applicationId),
-      ),
-    )
-    .get();
-  if (previous) {
-    return { error: "INTERVIEW_ALREADY_EXISTS" as const, status: 409 as const };
+  const creation = await interviewCreationState(db, workspaceId, applicationId);
+  if (!creation.allowed) {
+    return { error: "INTERVIEW_EVALUATION_REQUIRED" as const, status: 409 as const };
   }
-  const error = await interviewSelectionError(db, workspaceId, input, userId);
+  const error = await interviewSelectionError(db, workspaceId, input);
   if (error) {
     return { error, status: 400 as const };
   }
   const id: string = crypto.randomUUID();
+  const createdAt = new Date();
+  const assignments = assignmentValues(workspaceId, id, input);
   await db.batch([
     db.insert(interviewRound).values({
       ...roundSettings(input),
       applicationId,
-      createdAt: new Date(),
+      createdAt,
       createdBy: userId,
       id,
-      sequence: 1,
+      sequence: creation.sequence,
       status: "scheduled",
       workspaceId,
     }),
-    db.insert(interviewAssignment).values(assignmentValues(workspaceId, id, input, userId)),
+    ...(assignments.length ? [db.insert(interviewAssignment).values(assignments)] : []),
+    db.insert(applicationActivity).values(
+      interviewActivityValues(
+        {
+          applicationId,
+          id,
+          kind: input.kind,
+          label: input.label,
+          sequence: creation.sequence,
+          workspaceId,
+        },
+        "interview_created",
+        { actorId: userId, actorType: "user" },
+        createdAt,
+      ),
+    ),
   ]);
   return { id, version: 1 as const };
 }
@@ -235,7 +275,7 @@ export async function listInterviews(
     eq(interviewRound.workspaceId, workspaceId),
     eq(interviewRound.applicationId, applicationId),
   );
-  const [rows, total, manager] = await Promise.all([
+  const [rows, total, manager, creation, record] = await Promise.all([
     db
       .select({
         confirmationImage: user.image,
@@ -260,24 +300,55 @@ export async function listInterviews(
       .offset((page - 1) * pageSize),
     db.$count(interviewRound, where),
     isWorkspaceManager(db, workspaceId, userId),
+    interviewCreationState(db, workspaceId, applicationId),
+    interviewApplication(db, workspaceId, applicationId),
   ]);
   const assignments = await roundAssignments(
     db,
     workspaceId,
     rows.map(({ round }) => round.id),
   );
+  const evaluations = await db
+    .select()
+    .from(interviewEvaluation)
+    .where(
+      and(
+        eq(interviewEvaluation.workspaceId, workspaceId),
+        inArray(
+          interviewEvaluation.interviewRoundId,
+          rows.map(({ round }) => round.id),
+        ),
+      ),
+    )
+    .orderBy(asc(interviewEvaluation.submittedAt), asc(interviewEvaluation.authorUserId));
   return {
+    canCreateRound: creation.allowed && !record?.closedAt,
     page,
     pageSize,
-    rows: rows.map(({ round, ...names }) => ({
-      ...round,
-      ...names,
-      canDelete: round.status === "scheduled" && round.createdBy === userId,
-      canEdit: round.status === "scheduled" && (round.createdBy === userId || manager),
-      interviewers: (assignments.get(round.id) ?? []).filter(
-        (person) => person.role === "interviewer",
-      ),
-    })),
+    rows: rows.map(({ round, ...names }) => {
+      const people = assignments.get(round.id) ?? [];
+      const roundEvaluations = evaluations.filter((item) => item.interviewRoundId === round.id);
+      const requiredUserIds = people.map((person) => person.id);
+      const evaluation = evaluationSummary(round.kind, requiredUserIds, roundEvaluations);
+      return {
+        ...round,
+        ...names,
+        canDelete: round.status === "scheduled" && round.createdBy === userId,
+        canEdit: round.status === "scheduled" && (round.createdBy === userId || manager),
+        canEvaluate:
+          round.status === "completed" &&
+          !evaluation.complete &&
+          canConfirmEvaluation(round.kind, requiredUserIds, userId) &&
+          !roundEvaluations.some((item) => item.authorUserId === userId && item.submittedAt),
+        canJoin:
+          round.kind === "human" &&
+          round.status !== "completed" &&
+          !record?.closedAt &&
+          people.some((person) => person.role === "interviewer" && person.id === userId),
+        evaluation,
+        interviewers: people.filter((person) => person.role === "interviewer"),
+      };
+    }),
     total,
     version: 1 as const,
   };
@@ -379,10 +450,11 @@ export async function updateInterview(
   ) {
     return { error: "INTERVIEW_QUESTIONS_LOCKED" as const, status: 409 as const };
   }
-  const error = await interviewSelectionError(db, workspaceId, input, userId, questionsBound);
+  const error = await interviewSelectionError(db, workspaceId, input, questionsBound);
   if (error) {
     return { error, status: 400 as const };
   }
+  const assignments = assignmentValues(workspaceId, id, input);
   await db.batch([
     db
       .update(interviewRound)
@@ -396,7 +468,7 @@ export async function updateInterview(
           eq(interviewAssignment.interviewRoundId, id),
         ),
       ),
-    db.insert(interviewAssignment).values(assignmentValues(workspaceId, id, input, userId)),
+    ...(assignments.length ? [db.insert(interviewAssignment).values(assignments)] : []),
   ]);
   return { id, version: 1 as const };
 }

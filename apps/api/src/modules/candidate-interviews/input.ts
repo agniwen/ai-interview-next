@@ -21,3 +21,11 @@ export const candidateFormInput = z.strictObject({
 });
 
 export type CandidateFormInput = z.output<typeof candidateFormInput>;
+
+export const candidateStartInput = z.strictObject({ version: z.literal(1) });
+
+export const candidateFeedbackInput = z.strictObject({
+  comment: z.string().trim().max(3000),
+  rating: z.number().int().min(1).max(5),
+  version: z.literal(1),
+});

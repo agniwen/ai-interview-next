@@ -1,6 +1,7 @@
 import type { Database } from "@ai-interview/db";
 import {
   application,
+  candidate,
   interviewInvitation,
   interviewFormResponse,
   interviewQuestionSnapshot,
@@ -12,9 +13,13 @@ import {
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { CandidateFormInput } from "./input";
 
-function candidateInterview(db: Database, token: string) {
+export function candidateInterview(db: Database, token: string) {
   return db
     .select({
+      applicationClosedAt: application.closedAt,
+      candidateId: application.candidateId,
+      candidateName: candidate.name,
+      jobDescription: job.requirements,
       jobTitle: job.title,
       round: interviewRound,
       workspaceName: organization.name,
@@ -22,6 +27,7 @@ function candidateInterview(db: Database, token: string) {
     .from(interviewInvitation)
     .innerJoin(interviewRound, eq(interviewRound.id, interviewInvitation.interviewRoundId))
     .innerJoin(application, eq(application.id, interviewRound.applicationId))
+    .innerJoin(candidate, eq(candidate.id, application.candidateId))
     .innerJoin(job, eq(job.id, application.jobId))
     .innerJoin(organization, eq(organization.id, interviewRound.workspaceId))
     .where(and(eq(interviewInvitation.token, token), isNull(application.deletedAt)))
@@ -109,12 +115,16 @@ export async function enterCandidateInterview(db: Database, token: string) {
   if (!result) {
     return;
   }
-  const { round, jobTitle, workspaceName } = result;
+  const { round, candidateName, jobDescription, jobTitle, workspaceName } = result;
   const snapshot = round.kind === "ai" ? await bindQuestions(db, round) : null;
   const form = snapshot ? await readFormResponse(db, round.id) : null;
   return {
     admissionDeadline: round.admissionDeadline,
+    candidateName,
+    endedAt: round.endedAt,
+    feedback: round.candidateFeedback,
     form: form ?? null,
+    jobDescription,
     jobTitle,
     kind: round.kind,
     label: round.label,
@@ -130,6 +140,7 @@ export async function enterCandidateInterview(db: Database, token: string) {
       : null,
     scheduledAt: round.scheduledAt,
     sequence: round.sequence,
+    startedAt: round.startedAt,
     status: round.status,
     version: 1 as const,
     workspaceName,
@@ -214,4 +225,24 @@ export async function saveCandidateForm(
     })
     .onConflictDoUpdate({ set: form, target: interviewFormResponse.interviewRoundId });
   return { form: { ...form, version: 1 as const } };
+}
+
+export async function saveCandidateFeedback(
+  db: Database,
+  token: string,
+  input: { version: 1; rating: number; comment: string },
+) {
+  const entry = await candidateInterview(db, token);
+  if (!entry) {
+    return { error: "INTERVIEW_UNAVAILABLE" as const, status: 404 as const };
+  }
+  if (entry.round.status !== "completed") {
+    return { error: "INTERVIEW_NOT_ENDED" as const, status: 409 as const };
+  }
+  const feedback = { ...input, submittedAt: new Date().toISOString() };
+  await db
+    .update(interviewRound)
+    .set({ candidateFeedback: feedback })
+    .where(eq(interviewRound.id, entry.round.id));
+  return { feedback, version: 1 as const };
 }

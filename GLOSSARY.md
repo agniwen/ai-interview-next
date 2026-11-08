@@ -69,13 +69,22 @@ _Avoid_：默认工作区、初始工作区（用于指代最近使用的工作�
 针对某次应聘，依据所采用的简历版本和岗位要求生成的评价。
 
 **应聘操作日志（Application Activity）**：
-某条应聘发生的业务操作记录，包含发生时间、发起人、动作和结果。发起人可以是招聘人员或系统。
+某条应聘发生的业务操作记录，包含发生时间、发起人、动作和结果。执行者可以是招聘人员、候选人或系统。
 
 **面试阶段（Interview Stage）**：
 一次应聘中开展面试的招聘阶段，包含该次应聘的多个面试轮次。
 
 **面试轮次（Interview Round）**：
 一次应聘中的第几轮面试，以轮次序号标识。初面、复面、终面等描述可用面试标签表达。
+
+**面试实际开始（Interview Start）**：
+一轮面试正式进入沟通的业务事件。AI 面试由候选人完成准备后主动开始；真人面试由候选人或指定面试官首次入房开始。
+
+**面试正式结束（Interview Completion）**：
+本轮访谈正式终止的业务事件。AI 面试可由候选人主动结束或由面试官 Agent 执行；真人面试由指定面试官执行。暂时离开不属于正式结束。
+
+**面试续接（Interview Reconnection）**：
+参加者在刷新页面或连接中断后返回仍在进行的同一轮面试，不构成一次新的开始。
 
 **面试官（Interviewer）**：
 创建面试时指定的主持者，可以是系统中的用户，也可以是面试官 Agent；前者对应真人面试，后者对应 AI 面试。
@@ -111,10 +120,12 @@ _Avoid_：默认工作区、初始工作区（用于指代最近使用的工作�
 候选人首次进入某轮 AI 面试页面时固定的题目内容与顺序，由本轮所选题套合并形成。后续访问沿用该内容，不受题库修改影响。
 
 **面试评价（Interview Evaluation）**：
-针对某轮面试表现形成的正式评价，包含通过、待定或不通过的结论，以及评价内容和理由。AI 面试的评价由指定确认人审阅；真人面试的评价由指定的真人面试官填写，与其他成员的普通留言区分。
+针对某轮面试表现形成的正式评价，由结论和整体评价组成，与普通留言区分。AI 面试结论为通过或不通过；真人面试还可为待定。
+A formal assessment of an interview round, consisting of a verdict and overall evaluation, distinct from ordinary comments. AI verdicts are pass or fail; human interviews also allow pending.
 
 **面试整体评价（Overall Interview Evaluation）**：
 代表某轮面试整体判断的评价。真人面试只有一位面试官时采用该面试官的评价；有多位面试官时按正式提交时间采用首个非待定评价，所有人均提交待定时整体也为待定。
 
 **面试评价确认人（Interview Evaluation Reviewer）**：
-负责审阅 AI 面试评价并确认或修正其结论的用户。
+负责填写或审阅 AI 面试评价并确认其结论的工作区成员；未指定时，可由任一工作区成员承担。
+A workspace member who writes or reviews an AI interview evaluation and confirms its verdict; when unassigned, any workspace member may take this role.

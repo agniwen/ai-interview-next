@@ -1,3 +1,18 @@
+import { resumeFiles } from "../ats/storage";
+import { readHumanMeeting, joinInterviewerMeeting, endHumanMeeting } from "./meeting";
+import {
+  meetingRoomConfiguration,
+  connectHumanMeeting,
+  closeInterviewRoom,
+} from "../interview-sessions/rooms";
+import { readInterviewResult } from "./result";
+import {
+  interviewEvaluationDraftSchema,
+  interviewEvaluationSchema,
+} from "@ai-interview/db/interview-evaluation";
+import { saveEvaluation } from "./evaluation";
+import { canConfirmEvaluation } from "./evaluation-state";
+import { createInterviewEvaluator, generateInterviewEvaluation } from "./evaluation-generation";
 import { sValidator } from "@hono/standard-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
@@ -38,6 +53,123 @@ const interviewParams = sValidator(
  * Public endpoints use interview domain names; establish identity, workspace access and external formats at the boundary. */
 export const interviewRoutes = new Hono<AuthenticatedEnv>()
   .use("/:workspaceId/*", requireWorkspace)
+  .get(
+    "/:workspaceId/:id/meeting/resumes/:resumeId",
+    sValidator(
+      "param",
+      z.object({ id: z.uuid(), resumeId: z.uuid(), workspaceId: z.string() }),
+      validationResult,
+    ),
+    async (c) => {
+      const { id, resumeId } = c.req.valid("param");
+      const result = await readHumanMeeting(
+        c.get("database"),
+        c.get("workspaceId"),
+        id,
+        c.get("userId"),
+      );
+      if ("error" in result) {
+        return c.json({ error: result.error, version: 1 as const }, result.status);
+      }
+      const resume = result.materials.resumes.find((item) => item.id === resumeId);
+      if (!resume) {
+        return c.json({ error: "RESUME_UNAVAILABLE", version: 1 as const }, 404);
+      }
+      const file = await resumeFiles(c.env).download(resume.pdfObjectKey, { as: "stream" });
+      return c.body(file.stream(), 200, {
+        "Cache-Control": "private, no-store",
+        "Content-Disposition": 'inline; filename="resume.pdf"',
+        "Content-Type": "application/pdf",
+        "X-Content-Type-Options": "nosniff",
+      });
+    },
+  )
+  .get("/:workspaceId/:id/meeting", interviewParams, async (c) => {
+    const result = await readHumanMeeting(
+      c.get("database"),
+      c.get("workspaceId"),
+      c.req.valid("param").id,
+      c.get("userId"),
+    );
+    if ("error" in result) {
+      return c.json({ error: result.error, version: 1 as const }, result.status);
+    }
+    c.header("Cache-Control", "private, no-store");
+    return c.json(result, 200);
+  })
+  .post(
+    "/:workspaceId/:id/meeting/entered",
+    interviewParams,
+    sValidator("json", z.object({ version: z.literal(1) }), validationResult),
+    async (c) => {
+      const result = await joinInterviewerMeeting(
+        c.get("database"),
+        c.get("workspaceId"),
+        c.req.valid("param").id,
+        c.get("userId"),
+        true,
+      );
+      if ("error" in result) {
+        return c.json({ error: result.error, version: 1 as const }, result.status);
+      }
+      return c.json({ startedAt: result.session.startedAt, version: 1 as const }, 200);
+    },
+  )
+  .post(
+    "/:workspaceId/:id/meeting",
+    interviewParams,
+    sValidator("json", z.object({ version: z.literal(1) }), validationResult),
+    async (c) => {
+      const config = meetingRoomConfiguration.safeParse(c.env);
+      if (!config.success) {
+        return c.json({ error: "INTERVIEW_SERVICE_UNAVAILABLE", version: 1 as const }, 503);
+      }
+      const result = await joinInterviewerMeeting(
+        c.get("database"),
+        c.get("workspaceId"),
+        c.req.valid("param").id,
+        c.get("userId"),
+      );
+      if ("error" in result) {
+        return c.json({ error: result.error, version: 1 as const }, result.status);
+      }
+      try {
+        c.header("Cache-Control", "private, no-store");
+        return c.json(
+          await connectHumanMeeting(config.data, result.session, result.participant),
+          200,
+        );
+      } catch {
+        return c.json({ error: "INTERVIEW_CONNECTION_FAILED", version: 1 as const }, 503);
+      }
+    },
+  )
+  .post(
+    "/:workspaceId/:id/meeting/end",
+    interviewParams,
+    sValidator("json", z.object({ version: z.literal(1) }), validationResult),
+    async (c) => {
+      const config = meetingRoomConfiguration.safeParse(c.env);
+      if (!config.success) {
+        return c.json({ error: "INTERVIEW_SERVICE_UNAVAILABLE", version: 1 as const }, 503);
+      }
+      const result = await endHumanMeeting(
+        c.get("database"),
+        c.get("workspaceId"),
+        c.req.valid("param").id,
+        c.get("userId"),
+      );
+      if ("error" in result) {
+        return c.json({ error: result.error, version: 1 as const }, result.status);
+      }
+      try {
+        await closeInterviewRoom(config.data, result.roomName);
+      } catch {
+        return c.json({ error: "INTERVIEW_CLOSE_FAILED", version: 1 as const }, 503);
+      }
+      return c.json({ endedAt: result.endedAt, version: 1 as const }, 200);
+    },
+  )
   .get("/:workspaceId/members", sValidator("query", listQuery, validationResult), async (c) =>
     c.json(
       await interviewMembers(c.get("database"), c.get("workspaceId"), c.req.valid("query")),
@@ -126,6 +258,81 @@ export const interviewRoutes = new Hono<AuthenticatedEnv>()
         c.get("userId"),
         c.req.valid("json"),
       );
+      if ("error" in result) {
+        return c.json({ error: result.error, version: 1 as const }, result.status);
+      }
+      return c.json(result, 200);
+    },
+  )
+  .get("/:workspaceId/:id/result", interviewParams, async (c) => {
+    const result = await readInterviewResult(
+      c.get("database"),
+      c.get("workspaceId"),
+      c.req.valid("param").id,
+      c.get("userId"),
+    );
+    if (!result) {
+      return c.json({ error: "INTERVIEW_UNAVAILABLE", version: 1 as const }, 404);
+    }
+    return c.json(result, 200);
+  })
+  .put(
+    "/:workspaceId/:id/evaluation",
+    interviewParams,
+    sValidator("json", interviewEvaluationDraftSchema, validationResult),
+    async (c) => {
+      const result = await saveEvaluation(
+        c.get("database"),
+        c.get("workspaceId"),
+        c.req.valid("param").id,
+        c.get("userId"),
+        { content: c.req.valid("json"), submit: false },
+      );
+      if ("error" in result) {
+        return c.json({ error: result.error, version: 1 as const }, result.status);
+      }
+      return c.json(result, 200);
+    },
+  )
+  .post(
+    "/:workspaceId/:id/evaluation/submit",
+    interviewParams,
+    sValidator("json", interviewEvaluationSchema, validationResult),
+    async (c) => {
+      const result = await saveEvaluation(
+        c.get("database"),
+        c.get("workspaceId"),
+        c.req.valid("param").id,
+        c.get("userId"),
+        { content: c.req.valid("json"), submit: true },
+      );
+      if ("error" in result) {
+        return c.json({ error: result.error, version: 1 as const }, result.status);
+      }
+      return c.json(result, 200);
+    },
+  )
+  .post(
+    "/:workspaceId/:id/evaluation/generate",
+    interviewParams,
+    sValidator("json", z.strictObject({ version: z.literal(1) }), validationResult),
+    async (c) => {
+      const db = c.get("database");
+      const { id } = c.req.valid("param");
+      const entry = await getInterview(db, c.get("workspaceId"), id);
+      if (!entry) {
+        return c.json({ error: "INTERVIEW_UNAVAILABLE", version: 1 as const }, 404);
+      }
+      if (
+        !canConfirmEvaluation(
+          entry.round.kind,
+          entry.round.assignments.map((item) => item.id),
+          c.get("userId"),
+        )
+      ) {
+        return c.json({ error: "INTERVIEW_EVALUATION_FORBIDDEN", version: 1 as const }, 403);
+      }
+      const result = await generateInterviewEvaluation(db, id, createInterviewEvaluator(c.env));
       if ("error" in result) {
         return c.json({ error: result.error, version: 1 as const }, result.status);
       }
