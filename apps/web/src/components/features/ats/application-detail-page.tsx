@@ -68,9 +68,12 @@ async function readApplicationDetail(
 }
 
 export type ApplicationDetail = NonNullable<Awaited<ReturnType<typeof readApplicationDetail>>>;
-type ApplicationActorDetails = NonNullable<ApplicationDetail["application"]["creator"]>;
+type ApplicationActorDetails = Pick<
+  ApplicationDetail["activity"][number],
+  "actorId" | "actorType" | "actorImage" | "actorName"
+>;
 const applicationColumnsClassName =
-  "grid items-start gap-8 @min-[56rem]:grid-cols-[minmax(0,56rem)_18rem]";
+  "grid items-start gap-8 @min-[56rem]:grid-cols-[minmax(0,1fr)_clamp(18rem,25cqw,24rem)]";
 
 function CloseApplicationDialog({ id, workspaceId }: { id: string; workspaceId: string }) {
   const [open, setOpen] = useState(false);
@@ -192,11 +195,11 @@ function ApplicationActor({
     return <span className="text-muted-foreground">{m.ats_application_creator_unrecorded()}</span>;
   }
   if (actor.actorType === "system") {
-    if (actor.actorId === "sainoa-agent") {
+    if (actor.actorId === "sainoa-agent" || actor.actorName) {
       return (
         <UserColumn
           className={className}
-          user={{ image: "/logo.png", name: m.ats_evaluation_ai() }}
+          user={{ image: "/logo.png", name: actor.actorName ?? m.ats_evaluation_ai() }}
         />
       );
     }
@@ -396,6 +399,14 @@ function ApplicationActivity({
             label = m.ats_activity_evaluation_completed();
           } else if (entry.action === "feedback_added") {
             label = m.ats_activity_feedback_added();
+          } else if (entry.action === "interview_created") {
+            label = m.ats_activity_interview_created();
+          } else if (entry.action === "interview_started") {
+            label = m.ats_activity_interview_started();
+          } else if (entry.action === "interview_ended") {
+            label = m.ats_activity_interview_ended();
+          } else if (entry.action === "interview_evaluation_submitted") {
+            label = m.interview_evaluation_activity();
           } else if (entry.result.reason === "job_changed") {
             label = m.ats_transferred();
           }
@@ -404,7 +415,11 @@ function ApplicationActivity({
               actor={entry}
               body={entry.result.feedbackId ? feedbackById.get(entry.result.feedbackId) : undefined}
               key={entry.id}
-              label={label}
+              label={
+                entry.result.interview
+                  ? `${label} · ${m.interviews_round({ number: entry.result.interview.sequence })}${entry.result.interview.label ? ` · ${entry.result.interview.label}` : ""}`
+                  : label
+              }
               occurredAt={entry.occurredAt}
             />
           );
@@ -647,7 +662,7 @@ export function ApplicationDetailPage({
           {m.ats_back_to_applications()}
         </Button>
       </PageHeaderContent>
-      <div className="@container mx-auto flex w-full max-w-[76rem] flex-1 flex-col gap-6">
+      <div className="@container mx-auto flex w-full max-w-[96rem] flex-1 flex-col gap-6">
         {phase === "ready" && !data && <PageHeader title={m.ats_application_detail()} />}
         {content}
       </div>

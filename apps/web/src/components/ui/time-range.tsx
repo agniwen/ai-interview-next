@@ -1,4 +1,4 @@
-import { LocalTime, LocalTimeZone } from "@/components/local-time";
+import { LocalTime } from "@/components/local-time";
 import type { DateRange } from "@daypicker/react";
 import { enUS, ja, ko, zhCN } from "@daypicker/react/locale";
 import { IconArrowRight, IconCalendarEvent } from "@tabler/icons-react";
@@ -124,18 +124,11 @@ export function TimeRange({
   const triggerContent = (
     <>
       <IconCalendarEvent aria-hidden="true" className="shrink-0 text-muted-foreground" />
-      <span className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-1.5">
+      <span className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center gap-x-3">
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="text-xs font-normal text-muted-foreground">{startLabel}</span>
           {value?.from ? (
-            <>
-              <span className="text-xs">
-                <LocalTime value={value.from} format="date" />
-              </span>
-              <span className="text-base tabular-nums">
-                <LocalTime value={value.from} format="time" />
-              </span>
-            </>
+            <LocalTime value={value.from} className="whitespace-normal text-sm tabular-nums leading-5" />
           ) : (
             <span className="whitespace-normal text-sm font-normal text-muted-foreground">
               {m.time_range_start_placeholder()}
@@ -146,28 +139,20 @@ export function TimeRange({
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="text-xs font-normal text-muted-foreground">{endLabel}</span>
           {value?.to ? (
-            <>
-              <span className="text-xs">
-                <LocalTime value={value.to} format="date" />
-              </span>
-              <span className="text-base tabular-nums">
-                <LocalTime value={value.to} format="time" />
-              </span>
-            </>
+            <LocalTime value={value.to} className="whitespace-normal text-sm tabular-nums leading-5" />
           ) : (
             <span className="whitespace-normal text-sm font-normal text-muted-foreground">
               {m.time_range_end_placeholder()}
             </span>
           )}
         </span>
-        <LocalTimeZone className="col-span-3 text-xs font-normal text-muted-foreground" />
       </span>
     </>
   );
   const trigger = (
     <Button
       variant="outline"
-      className="h-auto w-full justify-start gap-3 px-3 py-3 text-left sm:h-auto"
+      className="h-auto w-full justify-start gap-3 px-3 py-2.5 text-left sm:h-auto"
     />
   );
   const editor = (

@@ -382,8 +382,8 @@ export function ResumeProfileDocument({
   return (
     <article
       className={cn(
-        "flex max-w-4xl select-text flex-col gap-5 text-sm sm:gap-6",
-        layout === "preview" ? "mx-auto p-8 sm:p-16" : "pt-2 pb-6",
+        "flex select-text flex-col gap-5 text-sm sm:gap-6",
+        layout === "preview" ? "mx-auto max-w-4xl p-8 sm:p-16" : "pt-2 pb-6",
       )}
     >
       {basics && (

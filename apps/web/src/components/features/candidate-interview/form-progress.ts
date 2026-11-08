@@ -15,7 +15,11 @@ export function isFormAnswerComplete(
 }
 
 export function initialPreparationStep(interview: CandidateInterview): PreparationStep {
-  if (interview.form?.submittedAt) {
+  if (
+    interview.startedAt ||
+    interview.form?.submittedAt ||
+    (interview.kind === "ai" && !interview.questions?.form.length)
+  ) {
     return "ready";
   }
   return interview.form ? "forms" : "intro";

@@ -1,3 +1,4 @@
+import { InterviewCompleted } from "./completed";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { InterviewEntryShell } from "@/components/interview-entry-shell";
@@ -33,7 +34,10 @@ export function CandidateInterviewEntry({ token }: { token: string }) {
           </p>
         </div>
       )}
-      {phase === "ready" && query.data && (
+      {phase === "ready" && query.data?.status === "completed" && (
+        <InterviewCompleted token={token} interview={query.data} />
+      )}
+      {phase === "ready" && query.data && query.data.status !== "completed" && (
         <InterviewPreparation key={token} interview={query.data} token={token} />
       )}
     </InterviewEntryShell>

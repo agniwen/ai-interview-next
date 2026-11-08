@@ -7,7 +7,7 @@ export const loginSearch = z.object({
   error: z.string().optional(),
   next: z
     .string()
-    .regex(/^\/(?:w\/|invite\/|(?:workspaces|account)(?:[?#]|$))/u)
+    .regex(/^\/(?:w\/|invite\/|meet\/|(?:workspaces|account)(?:[?#]|$))/u)
     .optional()
     .catch(undefined),
 });

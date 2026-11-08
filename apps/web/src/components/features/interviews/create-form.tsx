@@ -8,6 +8,7 @@ import { TimeRange } from "@/components/ui/time-range";
 import type { TimeRangeValue } from "@/components/ui/time-range";
 import { Radio, RadioGroup } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
+import { LocalTimeZone } from "@/components/local-time";
 import { Toolbar, ToolbarButton } from "@/components/ui/toolbar";
 import { InterviewFormSkeleton } from "@/components/skeletons/components/interview-form-skeleton";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
@@ -103,18 +104,11 @@ function toInterviewInput({
 }
 
 function canSaveInterview(
-  {
-    kind,
-    agent,
-    reviewer,
-    interviewers,
-  }: Pick<FormValues, "kind" | "agent" | "reviewer" | "interviewers">,
+  { kind, agent, interviewers }: Pick<FormValues, "kind" | "agent" | "interviewers">,
   hasQuestions: boolean,
   validTimes: boolean,
 ) {
-  return kind === "ai"
-    ? Boolean(agent && reviewer && hasQuestions)
-    : interviewers.length > 0 && validTimes;
+  return kind === "ai" ? Boolean(agent && hasQuestions) : interviewers.length > 0 && validTimes;
 }
 
 /**
@@ -157,11 +151,7 @@ function Form({
   const invalidTimes = Boolean(timeRange?.from && timeRange.to && !validTimes);
   const questionsDisabled = mutation.isPending || questionsLocked;
   const hasQuestions = questionsLocked || conversation.some((set) => (set.questionCount ?? 0) > 0);
-  const canSave = canSaveInterview(
-    { agent, interviewers, kind, reviewer },
-    hasQuestions,
-    validTimes,
-  );
+  const canSave = canSaveInterview({ agent, interviewers, kind }, hasQuestions, validTimes);
   return (
     <form
       className="flex min-w-0 flex-col gap-6"
@@ -246,7 +236,12 @@ function Form({
       {kind === "human" && (
         <>
           <Field data-invalid={invalidTimes}>
-            <FieldLabel htmlFor={`${id}-time-range`}>{m.interviews_time_range()}</FieldLabel>
+            <FieldLabel htmlFor={`${id}-time-range`} className="flex-wrap gap-x-1.5 gap-y-1">
+              {m.interviews_time_range()}
+              <span className="text-xs font-normal text-muted-foreground">
+                (<LocalTimeZone format="name" />)
+              </span>
+            </FieldLabel>
             <TimeRange
               id={`${id}-time-range`}
               value={timeRange}
@@ -278,6 +273,7 @@ function Form({
               onChange={setReviewer}
               disabled={mutation.isPending}
             />
+            <p className="text-xs text-muted-foreground">{m.interviews_reviewer_optional_help()}</p>
           </Field>
           <SetSelection
             id={`${id}-conversation`}

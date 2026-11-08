@@ -1,5 +1,12 @@
+import type { ReactNode } from "react";
 import { useState } from "react";
-import { IconCheck, IconChevronDown, IconMicrophone, IconVideo } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconChevronDown,
+  IconMicrophone,
+  IconMicrophoneOff,
+  IconVideo,
+} from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -16,7 +23,15 @@ import { Switch } from "@/components/ui/switch";
 import * as m from "@/paraglide/messages";
 import { CameraPreview, MicrophoneMeter } from "./device-media";
 import type { DeviceFailure, DevicePreview, PreviewKind } from "./device-preview";
+import type { DeviceState } from "./use-device-preview";
 import { useDevicePreview } from "./use-device-preview";
+
+export interface InterviewDevices {
+  microphoneEnabled: boolean;
+  microphoneId?: string;
+  cameraId?: string;
+  cameraEnabled: boolean;
+}
 
 function DeviceError({ failure }: { failure: DeviceFailure }) {
   const messages = {
@@ -74,17 +89,84 @@ function DeviceSelect({
   );
 }
 
-/**
- * 候选人本地设备检查：麦克风检测到声音后就绪，摄像头可选；此组件不创建房间或开始面试。
- * Candidate local device check: microphone sound marks readiness, camera is optional; this component neither creates a room nor starts an interview.
- */
-export function InterviewDeviceCheck({
-  onBack,
-  hasForms,
-}: {
+interface DeviceCheckActionsProps {
+  details?: ReactNode;
   onBack: () => void;
   hasForms: boolean;
-}) {
+  onStart?: (devices: InterviewDevices) => Promise<void>;
+  starting?: boolean;
+  started?: boolean;
+  error?: boolean;
+}
+
+function DeviceCheckActions({
+  onBack,
+  hasForms,
+  onStart,
+  starting,
+  started,
+  error,
+  microphone,
+  camera,
+}: DeviceCheckActionsProps & { microphone: DeviceState; camera: DeviceState }) {
+  return (
+    <>
+      {error && (
+        <p role="alert" className="text-sm text-destructive-foreground">
+          {m.candidate_session_start_error()}
+        </p>
+      )}
+      <div className="flex flex-col-reverse justify-center gap-2 sm:flex-row">
+        {!started && (
+          <Button variant="outline" disabled={starting} onClick={onBack}>
+            {hasForms ? m.candidate_form_edit() : m.candidate_interview_back()}
+          </Button>
+        )}
+        {onStart && (
+          <Button
+            variant="outline"
+            disabled={starting}
+            onClick={() =>
+              onStart({
+                cameraEnabled: camera.status === "ready",
+                cameraId: camera.status === "ready" ? camera.preview.deviceId : undefined,
+                microphoneEnabled: false,
+                microphoneId:
+                  microphone.status === "ready" ? microphone.preview.deviceId : undefined,
+              })
+            }
+          >
+            <IconMicrophoneOff aria-hidden="true" />
+            {m.candidate_start_muted()}
+          </Button>
+        )}
+        {onStart && (
+          <Button
+            disabled={starting}
+            onClick={() =>
+              onStart({
+                cameraEnabled: camera.status === "ready",
+                cameraId: camera.status === "ready" ? camera.preview.deviceId : undefined,
+                microphoneEnabled: true,
+                microphoneId:
+                  microphone.status === "ready" ? microphone.preview.deviceId : undefined,
+              })
+            }
+          >
+            {starting ? <Spinner /> : <IconMicrophone aria-hidden="true" />}
+            {started ? m.candidate_session_rejoin() : m.candidate_session_start()}
+          </Button>
+        )}
+      </div>
+    </>
+  );
+}
+
+/**
+ * 麦克风检测仅提供提示，不阻止开始面试或静音开始。
+ * Microphone checks provide feedback without blocking normal or muted entry.
+ */
+export function InterviewDeviceCheck(props: DeviceCheckActionsProps) {
   const microphone = useDevicePreview("audio");
   const camera = useDevicePreview("video");
   const [heardStream, setHeardStream] = useState<MediaStream | null>(null);
@@ -93,6 +175,7 @@ export function InterviewDeviceCheck({
   return (
     <div className="mt-8 flex w-full max-w-sm flex-col gap-5 text-left">
       <Card render={<section aria-labelledby="devices-heading" />} className="overflow-hidden">
+        {props.details}
         <h2 id="devices-heading" className="px-3.5 py-2 text-xs text-muted-foreground">
           {m.candidate_device_heading()}
         </h2>
@@ -195,11 +278,7 @@ export function InterviewDeviceCheck({
           {m.candidate_device_ready()}
         </output>
       )}
-      <div className="flex justify-center">
-        <Button variant="outline" onClick={onBack}>
-          {hasForms ? m.candidate_form_edit() : m.candidate_interview_back()}
-        </Button>
-      </div>
+      <DeviceCheckActions {...props} microphone={microphone.state} camera={camera.state} />
     </div>
   );
 }

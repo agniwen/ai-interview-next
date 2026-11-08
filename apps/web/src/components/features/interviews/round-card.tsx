@@ -1,3 +1,5 @@
+import { applicationDetailSearch } from "../ats/list-search";
+import { Link, useLocation } from "@tanstack/react-router";
 import { LocalTime, LocalTimeZone } from "@/components/local-time";
 import {
   IconCalendarEvent,
@@ -27,6 +29,7 @@ import * as m from "@/paraglide/messages";
 import { deleteInterviewMutation } from "./client";
 import type { InterviewRound } from "./client";
 import { InvitationButton } from "./invitation-button";
+import { EvaluationStatus } from "./evaluation-status";
 
 function DeleteInterviewPopover({
   round,
@@ -114,6 +117,13 @@ function ScheduledTime({ label, value }: { label: string; value: string | null }
   );
 }
 
+function roundResultLabel(round: InterviewRound) {
+  if (round.canEvaluate) {
+    return m.interview_evaluation_review();
+  }
+  return round.status === "completed" ? m.interviews_view_result() : m.interviews_view_record();
+}
+
 /**
  * 面试轮次摘要卡，展示类型、人员、时间和题量，并承载编辑、删除与邀请操作。
  * Interview-round summary with type, people, schedule and question counts, plus edit, delete and invite actions.
@@ -129,10 +139,15 @@ export function InterviewRoundCard({
   applicationId: string;
   onEdit: () => void;
 }) {
+  const location = useLocation();
   const { questionSelection } = round;
-  const scheduled = round.status === "scheduled";
   const ai = round.kind === "ai";
-  const pendingLabel = ai ? m.interviews_not_started() : m.interviews_scheduled();
+  const statusLabels: Record<string, string> = {
+    completed: m.interviews_completed(),
+    in_progress: m.interviews_in_progress(),
+    scheduled: ai ? m.interviews_not_started() : m.interviews_scheduled(),
+  };
+  const statusLabel = statusLabels[round.status];
   return (
     <Frame className="min-w-0">
       <FrameHeader className="flex-row items-start justify-between gap-3 px-4 py-3">
@@ -143,9 +158,7 @@ export function InterviewRoundCard({
           </h4>
         </FrameTitle>
         <div className="flex shrink-0 items-center gap-2">
-          <Badge variant={scheduled ? "info" : "secondary"}>
-            {scheduled ? pendingLabel : m.interviews_recorded()}
-          </Badge>
+          <Badge variant={round.status === "completed" ? "success" : "info"}>{statusLabel}</Badge>
           {round.canEdit && (
             <Tooltip>
               <TooltipTrigger
@@ -211,14 +224,14 @@ export function InterviewRoundCard({
             <div className="flex min-w-0 flex-col gap-1.5">
               <dt className="text-xs text-muted-foreground">{m.interviews_reviewer()}</dt>
               <dd className="min-w-0">
-                <UserColumn
-                  className="max-w-full"
-                  user={
-                    round.confirmationName
-                      ? { image: round.confirmationImage, name: round.confirmationName }
-                      : null
-                  }
-                />
+                {round.confirmationName ? (
+                  <UserColumn
+                    className="max-w-full"
+                    user={{ image: round.confirmationImage, name: round.confirmationName }}
+                  />
+                ) : (
+                  <span className="text-sm">{m.interviews_any_member()}</span>
+                )}
               </dd>
             </div>
           </dl>
@@ -237,7 +250,53 @@ export function InterviewRoundCard({
             </span>
           </div>
         )}
-        <InvitationButton workspaceId={workspaceId} roundId={round.id} />
+        {round.status === "completed" && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <EvaluationStatus summary={round.evaluation} />
+            <span>
+              {m.interview_evaluation_progress({
+                submitted: round.evaluation.submittedCount,
+                total: round.evaluation.requiredCount,
+              })}
+            </span>
+          </div>
+        )}
+        {round.canJoin && (
+          <Button
+            variant="outline"
+            render={
+              <Link to="/meet/$workspaceId/$roundId" params={{ roundId: round.id, workspaceId }} />
+            }
+          >
+            {m.meeting_join()}
+          </Button>
+        )}
+        {round.status !== "completed" && (
+          <InvitationButton workspaceId={workspaceId} roundId={round.id} />
+        )}
+        {(round.status === "completed" || round.status === "in_progress") && (
+          <Button
+            variant="outline"
+            render={
+              <Link
+                to="/w/$workspaceId/hub/applications/overlay/$id/result/$roundId"
+                params={{ id: applicationId, roundId: round.id, workspaceId }}
+                search={
+                  location.pathname.includes("/applications/")
+                    ? applicationDetailSearch.parse(location.search)
+                    : { page: 1, pageSize: 20, search: "", tab: "interviews" }
+                }
+                mask={{
+                  params: { id: applicationId, roundId: round.id, workspaceId },
+                  to: "/w/$workspaceId/hub/applications/$id/result/$roundId",
+                  unmaskOnReload: true,
+                }}
+              />
+            }
+          >
+            {roundResultLabel(round)}
+          </Button>
+        )}
       </FramePanel>
     </Frame>
   );

@@ -46,11 +46,13 @@ function MessageScroller({
 function MessageScrollerViewport({
   className,
   children,
+  scrollFade = false,
   ...props
-}: React.ComponentProps<typeof MessageScrollerPrimitive.Viewport>) {
+}: React.ComponentProps<typeof MessageScrollerPrimitive.Viewport> & { scrollFade?: boolean }) {
   return (
     <ScrollArea
       overscrollContain
+      scrollFade={scrollFade}
       viewportClassName={cn(
         "size-full min-h-0 min-w-0 contain-content data-pending-scroll:invisible [&>[data-slot=scroll-area-content]]:min-h-full",
         className,

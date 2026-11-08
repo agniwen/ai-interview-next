@@ -1,5 +1,4 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 
 /**
@@ -11,7 +10,7 @@ export function ResumeProfileSkeleton({ layout = "preview" }: { layout?: "inline
     <div
       aria-busy="true"
       aria-label={m.resume_profile_loading()}
-      className={cn("max-w-4xl", layout === "preview" ? "mx-auto p-8 sm:p-16" : "pt-2 pb-6")}
+      className={layout === "preview" ? "mx-auto max-w-4xl p-8 sm:p-16" : "pt-2 pb-6"}
     >
       <div aria-hidden="true" className="flex flex-col gap-5 sm:gap-6">
         {layout === "preview" && (

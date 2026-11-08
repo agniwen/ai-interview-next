@@ -93,14 +93,18 @@ export function ApplicationInterviews({
       <Button
         variant="outline"
         className="w-48 max-w-full self-center"
-        disabled={closed || !query.data || rows.length > 0}
+        disabled={closed || !query.data?.pages[0].canCreateRound}
         onClick={() => setCreating(true)}
       >
         <IconPlus aria-hidden="true" />
         {m.interviews_create()}
       </Button>
       {rows.length > 0 && (
-        <p className="text-xs text-muted-foreground">{m.interviews_next_round_help()}</p>
+        <p className="text-xs text-muted-foreground">
+          {query.data?.pages[0].canCreateRound
+            ? m.interview_evaluation_next_ready()
+            : m.interviews_next_round_help()}
+        </p>
       )}
     </section>
   );

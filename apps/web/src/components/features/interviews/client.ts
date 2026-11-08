@@ -5,13 +5,16 @@ import { workspaceApi } from "@/lib/workspaces/client";
 import { readAts } from "../ats/client";
 import { questionSetKeys } from "../question-sets/query-keys";
 import { interviewerAgentKeys } from "../interviewer-agents/query-keys";
+import { atsKeys } from "../ats/query-keys";
 
 export const interviewsApi = workspaceApi.api.interviews[":workspaceId"];
 export const interviewKeys = createQueryKeys("interviews", {
   workspace: (workspaceId: string) => ({
     contextQueries: {
       edit: (id: string) => [id],
+      meeting: (id: string) => [id],
       members: (search: string) => [search],
+      result: (id: string) => [id],
       rounds: (applicationId: string) => [applicationId],
       setup: (applicationId: string) => [applicationId],
     },
@@ -83,9 +86,12 @@ export function createInterviewMutation(
         }),
       ),
     onSuccess: async () => {
-      await client.invalidateQueries({
-        queryKey: interviewKeys.workspace(workspaceId)._ctx.rounds(applicationId).queryKey,
-      });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: interviewKeys.workspace(workspaceId).queryKey }),
+        client.invalidateQueries({
+          queryKey: atsKeys.applications(workspaceId)._ctx.detail(applicationId).queryKey,
+        }),
+      ]);
     },
   });
 }
@@ -191,5 +197,72 @@ export function createInvitationMutation(client: QueryClient, workspaceId: strin
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: interviewKeys.workspace(workspaceId).queryKey });
     },
+  });
+}
+
+async function readResult(workspaceId: string, id: string, signal: AbortSignal) {
+  return readAts(
+    await interviewsApi[":id"].result.$get({ param: { id, workspaceId } }, { init: { signal } }),
+  );
+}
+export type InterviewResult = Awaited<ReturnType<typeof readResult>>;
+export type EvaluationDraft = Parameters<
+  (typeof interviewsApi)[":id"]["evaluation"]["$put"]
+>[0]["json"];
+export type EvaluationContent = Parameters<
+  (typeof interviewsApi)[":id"]["evaluation"]["submit"]["$post"]
+>[0]["json"];
+
+export function saveEvaluationMutation(client: QueryClient, workspaceId: string, id: string) {
+  return mutationOptions({
+    mutationFn: async (
+      input:
+        | { submit: false; content: EvaluationDraft }
+        | { submit: true; content: EvaluationContent },
+    ) => {
+      const args = { json: input.content, param: { id, workspaceId } };
+      if (input.submit) {
+        return readAts(
+          await interviewsApi[":id"].evaluation.submit.$post({ ...args, json: input.content }),
+        );
+      }
+      return readAts(await interviewsApi[":id"].evaluation.$put(args));
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: interviewKeys.workspace(workspaceId).queryKey }),
+        client.invalidateQueries({ queryKey: atsKeys.applications(workspaceId).queryKey }),
+      ]);
+    },
+  });
+}
+
+export function generateEvaluationMutation(client: QueryClient, workspaceId: string, id: string) {
+  return mutationOptions({
+    mutationFn: async () =>
+      readAts(
+        await interviewsApi[":id"].evaluation.generate.$post({
+          json: { version: 1 },
+          param: { id, workspaceId },
+        }),
+      ),
+    onSettled: async () => {
+      await client.invalidateQueries({
+        queryKey: interviewKeys.workspace(workspaceId)._ctx.result(id).queryKey,
+      });
+    },
+  });
+}
+
+export function resultQuery(workspaceId: string, id: string) {
+  return queryOptions({
+    queryFn: ({ signal }) => readResult(workspaceId, id, signal),
+    queryKey: interviewKeys.workspace(workspaceId)._ctx.result(id).queryKey,
+    refetchInterval: ({ state }) =>
+      state.data?.round.status === "in_progress" ||
+      state.data?.reportStatus === "processing" ||
+      state.data?.evaluation.original?.status === "generating"
+        ? 3000
+        : false,
   });
 }

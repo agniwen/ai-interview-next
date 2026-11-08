@@ -43,7 +43,7 @@ function WorkspaceShell() {
 
   const contentClassName = canvasPage
     ? "flex min-h-0 flex-1 flex-col"
-    : "flex flex-1 flex-col p-4 md:p-6";
+    : "mx-auto flex w-full min-w-0 max-w-[96rem] flex-1 flex-col p-4 md:p-6";
 
   const { mutate: activate, error } = useMutation({
     mutationFn: async (id: string) => {

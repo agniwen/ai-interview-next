@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "scope": [
+    "interview transcript ordering",
+    "call control dimensions",
+    "popup transitions",
+    "candidate feedback and recruiter result"
+  ],
+  "checks": {
+    "webTests": 21,
+    "pythonTests": {
+      "passed": 15,
+      "skipped": 2
+    },
+    "desktopControlsPx": 40,
+    "mobileAndTabletControlsPx": 44,
+    "realAudioReconnectReport": ".eval/interview-e2e/qwen-acceptance/20261108T091150-audio-room-reconnect-3a9d32c2.json",
+    "browserFeedback": "submitted and displayed on recruiter result",
+    "dialogExit": "observed mounted popup with active opacity and scale transitions",
+    "comboboxExit": "observed mounted popup with opacity 1 to 0 and scale to 0.95 transitions"
+  },
+  "limitations": [
+    "Browser microphone permission was denied; synthetic Web Audio was used for browser speech input.",
+    "The earlier browser round retained a report reconciliation failure caused by missing SOCKS support. The dependency is now installed and client initialization passes; that completed round was not rewritten.",
+    "Autocomplete, context-menu and composer changes were statically checked; they currently have no feature call sites."
+  ]
+}

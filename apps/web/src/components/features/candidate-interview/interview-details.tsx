@@ -1,3 +1,4 @@
+import { InterviewRoleContext } from "./role-context";
 import type { ReactNode } from "react";
 import {
   IconBriefcase,
@@ -36,19 +37,29 @@ function DetailRow({
  * 候选人可见的面试信息卡，展示岗位、团队和题数；真人面试另显示设备本地时区的预约时间。
  * Candidate-facing interview details with job, team and question counts; human interviews also show device-local appointment times.
  */
-export function InterviewDetails({ interview }: { interview: CandidateInterview }) {
+export function InterviewDetails({
+  interview,
+  embedded = false,
+}: {
+  interview: CandidateInterview;
+  embedded?: boolean;
+}) {
   return (
     <Card
       render={<section />}
       aria-label={m.candidate_interview_details()}
-      className="w-full text-left"
+      className={
+        embedded
+          ? "w-full rounded-none border-0 bg-transparent text-left shadow-none before:hidden"
+          : "w-full text-left"
+      }
     >
       <h2 className="px-3.5 py-3 text-xs text-muted-foreground">
         {m.candidate_interview_details()}
       </h2>
       <dl className="divide-y divide-border/70 border-t border-border/70">
         <DetailRow icon={IconBriefcase} label={m.candidate_interview_role()}>
-          {interview.jobTitle}
+          <InterviewRoleContext interview={interview} />
         </DetailRow>
         <DetailRow icon={IconBuilding} label={m.candidate_interview_team()}>
           {interview.workspaceName}

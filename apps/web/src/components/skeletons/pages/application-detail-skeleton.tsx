@@ -31,7 +31,7 @@ export function ApplicationDetailSkeleton() {
         <div aria-hidden="true" className="border-b py-1">
           <Skeleton className="h-8.5 w-32 max-w-full sm:h-7.5" />
         </div>
-        <div className="grid items-start gap-8 @min-[56rem]:grid-cols-[minmax(0,56rem)_18rem]">
+        <div className="grid items-start gap-8 @min-[56rem]:grid-cols-[minmax(0,1fr)_clamp(18rem,25cqw,24rem)]">
           <ResumeProfileSkeleton layout="inline" />
           <div
             aria-hidden="true"

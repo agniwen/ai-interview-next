@@ -46,11 +46,18 @@ export function LocalTime({
  * 显示当前设备的时区说明，水合前保留空白占位。
  * Displays the current device's time-zone label, retaining a blank placeholder before hydration.
  */
-export function LocalTimeZone({ className }: { className?: string }) {
+export function LocalTimeZone({
+  className,
+  format = "label",
+}: {
+  className?: string;
+  format?: "label" | "name";
+}) {
   const hydrated = useHydrated();
+  const zone = format === "name" ? deviceTimeZone() : m.time_zone_local({ zone: deviceTimeZone() });
   return (
     <span className={cn("wrap-anywhere", className)} aria-busy={!hydrated}>
-      {hydrated ? m.time_zone_local({ zone: deviceTimeZone() }) : "\u00A0"}
+      {hydrated ? zone : "\u00A0"}
     </span>
   );
 }
