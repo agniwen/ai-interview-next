@@ -4,8 +4,12 @@ version = "0.1.0"
 description = "Sainoa voice agent powered by LiveKit Agents"
 requires-python = ">=3.14,<3.15"
 dependencies = [
-  "livekit-agents~=1.8.10",
+  "aiohttp>=3.13,<4",
+  "httpx2[socks]>=2.16.0",
+  "livekit-agents[openai]~=1.8.11",
   "livekit-plugins-ai-coustics~=0.3",
+  "openai>=3.42,<4",
+  "pydantic>=2.12,<3",
   "python-dotenv>=1.2,<2",
 ]
 
