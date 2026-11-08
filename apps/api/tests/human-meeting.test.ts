@@ -1,6 +1,7 @@
 import {
   applicationActivity,
   interviewRound,
+  interviewEvaluation,
   interviewSession,
   job,
 } from "@ai-interview/db/schema";
@@ -241,4 +242,49 @@ it("saves an interviewer's live draft but requires completion before formal subm
   expect(await f.owner.call(`${path}/evaluation/submit`, content)).toMatchObject({ status: 409 });
   await f.owner.call(`${f.path}/end`, { version: 1 });
   expect(await f.owner.call(`${path}/evaluation/submit`, content)).toMatchObject({ status: 200 });
+});
+
+it("shows submitted earlier evaluations and excludes drafts and later rounds", async () => {
+  const f = await setup("history");
+  const db = atsTest.platform.database;
+  const current = await f.round();
+  expect(current).toBeDefined();
+  if (!current) {
+    throw new Error("Missing fixture round");
+  }
+  await db.update(interviewRound).set({ sequence: 3 }).where(eq(interviewRound.id, current.id));
+  const previousId = crypto.randomUUID();
+  const draftId = crypto.randomUUID();
+  const laterId = crypto.randomUUID();
+  await Promise.all(
+    (
+      [
+        [previousId, 1],
+        [draftId, 2],
+        [laterId, 4],
+      ] as const
+    ).map(async ([id, sequence]) => {
+      await db.insert(interviewRound).values({ ...current, id, sequence, status: "completed" });
+      await db.insert(interviewEvaluation).values({
+        authorUserId: f.owner.userId,
+        content: {
+          conclusion: "pass",
+          overall: id === previousId ? "**Strong evidence**" : "Not visible",
+          version: 1,
+        },
+        interviewRoundId: id,
+        submittedAt: id === draftId ? null : new Date(),
+        updatedAt: new Date(),
+        workspaceId: f.owner.workspaceId,
+      });
+    }),
+  );
+  const meeting = await read(f.owner.call(f.path));
+  expect(meeting.materials.history).toHaveLength(1);
+  expect(meeting.materials.history[0]).toMatchObject({
+    author: { id: f.owner.userId },
+    content: { overall: "**Strong evidence**", version: 1 },
+    roundId: previousId,
+    sequence: 1,
+  });
 });

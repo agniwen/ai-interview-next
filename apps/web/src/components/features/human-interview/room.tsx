@@ -4,12 +4,14 @@ import {
   LiveKitRoom,
   RoomAudioRenderer,
   useTracks,
+  useParticipants,
   useConnectionState,
   useRoomContext,
 } from "@livekit/components-react";
 import { ConnectionState, Track } from "livekit-client";
 import {
   IconPhoneOff,
+  IconSubtitles,
   IconMessageCircle,
   IconFiles,
   IconLayoutGrid,
@@ -30,6 +32,8 @@ import type { InterviewDevices } from "../candidate-interview/device-check";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 import type { HumanMeeting, MeetingConnection } from "./client";
+import { MeetingParticipants } from "./participants";
+import { MeetingTranscript } from "./transcript";
 import { MeetingChat } from "./chat";
 import { MediaControl, ScreenControl, controlClass } from "./controls";
 import { MeetingView } from "./view";
@@ -54,6 +58,7 @@ function MeetingHeader({
   canEnd,
   onChat,
   onHangup,
+  children,
 }: {
   title: string;
   startedAt: string | null;
@@ -61,6 +66,7 @@ function MeetingHeader({
   canEnd: boolean;
   onChat: () => void;
   onHangup: () => void;
+  children?: ReactNode;
 }) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 px-3 md:px-4">
@@ -70,6 +76,7 @@ function MeetingHeader({
       <div className="hidden sm:block">
         <InterviewTimer startedAt={startedAt} />
       </div>
+      {children}
       <ThemeSwitcher />
       <Button
         variant={chatOpen ? "secondary" : "ghost"}
@@ -94,6 +101,37 @@ function MeetingHeader({
   );
 }
 
+function MeetingHeaderActions({
+  materials,
+  participants,
+  transcriptOpen,
+  onTranscript,
+}: {
+  materials?: HumanMeeting["materials"];
+  participants: ReturnType<typeof useParticipants>;
+  transcriptOpen: boolean;
+  onTranscript: () => void;
+}) {
+  return (
+    <>
+      {materials && (
+        <div className="hidden md:block">
+          <MeetingParticipants participants={participants} people={materials.people} />
+        </div>
+      )}
+      <Button
+        variant={transcriptOpen ? "secondary" : "ghost"}
+        size="sm"
+        aria-expanded={transcriptOpen}
+        onClick={onTranscript}
+      >
+        <IconSubtitles />
+        {m.meeting_subtitles()}
+      </Button>
+    </>
+  );
+}
+
 function MeetingStage({
   connection,
   title,
@@ -110,6 +148,12 @@ function MeetingStage({
   const state = useConnectionState();
   const [view, setView] = useState<"meeting" | "materials">("meeting");
   const [chatOpen, setChatOpen] = useState(false);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const participants = useParticipants().filter((person) => !person.isAgent);
+  function toggleChat() {
+    setTranscriptOpen(false);
+    setChatOpen((value) => !value);
+  }
   const [confirm, setConfirm] = useState<"leave" | "end">("leave");
   const [confirmOpen, setConfirmOpen] = useState(false);
   function requestConfirmation(action: "leave" | "end") {
@@ -135,9 +179,19 @@ function MeetingStage({
         startedAt={connection.startedAt}
         chatOpen={chatOpen}
         canEnd={Boolean(onEnd)}
-        onChat={() => setChatOpen(!chatOpen)}
+        onChat={toggleChat}
         onHangup={() => requestConfirmation(onEnd ? "end" : "leave")}
-      />
+      >
+        <MeetingHeaderActions
+          materials={view === "materials" ? materials : undefined}
+          participants={participants}
+          transcriptOpen={transcriptOpen}
+          onTranscript={() => {
+            setChatOpen(false);
+            setTranscriptOpen((value) => !value);
+          }}
+        />
+      </MeetingHeader>
       {(reconnecting || connecting) && (
         <output className="bg-muted px-4 py-2 text-center text-xs">
           {reconnecting ? m.meeting_reconnecting() : m.meeting_connecting()}
@@ -177,6 +231,7 @@ function MeetingStage({
             </output>
           )}
         </div>
+        <MeetingTranscript open={transcriptOpen} onClose={() => setTranscriptOpen(false)} />
         <MeetingChat open={chatOpen} onClose={() => setChatOpen(false)} />
       </div>
       <footer className="flex shrink-0 items-center justify-center gap-1 border-t bg-background px-2 pt-2 pb-[max(.75rem,env(safe-area-inset-bottom))] md:gap-3 md:px-4">
@@ -203,7 +258,7 @@ function MeetingStage({
           variant="outline"
           className={cn(controlClass, "hidden md:inline-flex")}
           aria-expanded={chatOpen}
-          onClick={() => setChatOpen(!chatOpen)}
+          onClick={toggleChat}
         >
           <IconMessageCircle />
           {m.meeting_chat()}

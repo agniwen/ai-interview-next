@@ -901,5 +901,12 @@
   "meeting_mic_on": "开启麦克风",
   "meeting_mic_off": "关闭麦克风",
   "meeting_end_error": "结束失败，请重试。",
-  "meeting_evaluation_draft_help": "面试中可以保存评价草稿，结束面试后再正式提交。"
+  "meeting_evaluation_draft_help": "面试中可以保存评价草稿，结束面试后再正式提交。",
+  "meeting_subtitles": "字幕",
+  "meeting_transcript_title": "实时字幕",
+  "meeting_transcript_empty": "等待会议转录…",
+  "meeting_history": "历史面试评价",
+  "meeting_history_empty": "暂无历史面试评价",
+  "meeting_resume_fullscreen": "全屏查看简历",
+  "meeting_participants": "参会人"
 }

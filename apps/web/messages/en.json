@@ -901,5 +901,12 @@
   "meeting_mic_on": "Unmute microphone",
   "meeting_mic_off": "Mute microphone",
   "meeting_end_error": "Could not end the meeting. Please retry.",
-  "meeting_evaluation_draft_help": "You can save your draft during the interview and submit it after the meeting ends."
+  "meeting_evaluation_draft_help": "You can save your draft during the interview and submit it after the meeting ends.",
+  "meeting_subtitles": "Subtitles",
+  "meeting_transcript_title": "Live subtitles",
+  "meeting_transcript_empty": "Waiting for meeting transcription…",
+  "meeting_history": "Previous interview evaluations",
+  "meeting_history_empty": "No previous interview evaluations",
+  "meeting_resume_fullscreen": "View resume full screen",
+  "meeting_participants": "Participants"
 }

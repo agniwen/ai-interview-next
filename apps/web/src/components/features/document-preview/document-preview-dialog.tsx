@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DialogClose, DialogPopup, DialogTitle } from "@/components/ui/dialog";
 import * as m from "@/paraglide/messages";
+import { cn } from "@/lib/utils";
 
 export function DocumentPreviewError() {
   return (
@@ -29,16 +30,21 @@ export function DocumentPreviewDialog({
   children,
   downloadUrl,
   filename,
+  fullScreen = false,
 }: {
   actions?: ReactNode;
   children: ReactNode;
   downloadUrl: string;
   filename: string;
+  fullScreen?: boolean;
 }) {
   return (
     <DialogPopup
       bottomStickOnMobile={false}
-      className="h-[calc(100dvh-2rem)] max-w-6xl overflow-hidden sm:h-[min(88dvh,64rem)]"
+      className={cn(
+        "h-[calc(100dvh-2rem)] max-w-6xl overflow-hidden sm:h-[min(88dvh,64rem)]",
+        fullScreen && "fixed inset-0 h-dvh max-h-none max-w-none rounded-none border-0 sm:h-dvh",
+      )}
       showCloseButton={false}
     >
       <header className="flex shrink-0 items-center justify-between gap-3 border-b px-3 py-2 sm:px-4">

@@ -55,3 +55,33 @@ it("retains an interviewer meeting through sign-in without allowing external red
     loginSearch.parse({ next: "https://example.com/meet/workspace/round" }).next,
   ).toBeUndefined();
 });
+
+it("renders previous evaluations with author, verdict, markdown and timeline navigation", async () => {
+  const { MeetingHistory } = await import("../src/components/features/human-interview/history");
+  const html = renderToStaticMarkup(
+    <MeetingHistory
+      history={[
+        {
+          author: { id: "reviewer", image: null, name: "Earlier interviewer" },
+          content: {
+            conclusion: "pass",
+            overall: "**Evidence from the previous round**",
+            version: 1,
+          },
+          kind: "human",
+          label: "Technical round",
+          roundId: "previous",
+          sequence: 1,
+          submittedAt: "2026-11-08T02:00:00Z",
+        },
+      ]}
+    >
+      <div>Resume preview</div>
+    </MeetingHistory>,
+  );
+  expect(html).toContain("Resume preview");
+  expect(html).toContain("Earlier interviewer");
+  expect(html).toContain("Technical round");
+  expect(html).toContain("<strong>Evidence from the previous round</strong>");
+  expect(html).toContain('href="#history-previous-reviewer"');
+});

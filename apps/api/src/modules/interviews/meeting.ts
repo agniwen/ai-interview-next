@@ -1,7 +1,14 @@
 import type { Database } from "@ai-interview/db";
-import type { interviewRound } from "@ai-interview/db/schema";
-import { application, interviewSession, organization } from "@ai-interview/db/schema";
-import { eq } from "drizzle-orm";
+import {
+  application,
+  interviewRound,
+  interviewSession,
+  interviewEvaluation,
+  organization,
+  resume,
+  user,
+} from "@ai-interview/db/schema";
+import { and, asc, eq, inArray, isNotNull, lt } from "drizzle-orm";
 import { candidateInterview } from "../candidate-interviews/service";
 import {
   captureSession,
@@ -52,24 +59,77 @@ export async function readHumanMeeting(
     return { error: entry.error, status: entry.status };
   }
   const { round } = entry;
-  const [session, [workspace]] = await Promise.all([
+  const [session, [workspace], history] = await Promise.all([
     db.select().from(interviewSession).where(eq(interviewSession.interviewRoundId, id)).get(),
     db
       .select({ name: organization.name })
       .from(organization)
       .where(eq(organization.id, workspaceId)),
+    db
+      .select({
+        author: { id: user.id, image: user.image, name: user.name },
+        content: interviewEvaluation.content,
+        kind: interviewRound.kind,
+        label: interviewRound.label,
+        roundId: interviewRound.id,
+        sequence: interviewRound.sequence,
+        submittedAt: interviewEvaluation.submittedAt,
+      })
+      .from(interviewEvaluation)
+      .innerJoin(interviewRound, eq(interviewRound.id, interviewEvaluation.interviewRoundId))
+      .innerJoin(user, eq(user.id, interviewEvaluation.authorUserId))
+      .where(
+        and(
+          eq(interviewRound.workspaceId, workspaceId),
+          eq(interviewRound.applicationId, round.applicationId),
+          lt(interviewRound.sequence, round.sequence),
+          isNotNull(interviewEvaluation.submittedAt),
+        ),
+      )
+      .orderBy(
+        asc(interviewRound.sequence),
+        asc(interviewRound.id),
+        asc(interviewEvaluation.submittedAt),
+        asc(user.id),
+      ),
   ]);
   const materials = session?.content ?? (await readInterviewMaterials(db, round));
+  const avatar = await db
+    .select({ id: resume.id })
+    .from(resume)
+    .where(
+      and(
+        eq(resume.workspaceId, workspaceId),
+        inArray(
+          resume.id,
+          materials.resumes.map((item) => item.id),
+        ),
+        isNotNull(resume.avatarObjectKey),
+      ),
+    )
+    .orderBy(asc(resume.id))
+    .get();
   return {
     admissionError: admissionError(round, entry.closedAt) ?? null,
     candidateName: materials.candidate.name,
     jobDescription: materials.job.requirements,
     jobTitle: materials.job.title,
     materials: {
+      history,
       job: materials.job,
-      resumes: materials.resumes.map((resume) => ({
-        ...resume,
-        documentUrl: `/api/interviews/${workspaceId}/${id}/meeting/resumes/${resume.id}`,
+      people: [
+        {
+          identity: `candidate-${round.id}`,
+          image: avatar ? `/api/ats/${workspaceId}/resumes/${avatar.id}/avatar` : null,
+        },
+        ...round.assignments.map((person) => ({
+          identity: `interviewer-${person.id}`,
+          image: person.image,
+        })),
+      ],
+      resumes: materials.resumes.map((item) => ({
+        ...item,
+        documentUrl: `/api/interviews/${workspaceId}/${id}/meeting/resumes/${item.id}`,
       })),
       version: 1 as const,
     },

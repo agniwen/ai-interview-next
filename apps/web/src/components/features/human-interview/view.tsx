@@ -1,5 +1,6 @@
 import type { TrackReferenceOrPlaceholder } from "@livekit/components-react";
 import { Track } from "livekit-client";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { HumanMeeting } from "./client";
 import { MeetingMaterials } from "./materials";
@@ -19,20 +20,7 @@ export function MeetingView({
   onReset: () => void;
 }) {
   if (materials) {
-    return (
-      <>
-        <MeetingMaterials materials={materials} />
-        <div className="absolute right-3 bottom-3 flex max-w-[calc(100%-1.5rem)] gap-2 overflow-x-auto rounded-lg border bg-background p-1.5 shadow-lg">
-          {tracks
-            .filter((track) => track.source === Track.Source.Camera)
-            .map((track) => (
-              <div key={trackKey(track)} className="h-28 w-40 shrink-0">
-                <MeetingTile track={track} onFocus={() => onFocus(trackKey(track))} />
-              </div>
-            ))}
-        </div>
-      </>
-    );
+    return <MeetingMaterials materials={materials} />;
   }
   const selected = tracks.find((track) => trackKey(track) === focused);
   const main = selected ?? tracks.find((track) => track.source === Track.Source.ScreenShare);
@@ -49,15 +37,17 @@ export function MeetingView({
       >
         <MeetingTile track={main} onReset={selected ? onReset : undefined} />
         {others.length > 0 && (
-          <aside className="grid min-h-0 auto-cols-[12rem] grid-flow-col gap-1.5 overflow-auto md:auto-cols-auto md:auto-rows-[8rem] md:grid-flow-row md:content-start">
-            {others.map((track) => (
-              <MeetingTile
-                key={trackKey(track)}
-                track={track}
-                onFocus={() => onFocus(trackKey(track))}
-              />
-            ))}
-          </aside>
+          <ScrollArea overscrollContain>
+            <aside className="grid auto-cols-[12rem] grid-flow-col gap-1.5 md:auto-cols-auto md:auto-rows-[8rem] md:grid-flow-row md:content-start">
+              {others.map((track) => (
+                <MeetingTile
+                  key={trackKey(track)}
+                  track={track}
+                  onFocus={() => onFocus(trackKey(track))}
+                />
+              ))}
+            </aside>
+          </ScrollArea>
         )}
       </div>
     );
@@ -65,7 +55,7 @@ export function MeetingView({
   return (
     <div
       className={cn(
-        "grid min-h-0 flex-1 auto-rows-fr gap-1.5 overflow-auto px-1.5 pb-1.5",
+        "grid min-h-0 flex-1 auto-rows-fr gap-1.5 overflow-hidden px-1.5 pb-1.5",
         tracks.length > 1 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1",
         tracks.length > 4 && "xl:grid-cols-3",
       )}
