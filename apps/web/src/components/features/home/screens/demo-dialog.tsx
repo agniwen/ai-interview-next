@@ -28,7 +28,11 @@ import { DEMO_CANDIDATE_ID, DEMO_INVITATION_URL } from "./demo-workflow-data";
 export function DemoDialogLayer() {
   const demo = useDemo();
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
-  const { dialog } = demo;
+  const [retainedDialog, setRetainedDialog] = useState(demo.dialog);
+  if (demo.dialog && demo.dialog !== retainedDialog) {
+    setRetainedDialog(demo.dialog);
+  }
+  const dialog = demo.dialog ?? retainedDialog;
   const { conversation, dialog: copy, job, people } = getDemoScreenCopy();
   return (
     <>
@@ -39,7 +43,12 @@ export function DemoDialogLayer() {
       />
       <Dialog.Root
         modal={false}
-        open={Boolean(dialog)}
+        open={Boolean(demo.dialog)}
+        onOpenChangeComplete={(open) => {
+          if (!open) {
+            setRetainedDialog(null);
+          }
+        }}
         onOpenChange={(open, details) => {
           if (!details.event?.isTrusted && !open) {
             demo.setDialog(null);
@@ -48,12 +57,12 @@ export function DemoDialogLayer() {
       >
         {container && dialog && (
           <Dialog.Portal container={container}>
-            <Dialog.Backdrop className="pointer-events-auto absolute inset-0 bg-background/80 backdrop-blur-xs" />
+            <Dialog.Backdrop className="pointer-events-auto absolute inset-0 bg-background/80 backdrop-blur-xs transition-opacity duration-200 data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none" />
             <Dialog.Popup
               initialFocus={false}
               finalFocus={false}
               className={cn(
-                "pointer-events-auto absolute top-1/2 left-1/2 flex max-h-[700px] w-[720px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-background shadow-extra-large",
+                "pointer-events-auto absolute top-1/2 left-1/2 flex max-h-[700px] w-[720px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-background shadow-extra-large transition-[opacity,scale] duration-200 data-starting-style:opacity-0 data-ending-style:opacity-0 motion-safe:data-starting-style:scale-98 motion-safe:data-ending-style:scale-98 motion-reduce:transition-none",
                 dialog.kind === "resume" && "w-[1080px] h-[720px]",
               )}
               data-slot="demo-dialog"
