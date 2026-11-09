@@ -1,5 +1,6 @@
 import { InterviewEntryShell } from "@/components/interview-entry-shell";
 import { DocumentPreviewSkeleton } from "@/components/skeletons/components/document-preview-skeleton";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 
@@ -72,7 +73,7 @@ export function HumanInterviewPreparationSkeleton({
         </p>
         {interviewer ? (
           <div>
-            <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+            <Card className="overflow-hidden">
               <div className="flex aspect-[16/10] flex-col overflow-hidden">
                 <DocumentPreviewSkeleton />
               </div>
@@ -81,7 +82,7 @@ export function HumanInterviewPreparationSkeleton({
                 <Skeleton className="h-5 w-40 max-w-full" />
                 <Skeleton className="ms-auto size-4" />
               </div>
-            </div>
+            </Card>
             <div className="mt-6 flex flex-col gap-2">
               <p className="text-lg font-semibold">{m.meeting_history()}</p>
               <Skeleton className="h-5 w-40" />

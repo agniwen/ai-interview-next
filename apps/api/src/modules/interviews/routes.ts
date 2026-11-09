@@ -1,7 +1,13 @@
 import { resumeFiles } from "../ats/storage";
-import { readHumanMeeting, joinInterviewerMeeting, endHumanMeeting } from "./meeting";
+import {
+  readHumanMeeting,
+  joinInterviewerMeeting,
+  endHumanMeeting,
+  startHumanMeetingTranscription,
+} from "./meeting";
 import {
   meetingRoomConfiguration,
+  interviewRoomConfiguration,
   connectHumanMeeting,
   closeInterviewRoom,
 } from "../interview-sessions/rooms";
@@ -103,17 +109,26 @@ export const interviewRoutes = new Hono<AuthenticatedEnv>()
     interviewParams,
     sValidator("json", z.object({ version: z.literal(1) }), validationResult),
     async (c) => {
+      const db = c.get("database");
+      const config = interviewRoomConfiguration.safeParse(c.env);
       const result = await joinInterviewerMeeting(
-        c.get("database"),
+        db,
         c.get("workspaceId"),
         c.req.valid("param").id,
         c.get("userId"),
-        true,
+        (session) => {
+          if (config.success) {
+            c.executionCtx.waitUntil(startHumanMeetingTranscription(db, config.data, session));
+          }
+        },
       );
       if ("error" in result) {
         return c.json({ error: result.error, version: 1 as const }, result.status);
       }
-      return c.json({ startedAt: result.session.startedAt, version: 1 as const }, 200);
+      return c.json(
+        { startedAt: result.session.startedAt, turns: result.turns ?? [], version: 1 as const },
+        200,
+      );
     },
   )
   .post(
@@ -159,16 +174,12 @@ export const interviewRoutes = new Hono<AuthenticatedEnv>()
         c.get("workspaceId"),
         c.req.valid("param").id,
         c.get("userId"),
+        (roomName) => closeInterviewRoom(config.data, roomName),
       );
       if ("error" in result) {
         return c.json({ error: result.error, version: 1 as const }, result.status);
       }
-      try {
-        await closeInterviewRoom(config.data, result.roomName);
-      } catch {
-        return c.json({ error: "INTERVIEW_CLOSE_FAILED", version: 1 as const }, 503);
-      }
-      return c.json({ endedAt: result.endedAt, version: 1 as const }, 200);
+      return c.json(result, 200);
     },
   )
   .get("/:workspaceId/members", sValidator("query", listQuery, validationResult), async (c) =>

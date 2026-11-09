@@ -1,81 +1,134 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useChat } from "@livekit/components-react";
 import { IconSend } from "@tabler/icons-react";
+import { LocalTime } from "@/components/local-time";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MeetingPanel } from "./panel";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
+import { MeetingPanel } from "./panel";
 
 export function MeetingChat({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { chatMessages, send, isSending } = useChat();
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
-  const viewport = useRef<HTMLDivElement>(null);
+  const [viewport, setViewport] = useState<HTMLDivElement | null>(null);
+  const textarea = useRef<HTMLTextAreaElement>(null);
+  const helpId = useId();
+  const latestId = chatMessages.at(-1)?.id;
+  const text = message.trim();
+  const canSend = Boolean(text) && !isSending;
+
   useEffect(() => {
-    if (open && chatMessages.length && viewport.current) {
-      viewport.current.scrollTop = viewport.current.scrollHeight;
+    if (open && latestId && viewport) {
+      viewport.scrollTo({ top: viewport.scrollHeight });
     }
-  }, [open, chatMessages.length]);
+  }, [open, latestId, viewport]);
+
   return (
-    <MeetingPanel open={open} onClose={onClose} title={m.meeting_chat()}>
-      <ScrollArea className="min-h-0 flex-1" overscrollContain viewportProps={{ ref: viewport }}>
-        <div className="px-4 py-4" role="log" aria-label={m.meeting_chat()}>
-          <p className="mb-5 text-xs leading-5 text-muted-foreground">{m.meeting_chat_help()}</p>
-          {!chatMessages.length && (
-            <p className="text-sm text-muted-foreground">{m.meeting_chat_empty()}</p>
-          )}
-          {chatMessages.map((item) => (
-            <div key={item.id} className="mb-4">
-              <p className="mb-1 text-xs text-muted-foreground">
-                {item.from?.name} ·{" "}
-                {new Date(item.timestamp).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-              <p className="whitespace-pre-wrap wrap-anywhere text-sm leading-6">{item.message}</p>
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
-      <form
-        className="flex flex-col gap-2 border-t p-3 pb-[max(.75rem,env(safe-area-inset-bottom))]"
-        onSubmit={async (event) => {
-          event.preventDefault();
-          try {
-            await send(message.trim());
-            setMessage("");
-            setError(false);
-          } catch {
-            setError(true);
-          }
-        }}
-      >
-        <Textarea
-          aria-label={m.meeting_chat_placeholder()}
-          placeholder={m.meeting_chat_placeholder()}
-          value={message}
-          maxLength={4000}
-          onChange={(event) => setMessage(event.target.value)}
-          rows={2}
-        />
+    <MeetingPanel open={open} onClose={onClose} title={m.meeting_chat()} initialFocus={textarea}>
+      <div className="relative flex min-h-0 flex-1">
+        <ScrollArea
+          className="touch-auto"
+          overscrollContain
+          scrollFade
+          viewportProps={{ ref: setViewport }}
+        >
+          <div
+            className="flex min-w-0 flex-col gap-4 px-4 py-2"
+            role="log"
+            aria-label={m.meeting_chat()}
+          >
+            {chatMessages.map((item) => {
+              const local = item.from?.isLocal;
+              return (
+                <Bubble
+                  key={item.id}
+                  align={local ? "end" : "start"}
+                  variant={local ? "secondary" : "muted"}
+                  className="max-w-[85%]"
+                >
+                  <div
+                    className={cn(
+                      "flex min-w-0 items-baseline gap-2 text-xs text-muted-foreground",
+                      local && "justify-end",
+                    )}
+                  >
+                    <span className="truncate">
+                      {local ? m.meeting_you() : item.from?.name || item.from?.identity}
+                    </span>
+                    <LocalTime className="shrink-0" format="time" value={item.timestamp} />
+                  </div>
+                  <BubbleContent className="whitespace-pre-wrap wrap-anywhere">
+                    {item.message}
+                  </BubbleContent>
+                </Bubble>
+              );
+            })}
+          </div>
+        </ScrollArea>
+        {chatMessages.length === 0 && (
+          <p className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-muted-foreground">
+            {m.meeting_chat_empty()}
+          </p>
+        )}
+      </div>
+      <div className="shrink-0 p-3">
+        <p className="sr-only" id={helpId}>
+          {m.meeting_chat_help()}
+        </p>
         {error && (
-          <p role="alert" className="text-xs text-destructive-foreground">
+          <p role="alert" className="mb-2 text-xs text-destructive-foreground">
             {m.ats_error()}
           </p>
         )}
-        <Button
-          type="submit"
-          variant="outline"
-          className="self-end"
-          disabled={!message.trim()}
-          loading={isSending}
+        <form
+          className="flex items-end gap-2"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            try {
+              await send(text);
+              setMessage((current) => (current === message ? "" : current));
+              setError(false);
+            } catch {
+              setError(true);
+            }
+          }}
         >
-          <IconSend />
-          {m.meeting_send()}
-        </Button>
-      </form>
+          <Textarea
+            aria-describedby={helpId}
+            aria-label={m.meeting_chat_placeholder()}
+            className="min-w-0 flex-1 has-focus-visible:ring-2 has-focus-visible:ring-ring/16 [&>textarea]:max-h-32 [&>textarea]:min-h-8.5 [&>textarea]:resize-none [&>textarea]:py-[calc(--spacing(2)-1px)] [&>textarea]:leading-5"
+            maxLength={4000}
+            onChange={(event) => setMessage(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                if (canSend) {
+                  event.currentTarget.form?.requestSubmit();
+                }
+              }
+            }}
+            placeholder={m.meeting_chat_placeholder()}
+            ref={textarea}
+            rows={1}
+            value={message}
+          />
+          <Button
+            aria-label={m.meeting_send()}
+            className="sm:size-9"
+            disabled={!canSend}
+            loading={isSending}
+            size="icon"
+            type="submit"
+            variant="secondary"
+          >
+            <IconSend aria-hidden="true" />
+          </Button>
+        </form>
+      </div>
     </MeetingPanel>
   );
 }

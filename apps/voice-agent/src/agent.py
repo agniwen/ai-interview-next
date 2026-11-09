@@ -218,6 +218,11 @@ server = AgentServer(shutdown_process_timeout=90)
 async def voice_agent(ctx: JobContext) -> None:
     ctx.log_context_fields = {"room": ctx.room.name}
     client = InterviewSessionClient(ctx.job.metadata)
+    if client.is_human_transcription:
+        from human_transcription import run_human_transcription
+
+        await run_human_transcription(ctx, client)
+        return
     context = await client.load()
     await ctx.connect()
     runtime = InterviewRuntime(client, ctx.job.id, ctx.room.local_participant)

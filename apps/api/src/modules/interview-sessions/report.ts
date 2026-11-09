@@ -40,6 +40,7 @@ export function readInterviewTurns(db: Database, id: string) {
       id: interviewTranscript.id,
       interrupted: interviewTranscript.interrupted,
       role: interviewTranscript.role,
+      speakerName: interviewTranscript.speakerName,
       text: interviewTranscript.text,
     })
     .from(interviewTranscript)
@@ -113,10 +114,20 @@ export async function saveInterviewTurns(
   if (!(await agentReportSession(db, id, credential))) {
     return { error: "INTERVIEW_CONTEXT_UNAVAILABLE" as const, status: 404 as const };
   }
-  await db
-    .insert(interviewTranscript)
-    .values(turns.map((turn) => ({ ...turn, interviewRoundId: id })))
-    .onConflictDoNothing();
+  // D1 每条语句最多绑定 100 个参数，每段转录占 8 个。
+  // D1 allows 100 bound parameters per statement, with eight per transcript turn.
+  await Promise.all(
+    Array.from({ length: Math.ceil(turns.length / 12) }, (_, index) =>
+      db
+        .insert(interviewTranscript)
+        .values(
+          turns
+            .slice(index * 12, (index + 1) * 12)
+            .map((turn) => ({ ...turn, interviewRoundId: id })),
+        )
+        .onConflictDoNothing(),
+    ),
+  );
   return { version: 1 as const };
 }
 

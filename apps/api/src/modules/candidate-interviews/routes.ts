@@ -1,4 +1,4 @@
-import { joinCandidateMeeting } from "../interviews/meeting";
+import { joinCandidateMeeting, startHumanMeetingTranscription } from "../interviews/meeting";
 import {
   candidateFeedbackInput,
   candidateInterviewParam,
@@ -63,15 +63,20 @@ export const candidateInterviewRoutes = new Hono<{ Bindings: ApiBindings }>()
     return c.json(result, 200);
   })
   .post("/:token/meeting/entered", validateToken, validateStart, async (c) => {
-    const result = await joinCandidateMeeting(
-      createDatabase(c.env.AUTH_DB),
-      c.req.valid("param").token,
-      true,
+    const db = createDatabase(c.env.AUTH_DB);
+    const config = interviewRoomConfiguration.safeParse(c.env);
+    const result = await joinCandidateMeeting(db, c.req.valid("param").token, (session) =>
+      config.success
+        ? c.executionCtx.waitUntil(startHumanMeetingTranscription(db, config.data, session))
+        : undefined,
     );
     if ("error" in result) {
       return c.json({ error: result.error, version: 1 as const }, result.status);
     }
-    return c.json({ startedAt: result.session.startedAt, version: 1 as const }, 200);
+    return c.json(
+      { startedAt: result.session.startedAt, turns: result.turns ?? [], version: 1 as const },
+      200,
+    );
   })
   .post("/:token/meeting", validateToken, validateStart, async (c) => {
     const config = meetingRoomConfiguration.safeParse(c.env);
@@ -153,7 +158,7 @@ export const candidateInterviewRoutes = new Hono<{ Bindings: ApiBindings }>()
       }
     }),
     async (c) => {
-      const config = interviewRoomConfiguration.safeParse(c.env);
+      const config = meetingRoomConfiguration.safeParse(c.env);
       if (!config.success) {
         return c.json({ error: "INTERVIEW_SERVICE_UNAVAILABLE", version: 1 as const }, 503);
       }

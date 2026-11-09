@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { HumanInterviewPreparation } from "../src/components/features/candidate-interview/human-preparation";
 import { MeetingError } from "../src/components/features/human-interview/error";
 import { MeetingCandidateMaterials } from "../src/components/features/human-interview/materials";
+import { MeetingView } from "../src/components/features/human-interview/view";
 import { loginSearch } from "../src/lib/workspaces/client";
 import * as m from "../src/paraglide/messages";
 
@@ -124,4 +125,49 @@ it("renders previous evaluations with author, verdict, markdown and timeline nav
   expect(html).toContain("Technical round");
   expect(html).toContain("<strong>Evidence from the previous round</strong>");
   expect(html).toContain('href="#history-previous-reviewer"');
+});
+
+it("shows the original resume and AI resume evaluation together without job tabs", () => {
+  const html = renderToStaticMarkup(
+    <MeetingView
+      focused={null}
+      materials={{
+        history: [],
+        job: {
+          id: "job",
+          internalCriteria: "Private criteria",
+          requirements: "Public job requirements",
+          title: "Engineer",
+        },
+        people: [],
+        resumeEvaluation: {
+          createdAt: "2026-11-09T02:00:00Z",
+          result: {
+            conciseOverall: "Relevant experience",
+            detailedOverall: { judgment: "Good match", matchingEvidence: [], risks: [] },
+            recommendationLevel: "recommended",
+            version: 3,
+          },
+        },
+        resumes: [
+          {
+            documentUrl: "/original.png",
+            filename: "original.png",
+            id: "resume",
+            markdown: null,
+            parsedProfile: null,
+            pdfObjectKey: "original",
+          },
+        ],
+        version: 1,
+      }}
+      onFocus={vi.fn()}
+      onReset={vi.fn()}
+      tracks={[]}
+    />,
+  );
+  expect(html).toContain('src="/original.png"');
+  expect(html).toContain('href="#meeting-resume-evaluation"');
+  expect(html).toContain("Relevant experience");
+  expect(html).not.toMatch(/role="tablist"|Public job requirements|Private criteria/u);
 });

@@ -20,6 +20,7 @@ export const interviewSession = sqliteTable(
     contextToken: text("contextToken").notNull(),
     interviewRoundId: text("interviewRoundId").primaryKey(),
     roomName: text("roomName").notNull(),
+    transcriptionDispatchAt: integer("transcriptionDispatchAt"),
     workspaceId: text("workspaceId").notNull(),
   },
   (table) => [
@@ -63,6 +64,7 @@ export const interviewTranscript = sqliteTable(
       .notNull()
       .references(() => interviewRound.id, { onDelete: "cascade" }),
     role: text("role", { enum: ["user", "assistant"] }).notNull(),
+    speakerName: text("speakerName"),
     text: text("text").notNull(),
   },
   (table) => [primaryKey({ columns: [table.interviewRoundId, table.id] })],

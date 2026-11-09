@@ -16,6 +16,9 @@ make voice-dev
 
 正式面试入口需要服务端调度元数据。运行 `make voice-dev` 后，通过 Web 候选人邀请页完成设备检查并开始沟通，由 API 显式调度 Agent。API 和本地 Agent 的 `LIVEKIT_AGENT_NAME` 必须一致；`INTERVIEW_AGENT_API_URL` 必须能从 Agent 进程访问。命名 Agent 不会自动加入所有房间。
 
+真人面试使用同一个 Worker 的转录任务。它通过 LiveKit Inference 的 `deepgram/nova-3:multi` 转录各参会者的麦克风，发布字幕并通过本轮服务凭证保存最终句子。
+Human interviews use the same worker for transcription jobs. It uses LiveKit Inference `deepgram/nova-3:multi` for participant microphones, publishes captions, and saves finalized turns using the round credential.
+
 普通 `voice-console` / Playground 调度不带本轮凭证，不能直接启动正式面试。模型行为测试使用下方的合成材料，不依赖真实候选人数据。
 
 凭据也可以通过进程环境变量注入，优先于 `.env`。环境文件不提交，也不会进入 Docker 镜像。多人联调时，在各自 `.env` 中设置 `LIVEKIT_AGENT_NAME=sainoa-voice-agent-你的名字`，并让客户端调度对应名称。未设置时使用默认名称 `sainoa-voice-agent`。

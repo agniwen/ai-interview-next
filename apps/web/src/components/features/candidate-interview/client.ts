@@ -78,7 +78,7 @@ export function candidateInterviewQuery(token: string) {
     queryFn: ({ signal }) => readCandidateInterview(token, signal),
     queryKey: candidateInterviewKeys.entry(token).queryKey,
     refetchInterval: (query) =>
-      query.state.data?.kind === "human" && query.state.data.status === "in_progress"
+      query.state.data?.kind === "human" && query.state.data.status !== "completed"
         ? 15_000
         : false,
     retry: false,

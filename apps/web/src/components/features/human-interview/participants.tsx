@@ -47,8 +47,9 @@ function ParticipantItem({
         )}
       />
       <Badge
+        size="sm"
         variant="outline"
-        className="absolute bottom-0 block h-3 max-w-full truncate rounded-sm bg-background px-0.5 text-[8px] leading-[10px]"
+        className="absolute bottom-0 block max-w-8 truncate bg-background px-0.5 text-center sm:h-3 sm:min-w-0 sm:text-[8px]/[10px]"
       >
         {name}
       </Badge>

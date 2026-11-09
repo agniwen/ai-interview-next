@@ -77,14 +77,16 @@ export function MeetingTile({
           {!screen && muted && (
             <IconMicrophoneOff className="size-3.5 shrink-0 text-destructive-foreground" />
           )}
-          <span className="truncate">
-            {name}
-            {track.participant.isLocal ? ` (${m.meeting_you()})` : ""}
-          </span>
-          <span className="shrink-0 text-[10px] text-muted-foreground">
-            {track.participant.attributes.role === "candidate"
-              ? m.meeting_candidate()
-              : m.meeting_interviewer()}
+          <span className="flex min-w-0 items-baseline gap-1.5">
+            <span className="truncate">
+              {name}
+              {track.participant.isLocal ? ` (${m.meeting_you()})` : ""}
+            </span>
+            <span className="shrink-0 text-[10px] leading-4 text-muted-foreground">
+              {track.participant.attributes.role === "candidate"
+                ? m.meeting_candidate()
+                : m.meeting_interviewer()}
+            </span>
           </span>
         </div>
         <ConnectionQualityIndicator

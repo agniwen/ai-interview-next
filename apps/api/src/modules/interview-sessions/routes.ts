@@ -11,7 +11,12 @@ import {
   agentEventsInput,
 } from "./input";
 import { recordAgentEvents } from "./events";
-import { prepareInterviewPlan, saveInterviewProgress, saveInterviewTurns } from "./report";
+import {
+  agentReportSession,
+  prepareInterviewPlan,
+  saveInterviewProgress,
+  saveInterviewTurns,
+} from "./report";
 import { endAgentInterview, readInterviewContext } from "./service";
 import {
   createInterviewEvaluator,
@@ -70,6 +75,17 @@ export const interviewSessionRoutes = new Hono<{ Bindings: ApiBindings }>()
       return c.json({ error: "INTERVIEW_CONTEXT_UNAVAILABLE", version: 1 as const }, 404);
     }
     return c.json(result, 200);
+  })
+  .get("/:id/transcription", validateContextId, validateCredential, async (c) => {
+    const entry = await agentReportSession(
+      createDatabase(c.env.AUTH_DB),
+      c.req.valid("param").id,
+      c.req.valid("header").authorization,
+    );
+    if (entry?.round.kind !== "human" || entry.round.status !== "in_progress") {
+      return c.json({ error: "INTERVIEW_CONTEXT_UNAVAILABLE", version: 1 as const }, 404);
+    }
+    return c.json({ version: 1 as const }, 200);
   })
   .post(
     "/:id/end",

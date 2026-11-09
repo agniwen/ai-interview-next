@@ -9,6 +9,7 @@ import {
   ResumeDocumentFileIcon,
 } from "@/components/resume-document-file-icon";
 import { DocumentPreviewSkeleton } from "@/components/skeletons/components/document-preview-skeleton";
+import { Card } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
@@ -47,7 +48,7 @@ export function MeetingResume({ filename, url }: { filename: string; url: string
   const isImage = getResumeDocumentKind({ fileName: filename }) === "image";
   return (
     <Dialog>
-      <div className="relative overflow-hidden rounded-xl border bg-card shadow-sm focus-within:ring-2 focus-within:ring-ring">
+      <Card className="overflow-hidden focus-within:ring-2 focus-within:ring-ring">
         <div
           className="flex aspect-[16/10] w-full flex-col overflow-hidden bg-muted/40"
           aria-hidden="true"
@@ -70,7 +71,7 @@ export function MeetingResume({ filename, url }: { filename: string; url: string
           <span className="min-w-0 flex-1 truncate">{filename}</span>
           <IconMaximize aria-hidden="true" className="size-4 shrink-0" />
         </DialogTrigger>
-      </div>
+      </Card>
       <DocumentPreviewDialog filename={filename} downloadUrl={url} fullScreen>
         {isImage ? (
           <ScrollArea className="min-h-0 flex-1 bg-muted/40" overscrollContain>

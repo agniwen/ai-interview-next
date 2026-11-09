@@ -1,5 +1,6 @@
 import {
   applicationActivity,
+  applicationEvaluation,
   applicationResume,
   interviewRound,
   interviewEvaluation,
@@ -10,7 +11,13 @@ import {
   resumeUploadItem,
 } from "@ai-interview/db/schema";
 import { and, eq } from "drizzle-orm";
-import { AgentDispatchClient, Room, RoomServiceClient, TokenVerifier } from "livekit-server-sdk";
+import {
+  AgentDispatch,
+  AgentDispatchClient,
+  Room,
+  RoomServiceClient,
+  TokenVerifier,
+} from "livekit-server-sdk";
 import { afterEach, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 import { resumeFiles } from "../src/modules/ats/storage";
@@ -104,7 +111,7 @@ it("restricts interviewer materials and room admission to authenticated assigned
   expect(candidate).not.toHaveProperty("internalCriteria");
 });
 
-it("serves the original image resume with its filename and media type before entry", async () => {
+it("serves the original image resume and the latest resume evaluation before entry", async () => {
   const f = await setup("original-resume");
   const { userId, workspaceId } = f.owner;
   const id = crypto.randomUUID();
@@ -139,9 +146,28 @@ it("serves the original image resume with its filename and media type before ent
     }),
   ]);
   await resumeFiles(atsTest.env).upload(id, png, { contentType: "image/png" });
+  await db.insert(applicationEvaluation).values(
+    ["Earlier assessment", "Latest assessment"].map((assessment, index) => ({
+      applicationId: f.applicationId,
+      createdAt: new Date(createdAt.getTime() + index),
+      id: crypto.randomUUID(),
+      jobRequirementsSnapshot: "Requirements",
+      result: {
+        conciseOverall: assessment,
+        detailedOverall: { judgment: assessment, matchingEvidence: [], risks: [] },
+        recommendationLevel: "recommended" as const,
+        version: 3 as const,
+      },
+      resumeId: id,
+      workspaceId,
+    })),
+  );
   const documentUrl = `/api/${f.path}/resumes/${id}`;
   expect(await read(f.owner.call(f.path))).toMatchObject({
-    materials: { resumes: [{ documentUrl, filename }] },
+    materials: {
+      resumeEvaluation: { result: { conciseOverall: "Latest assessment", version: 3 } },
+      resumes: [{ documentUrl, filename }],
+    },
   });
   const original = await f.owner.call(`${f.path}/resumes/${id}`);
   expect(original.status).toBe(200);
@@ -261,12 +287,115 @@ it("enforces the ten-minute admission window without automatically ending an act
   expect(await f.owner.call(`${f.path}/end`, { version: 1 })).toMatchObject({ status: 200 });
 });
 
-it("leaves an interview scheduled when the room service cannot connect", async () => {
+it("keeps the round active until the room closes and lets an interviewer retry a timeout", async () => {
+  const f = await setup("end-retry");
+  await f.candidate("meeting/entered");
+  f.deleteRoom.mockRejectedValueOnce(new DOMException("Room close timed out", "TimeoutError"));
+
+  const end = () => f.owner.call(`${f.path}/end`, { version: 1 });
+  expect(await end()).toMatchObject({ status: 503 });
+  expect(await f.round()).toMatchObject({ endedAt: null, status: "in_progress" });
+  expect(await f.candidate("meeting")).toMatchObject({ status: 200 });
+
+  expect(await end()).toMatchObject({ status: 200 });
+  expect(await f.round()).toMatchObject({ status: "completed" });
+  expect(await f.candidate("meeting")).toMatchObject({ status: 409 });
+});
+
+it("issues both human meeting tokens when explicit room creation would time out", async () => {
   const f = await setup("unavailable");
-  f.createRoom.mockRejectedValue(new Error("Connection unavailable"));
-  expect(await f.candidate("meeting")).toMatchObject({ status: 503 });
+  f.createRoom.mockRejectedValue(new DOMException("Room creation timed out", "TimeoutError"));
+  expect(await f.candidate("meeting")).toMatchObject({ status: 200 });
+  expect(await f.owner.call(f.path, { version: 1 })).toMatchObject({ status: 200 });
+  expect(f.createRoom).not.toHaveBeenCalled();
   expect(await f.round()).toMatchObject({ startedAt: null, status: "scheduled" });
   expect(await f.session()).toBeUndefined();
+});
+
+it("dispatches one transcription worker after entry and restores speaker-attributed turns", async () => {
+  const f = await setup("transcription");
+  const listDispatch = vi
+    .spyOn(AgentDispatchClient.prototype, "listDispatch")
+    .mockResolvedValue([]);
+  const agent = new AgentDispatch({ agentName: "human-test-agent" });
+  f.dispatch.mockImplementation(() => {
+    listDispatch.mockResolvedValue([agent]);
+    return Promise.resolve(agent);
+  });
+  const { env } = atsTest;
+  const previous = { agent: env.LIVEKIT_AGENT_NAME, url: env.INTERVIEW_AGENT_API_URL };
+  env.LIVEKIT_AGENT_NAME = agent.agentName;
+  env.INTERVIEW_AGENT_API_URL = "https://sainoa.example";
+  try {
+    await f.candidate("meeting");
+    expect(f.dispatch).not.toHaveBeenCalled();
+    await Promise.all([
+      f.candidate("meeting/entered"),
+      f.owner.call(`${f.path}/entered`, { version: 1 }),
+    ]);
+    await vi.waitFor(() => expect(f.dispatch).toHaveBeenCalledTimes(1));
+    const session = await f.session();
+    const [[room, name, options]] = f.dispatch.mock.calls;
+    expect(room).toBe(session?.roomName);
+    expect(name).toBe(agent.agentName);
+    const metadata = JSON.parse(options?.metadata ?? "{}");
+    expect(metadata).toMatchObject({
+      contextToken: session?.contextToken,
+      mode: "human_transcription",
+      version: 1,
+    });
+    const headers = {
+      authorization: `Bearer ${session?.contextToken}`,
+      "content-type": "application/json",
+    };
+    expect(await app.request(metadata.contextUrl, {}, env, atsTest.platform.ctx)).toMatchObject({
+      status: 404,
+    });
+    expect(
+      await app.request(metadata.contextUrl, { headers }, env, atsTest.platform.ctx),
+    ).toMatchObject({ status: 200 });
+    const turns = [
+      {
+        at: Date.now(),
+        id: "first",
+        interrupted: false,
+        role: "user",
+        speakerName: "Candidate",
+        text: "Candidate spoke",
+      },
+      {
+        at: Date.now() + 1,
+        id: "second",
+        interrupted: false,
+        role: "assistant",
+        speakerName: "Interviewer",
+        text: "Interviewer spoke",
+      },
+    ];
+    const write = () =>
+      app.request(
+        metadata.contextUrl.replace(/\/transcription$/u, "/turns"),
+        {
+          body: JSON.stringify({ turns, version: 1 }),
+          headers,
+          method: "POST",
+        },
+        env,
+        atsTest.platform.ctx,
+      );
+    expect(await write()).toMatchObject({ status: 200 });
+    expect(await write()).toMatchObject({ status: 200 });
+    expect(await read(f.candidate("meeting/entered"))).toMatchObject({ turns });
+    expect(await read(f.owner.call(`${f.path}/entered`, { version: 1 }))).toMatchObject({ turns });
+    await f.owner.call(`${f.path}/end`, { version: 1 });
+    expect(await read(f.owner.call(f.path.replace(/\/meeting$/u, "/result")))).toMatchObject({
+      turns,
+    });
+    expect(f.dispatch).toHaveBeenCalledTimes(1);
+  } finally {
+    env.LIVEKIT_AGENT_NAME = previous.agent;
+    env.INTERVIEW_AGENT_API_URL = previous.url;
+  }
 });
 
 it("saves an interviewer's live draft but requires completion before formal submission", async () => {

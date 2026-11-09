@@ -68,7 +68,10 @@ function ResultTranscript({ data }: { data: InterviewResult }) {
             >
               <div className="mb-1.5 flex items-center gap-3 text-xs text-muted-foreground">
                 <span>
-                  {turn.role === "user" ? data.candidate.name : m.candidate_session_interviewer()}
+                  {turn.speakerName ??
+                    (turn.role === "user"
+                      ? data.candidate.name
+                      : m.candidate_session_interviewer())}
                 </span>
                 <LocalTime value={new Date(turn.at).toISOString()} format="time" />
               </div>
@@ -302,6 +305,7 @@ export function InterviewResultContent({ data }: { data: InterviewResult }) {
           </aside>
           <ResultSectionStack>
             <InterviewEvaluationSection data={data} />
+            <ResultTranscript data={data} />
             <ResultFeedback data={data} />
             <CandidateFeedback data={data} />
           </ResultSectionStack>

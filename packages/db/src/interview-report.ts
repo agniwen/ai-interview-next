@@ -16,6 +16,7 @@ export interface InterviewTurn {
   text: string;
   at: number;
   interrupted: boolean;
+  speakerName?: string | null;
 }
 
 export interface InterviewEvidence {

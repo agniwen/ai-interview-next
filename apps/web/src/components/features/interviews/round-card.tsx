@@ -118,13 +118,6 @@ function ScheduledTime({ label, value }: { label: string; value: string | null }
   );
 }
 
-function roundResultLabel(round: InterviewRound) {
-  if (round.canEvaluate) {
-    return m.interview_evaluation_review();
-  }
-  return round.status === "completed" ? m.interviews_view_result() : m.interviews_view_record();
-}
-
 /**
  * 面试轮次摘要卡，展示类型、人员、时间和题量，并承载编辑、删除与邀请操作。
  * Interview-round summary with type, people, schedule and question counts, plus edit, delete and invite actions.
@@ -258,50 +251,52 @@ export function InterviewRoundCard({
             </span>
           </div>
         )}
-        {round.status !== "completed" && (
-          <div className="flex flex-wrap items-start gap-2">
-            {round.canJoin && (
-              <Button
-                size="sm"
-                variant="outline"
-                render={
-                  <Link
-                    to="/meet/$workspaceId/$roundId"
-                    params={{ roundId: round.id, workspaceId }}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  />
-                }
-              >
-                {m.meeting_join()}
-              </Button>
-            )}
-            <InvitationButton kind={round.kind} workspaceId={workspaceId} roundId={round.id} />
-          </div>
-        )}
-        {(round.status === "completed" || round.status === "in_progress") && (
-          <Button
-            variant="outline"
-            render={
-              <Link
-                to="/w/$workspaceId/hub/applications/overlay/$id/result/$roundId"
-                params={{ id: applicationId, roundId: round.id, workspaceId }}
-                search={
-                  location.pathname.includes("/applications/")
-                    ? applicationDetailSearch.parse(location.search)
-                    : { page: 1, pageSize: 20, search: "", tab: "interviews" }
-                }
-                mask={{
-                  params: { id: applicationId, roundId: round.id, workspaceId },
-                  to: "/w/$workspaceId/hub/applications/$id/result/$roundId",
-                  unmaskOnReload: true,
-                }}
-              />
-            }
-          >
-            {roundResultLabel(round)}
-          </Button>
-        )}
+        <div className="flex flex-wrap items-start gap-2">
+          {round.status === "completed" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              render={
+                <Link
+                  to="/w/$workspaceId/hub/applications/overlay/$id/result/$roundId"
+                  params={{ id: applicationId, roundId: round.id, workspaceId }}
+                  search={
+                    location.pathname.includes("/applications/")
+                      ? applicationDetailSearch.parse(location.search)
+                      : { page: 1, pageSize: 20, search: "", tab: "interviews" }
+                  }
+                  mask={{
+                    params: { id: applicationId, roundId: round.id, workspaceId },
+                    to: "/w/$workspaceId/hub/applications/$id/result/$roundId",
+                    unmaskOnReload: true,
+                  }}
+                />
+              }
+            >
+              {m.interviews_view_record()}
+            </Button>
+          ) : (
+            <>
+              {round.canJoin && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  render={
+                    <Link
+                      to="/meet/$workspaceId/$roundId"
+                      params={{ roundId: round.id, workspaceId }}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    />
+                  }
+                >
+                  {m.meeting_join()}
+                </Button>
+              )}
+              <InvitationButton kind={round.kind} workspaceId={workspaceId} roundId={round.id} />
+            </>
+          )}
+        </div>
       </FramePanel>
     </Frame>
   );

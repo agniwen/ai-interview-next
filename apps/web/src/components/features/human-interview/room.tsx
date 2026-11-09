@@ -1,20 +1,30 @@
-import { useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
-  LiveKitRoom,
   RoomAudioRenderer,
+  SessionProvider,
+  useAudioPlayback,
+  useSession,
   useTracks,
   useParticipants,
   useConnectionState,
-  useRoomContext,
 } from "@livekit/components-react";
-import { ConnectionState, Track } from "livekit-client";
+import {
+  ConnectionState,
+  DisconnectReason,
+  Room,
+  RoomEvent,
+  TokenSource,
+  Track,
+} from "livekit-client";
 import {
   IconPhoneOff,
   IconSubtitles,
   IconMessageCircle,
   IconFiles,
   IconLayoutGrid,
+  IconLogout,
   IconX,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
@@ -31,20 +41,24 @@ import { InterviewTimer } from "../candidate-interview/timer";
 import type { InterviewDevices } from "../candidate-interview/device-check";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
-import type { HumanMeeting, MeetingConnection } from "./client";
+import type { HumanMeeting, MeetingConnection, MeetingEntry } from "./client";
+import { MeetingEnteredError } from "./client";
+import { MeetingError } from "./error";
 import { MeetingParticipants } from "./participants";
 import { MeetingTranscript } from "./transcript";
 import { MeetingChat } from "./chat";
 import { MediaControl, ScreenControl, controlClass } from "./controls";
 import { MeetingView } from "./view";
+import { MeetingJobPreview } from "./job-preview";
 
 interface MeetingRoomProps {
   connection: MeetingConnection;
   devices: InterviewDevices;
   title: string;
   materials?: HumanMeeting["materials"];
-  onLeave: () => void;
-  onEntered: () => Promise<{ startedAt: string | null }>;
+  onLeave: (interrupted: boolean) => void;
+  onDevicesChange: (patch: Partial<InterviewDevices>) => void;
+  onEntered: () => Promise<MeetingEntry>;
   onEnd?: () => Promise<void>;
   ending?: boolean;
   endError?: boolean;
@@ -53,28 +67,38 @@ interface MeetingRoomProps {
 
 function MeetingHeader({
   title,
+  materials,
   startedAt,
   chatOpen,
   canEnd,
   onChat,
   onHangup,
+  onLeave,
   children,
 }: {
   title: string;
+  materials?: HumanMeeting["materials"];
   startedAt: string | null;
   chatOpen: boolean;
   canEnd: boolean;
   onChat: () => void;
   onHangup: () => void;
+  onLeave: () => void;
   children?: ReactNode;
 }) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 px-3 md:px-4">
-      <h1 className="min-w-0 flex-1 truncate text-sm font-medium" title={title}>
-        {title}
+      <h1 className="min-w-0 flex-1 text-sm font-medium">
+        {materials ? (
+          <MeetingJobPreview title={title} job={materials.job} />
+        ) : (
+          <span className="block truncate" title={title}>
+            {title}
+          </span>
+        )}
       </h1>
       <div className="hidden sm:block">
-        <InterviewTimer startedAt={startedAt} />
+        <InterviewTimer startedAt={startedAt} variant="ghost" />
       </div>
       {children}
       <ThemeSwitcher />
@@ -88,6 +112,17 @@ function MeetingHeader({
       >
         <IconMessageCircle />
       </Button>
+      {canEnd && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          aria-label={m.meeting_leave()}
+          onClick={onLeave}
+        >
+          <IconLogout />
+        </Button>
+      )}
       <Button
         variant="destructive"
         size="icon"
@@ -132,19 +167,37 @@ function MeetingHeaderActions({
   );
 }
 
+function MeetingAudioPlayback({ onError }: { onError: () => void }) {
+  const { canPlayAudio, startAudio } = useAudioPlayback();
+  return canPlayAudio ? null : (
+    <div className="flex justify-center bg-muted p-2">
+      <Button size="sm" variant="outline" onClick={() => startAudio().catch(onError)}>
+        {m.meeting_enable_audio()}
+      </Button>
+    </div>
+  );
+}
+
 function MeetingStage({
   connection,
   title,
   materials,
   onEnd,
+  onLeave,
   ending,
   endError,
   evaluation,
   mediaError,
   onMediaError,
   onClearError,
-}: MeetingRoomProps & { mediaError: boolean; onMediaError: () => void; onClearError: () => void }) {
-  const room = useRoomContext();
+  onDevicesChange,
+  turns,
+}: MeetingRoomProps & {
+  mediaError: boolean;
+  onMediaError: () => void;
+  onClearError: () => void;
+  turns: MeetingEntry["turns"];
+}) {
   const state = useConnectionState();
   const [view, setView] = useState<"meeting" | "materials">("meeting");
   const [chatOpen, setChatOpen] = useState(false);
@@ -176,11 +229,13 @@ function MeetingStage({
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <MeetingHeader
         title={title}
+        materials={materials}
         startedAt={connection.startedAt}
         chatOpen={chatOpen}
         canEnd={Boolean(onEnd)}
         onChat={toggleChat}
         onHangup={() => requestConfirmation(onEnd ? "end" : "leave")}
+        onLeave={() => requestConfirmation("leave")}
       >
         <MeetingHeaderActions
           materials={view === "materials" ? materials : undefined}
@@ -213,6 +268,7 @@ function MeetingStage({
           </Button>
         </div>
       )}
+      <MeetingAudioPlayback onError={onMediaError} />
       <div className="relative flex min-h-0 flex-1">
         <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           <MeetingView
@@ -231,12 +287,24 @@ function MeetingStage({
             </output>
           )}
         </div>
-        <MeetingTranscript open={transcriptOpen} onClose={() => setTranscriptOpen(false)} />
+        <MeetingTranscript
+          open={transcriptOpen}
+          onClose={() => setTranscriptOpen(false)}
+          turns={turns}
+        />
         <MeetingChat open={chatOpen} onClose={() => setChatOpen(false)} />
       </div>
       <footer className="flex shrink-0 items-center justify-center gap-1 border-t bg-background px-2 pt-2 pb-[max(.75rem,env(safe-area-inset-bottom))] md:gap-3 md:px-4">
-        <MediaControl source={Track.Source.Microphone} onError={onMediaError} />
-        <MediaControl source={Track.Source.Camera} onError={onMediaError} />
+        <MediaControl
+          source={Track.Source.Microphone}
+          onError={onMediaError}
+          onDevicesChange={onDevicesChange}
+        />
+        <MediaControl
+          source={Track.Source.Camera}
+          onError={onMediaError}
+          onDevicesChange={onDevicesChange}
+        />
         <ScreenControl onError={onMediaError} onShare={() => setView("meeting")} />
         {evaluation && (
           <div className="max-md:flex max-md:flex-1 max-md:justify-center max-md:[&>button]:h-12 max-md:[&>button]:flex-col max-md:[&>button]:gap-1 max-md:[&>button]:border-0 max-md:[&>button]:bg-transparent max-md:[&>button]:text-[10px] max-md:[&>button]:shadow-none">
@@ -302,7 +370,11 @@ function MeetingStage({
               variant="destructive"
               loading={ending}
               onClick={async () => {
-                await (confirm === "end" ? onEnd?.() : room.disconnect());
+                if (confirm === "end") {
+                  await onEnd?.();
+                } else {
+                  onLeave(false);
+                }
               }}
             >
               {confirm === "end" ? m.meeting_end() : m.meeting_leave()}
@@ -315,53 +387,102 @@ function MeetingStage({
 }
 
 export default function MeetingRoom(props: MeetingRoomProps) {
-  const [error, setError] = useState(false);
-  const [connectionError, setConnectionError] = useState(false);
-  const [startedAt, setStartedAt] = useState(props.connection.startedAt);
   const { connection, devices } = props;
-  return (
-    <LiveKitRoom
-      token={connection.participantToken}
-      serverUrl={connection.serverUrl}
-      audio={devices.microphoneEnabled ? { deviceId: devices.microphoneId } : false}
-      video={
-        devices.cameraEnabled
-          ? { deviceId: devices.cameraId, resolution: { height: 720, width: 1280 } }
-          : false
+  const [mediaError, setMediaError] = useState(false);
+  const [connectionError, setConnectionError] = useState<Error>();
+  const [entry, setEntry] = useState<MeetingEntry>();
+  const room = useMemo(
+    () =>
+      new Room({
+        adaptiveStream: true,
+        audioCaptureDefaults: { deviceId: devices.microphoneId },
+        dynacast: true,
+        videoCaptureDefaults: {
+          deviceId: devices.cameraId,
+          resolution: { height: 720, width: 1280 },
+        },
+      }),
+    [devices],
+  );
+  const tokenSource = useMemo(() => TokenSource.literal(connection), [connection]);
+  const session = useSession(tokenSource, { room });
+  const { start } = session;
+  const entered = useMutation({
+    mutationFn: props.onEntered,
+    retry: (count, error) =>
+      count < 2 && (!(error instanceof MeetingEnteredError) || error.status >= 500),
+  });
+  const confirmEntry = useEffectEvent(async () => {
+    setEntry(await entered.mutateAsync());
+  });
+  const rememberDevices = useEffectEvent(props.onDevicesChange);
+  const leave = useEffectEvent(props.onLeave);
+  useEffect(() => {
+    const controller = new AbortController();
+    const disconnected = (reason?: DisconnectReason) => {
+      if (reason !== DisconnectReason.CLIENT_INITIATED) {
+        leave(true);
       }
-      options={{ adaptiveStream: true, dynacast: true }}
-      onDisconnected={props.onLeave}
-      onConnected={async () => {
-        try {
-          const result = await props.onEntered();
-          setStartedAt(result.startedAt);
-        } catch {
-          setConnectionError(true);
+    };
+    room.on(RoomEvent.Disconnected, disconnected);
+
+    async function connect() {
+      try {
+        await start({ signal: controller.signal, tracks: {} });
+        if (controller.signal.aborted) {
+          return;
         }
-      }}
-      onError={() => setConnectionError(true)}
-      onMediaDeviceFailure={() => setError(true)}
-      className="fixed inset-0 z-50 h-dvh bg-background text-left text-foreground"
-    >
-      <RoomAudioRenderer />
-      {connectionError ? (
-        <div role="alert" className="grid h-full place-items-center p-6">
-          <div className="flex max-w-sm flex-col gap-4 text-center">
-            <p>{m.meeting_join_error()}</p>
-            <Button variant="outline" onClick={props.onLeave}>
-              {m.candidate_interview_back()}
-            </Button>
+        await confirmEntry();
+        if (controller.signal.aborted) {
+          return;
+        }
+        rememberDevices({});
+        const publications = await Promise.allSettled([
+          room.localParticipant.setMicrophoneEnabled(devices.microphoneEnabled),
+          room.localParticipant.setCameraEnabled(devices.cameraEnabled),
+        ]);
+        if (publications.some((result) => result.status === "rejected")) {
+          setMediaError(true);
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setConnectionError(error instanceof Error ? error : new Error(m.meeting_join_error()));
+          void room.disconnect();
+        }
+      }
+    }
+    void connect();
+    return () => {
+      room.off(RoomEvent.Disconnected, disconnected);
+      controller.abort();
+    };
+  }, [devices, room, start]);
+  return (
+    <SessionProvider session={session}>
+      <div className="fixed inset-0 z-50 h-dvh bg-background text-left text-foreground">
+        {connectionError ? (
+          <div className="grid h-full place-items-center p-6">
+            <div className="flex max-w-sm flex-col gap-4 text-center">
+              <MeetingError error={connectionError} />
+              <Button variant="outline" onClick={() => props.onLeave(true)}>
+                {m.candidate_session_back_devices()}
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <MeetingStage
-          {...props}
-          connection={{ ...connection, startedAt }}
-          mediaError={error}
-          onMediaError={() => setError(true)}
-          onClearError={() => setError(false)}
-        />
-      )}
-    </LiveKitRoom>
+        ) : (
+          <>
+            {entry && <RoomAudioRenderer />}
+            <MeetingStage
+              {...props}
+              connection={{ ...connection, startedAt: entry?.startedAt ?? connection.startedAt }}
+              turns={entry?.turns ?? []}
+              mediaError={mediaError}
+              onMediaError={() => setMediaError(true)}
+              onClearError={() => setMediaError(false)}
+            />
+          </>
+        )}
+      </div>
+    </SessionProvider>
   );
 }

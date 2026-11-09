@@ -1,12 +1,12 @@
-import { lazy, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { lazy } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { SkeletonSuspense } from "@/components/skeletons/skeleton-suspense";
 import { HumanMeetingSkeleton } from "@/components/skeletons/pages/human-meeting-skeleton";
 import { HumanInterviewPreparation } from "../candidate-interview/human-preparation";
-import type { InterviewDevices } from "../candidate-interview/device-check";
 import type { CandidateInterview } from "../candidate-interview/client";
 import { candidateInterviewQuery } from "../candidate-interview/client";
 import { enterCandidateMeeting, joinCandidateMeeting } from "./client";
+import { useMeetingEntry } from "./use-meeting-entry";
 import * as m from "@/paraglide/messages";
 
 const MeetingRoom = lazy(() => import("./room"));
@@ -19,29 +19,23 @@ export function HumanCandidateInterview({
   token: string;
 }) {
   const client = useQueryClient();
-  const [devices, setDevices] = useState<InterviewDevices | null>(null);
-  const [left, setLeft] = useState(false);
-  const join = useMutation({ mutationFn: () => joinCandidateMeeting(token) });
-  async function leave() {
-    setDevices(null);
-    setLeft(true);
-    join.reset();
-    await client.invalidateQueries({ queryKey: candidateInterviewQuery(token).queryKey });
-  }
-  if (devices && join.data) {
+  const entry = useMeetingEntry({
+    connect: () => joinCandidateMeeting(token),
+    key: token,
+    refresh: () => client.invalidateQueries({ queryKey: candidateInterviewQuery(token).queryKey }),
+    status: interview.status,
+  });
+  if (entry.devices && entry.connection) {
     const title = `${interview.jobTitle} · ${interview.candidateName}`;
     return (
       <SkeletonSuspense fallback={<HumanMeetingSkeleton title={title} />}>
         <MeetingRoom
-          connection={join.data}
-          devices={devices}
+          connection={entry.connection}
+          devices={entry.devices}
           title={title}
-          onLeave={leave}
-          onEntered={async () => {
-            const result = await enterCandidateMeeting(token);
-            await client.invalidateQueries({ queryKey: candidateInterviewQuery(token).queryKey });
-            return result;
-          }}
+          onLeave={entry.handleLeave}
+          onDevicesChange={entry.handleDevicesChange}
+          onEntered={() => enterCandidateMeeting(client, token)}
         />
       </SkeletonSuspense>
     );
@@ -49,20 +43,15 @@ export function HumanCandidateInterview({
   return (
     <HumanInterviewPreparation
       interview={interview}
-      starting={join.isPending}
-      error={join.error}
-      onStart={async (selection) => {
-        try {
-          await join.mutateAsync();
-          setDevices(selection);
-          await client.invalidateQueries({ queryKey: candidateInterviewQuery(token).queryKey });
-        } catch {
-          /* 错误由 mutation 状态显示。 / Mutation state renders the error. */
-        }
-      }}
+      initialDevices={entry.devices}
+      starting={entry.isPending}
+      error={entry.error}
+      onStart={entry.handleStart}
     >
-      {left && (
-        <output className="text-sm text-muted-foreground">{m.meeting_disconnected()}</output>
+      {entry.departure && (
+        <output className="text-sm text-muted-foreground">
+          {entry.departure === "left" ? m.meeting_disconnected() : m.meeting_join_error()}
+        </output>
       )}
     </HumanInterviewPreparation>
   );

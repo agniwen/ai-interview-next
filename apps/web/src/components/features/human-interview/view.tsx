@@ -3,7 +3,7 @@ import { Track } from "livekit-client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { HumanMeeting } from "./client";
-import { MeetingMaterials } from "./materials";
+import { MeetingCandidateMaterials } from "./materials";
 import { MeetingTile, trackKey } from "./tiles";
 
 export function MeetingView({
@@ -20,7 +20,12 @@ export function MeetingView({
   onReset: () => void;
 }) {
   if (materials) {
-    return <MeetingMaterials materials={materials} />;
+    return (
+      <MeetingCandidateMaterials
+        materials={materials}
+        resumeEvaluation={materials.resumeEvaluation}
+      />
+    );
   }
   const selected = tracks.find((track) => trackKey(track) === focused);
   const main = selected ?? tracks.find((track) => track.source === Track.Source.ScreenShare);

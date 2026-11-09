@@ -13,6 +13,7 @@ class DispatchContext(BaseModel):
     version: Literal[1]
     contextUrl: HttpUrl
     contextToken: str = Field(pattern=r"^[a-f0-9]{64}$")
+    mode: Literal["human_transcription"] | None = None
 
 
 class Candidate(BaseModel):
@@ -111,7 +112,11 @@ class InterviewSessionClient:
         # Validate dispatch input once at this entry point; later requests reuse the parsed URL and credential.
         self._dispatch = DispatchContext.model_validate_json(metadata)
 
-    async def load(self) -> InterviewContext:
+    @property
+    def is_human_transcription(self) -> bool:
+        return self._dispatch.mode == "human_transcription"
+
+    async def read_context(self) -> str:
         # 固定请求目标，不跟随重定向；HTTP 失败和载荷不符合契约都会阻止会话启动。
         # Keep the request target fixed without redirects; HTTP or payload-contract failures prevent session startup.
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as http:
@@ -121,7 +126,10 @@ class InterviewSessionClient:
                 allow_redirects=False,
             ) as response:
                 response.raise_for_status()
-                return InterviewContext.model_validate_json(await response.text())
+                return await response.text()
+
+    async def load(self) -> InterviewContext:
+        return InterviewContext.model_validate_json(await self.read_context())
 
     async def post(self, action: str, payload: dict) -> dict:
         # 同一轮次的凭证只在服务端通信中使用，永不加入模型上下文。

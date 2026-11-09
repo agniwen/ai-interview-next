@@ -16,6 +16,7 @@ export function HumanInterviewPreparation({
   starting,
   error,
   interviewerMaterials,
+  initialDevices,
   children,
 }: {
   interview: Pick<
@@ -28,17 +29,17 @@ export function HumanInterviewPreparation({
     | "scheduledAt"
     | "admissionDeadline"
   >;
-  onStart: (devices: InterviewDevices) => Promise<void>;
+  onStart: (devices: InterviewDevices) => void;
   starting?: boolean;
   error?: Error | null;
   interviewerMaterials?: ReactNode;
+  initialDevices?: InterviewDevices;
   children?: ReactNode;
 }) {
   const interviewer = interviewerMaterials !== undefined;
-  const [devices, setDevices] = useState<InterviewDevices>({
-    cameraEnabled: false,
-    microphoneEnabled: true,
-  });
+  const [devices, setDevices] = useState<InterviewDevices>(
+    initialDevices ?? { cameraEnabled: false, microphoneEnabled: true },
+  );
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 15_000);
@@ -95,6 +96,9 @@ export function HumanInterviewPreparation({
         <output className="text-sm leading-6 text-muted-foreground">
           {m.meeting_prejoin_help()}
         </output>
+        <p className="text-sm leading-6 text-muted-foreground">
+          {m.meeting_transcription_notice()}
+        </p>
         {early && (
           <output className="text-sm text-muted-foreground">{m.meeting_too_early()}</output>
         )}

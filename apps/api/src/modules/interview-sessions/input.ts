@@ -60,6 +60,7 @@ export const interviewTurnsInput = z.strictObject({
         id: z.string().min(1).max(200),
         interrupted: z.boolean(),
         role: z.enum(["user", "assistant"]),
+        speakerName: z.string().trim().min(1).max(200).optional(),
         text: z.string().trim().min(1).max(32_000),
       }),
     )

@@ -307,7 +307,7 @@ Both interview kinds record creation; AI records its first start and formal comp
   Admission opens ten minutes before the appointment and closes at its deadline. Expiry blocks new entry without terminating existing connections. Candidates may leave temporarily; assigned interviewers formally complete the interview and close the room through the meeting end endpoint.
 - 真人面试进行中可保存本人评价草稿，结束后才可正式提交。界面提供设备切换、摄像头、屏幕共享、主画面切换、候选人材料、原始简历和评价入口，移动端使用紧凑底栏。
   Interviewers can save personal evaluation drafts during a human interview and submit only after completion. The UI supports device selection, camera, screen sharing, focused video, candidate materials, original resumes and evaluation, with compact mobile controls.
-- 房间聊天使用官方 `useChat`，页面明确说明消息在刷新后清空。目前真人房间未接入录音归档或服务端逐字转录，因此不显示录制或字幕入口；这一点与旧项目仍有差异。
-  Room chat uses the official `useChat`, with a visible notice that refresh clears messages. Human-room audio archival and server transcription are not connected yet, so recording and captions controls are absent; these remain differences from the previous project.
+- 房间聊天使用官方 `useChat`，页面提示刷新后清空。真人首次连接后独立调度转录 Worker，字幕按发言人显示，最终转录保存在本轮记录中。配置复用 `LIVEKIT_AGENT_NAME` 和 `INTERVIEW_AGENT_API_URL`。
+  Room chat uses `useChat` and shows that refresh clears messages. After connection, a separate worker publishes speaker-attributed captions and saves finalized turns in the round record. It uses `LIVEKIT_AGENT_NAME` and `INTERVIEW_AGENT_API_URL`.
 
 参考 / References: [LiveKitRoom](https://docs.livekit.io/reference/components/react/component/livekitroom/), [useTracks](https://docs.livekit.io/reference/components/react/hook/usetracks/), [useChat](https://docs.livekit.io/reference/components/react/hook/usechat/), [access tokens and grants](https://docs.livekit.io/frontends/reference/tokens-grants/).

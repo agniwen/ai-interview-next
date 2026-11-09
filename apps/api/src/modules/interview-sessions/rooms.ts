@@ -11,12 +11,41 @@ export const interviewRoomConfiguration = meetingRoomConfiguration.extend({
   INTERVIEW_AGENT_API_URL: z.url({ protocol: /^https?$/u }),
   LIVEKIT_AGENT_NAME: z.string().min(1),
 });
-type RoomConfiguration = z.output<typeof interviewRoomConfiguration>;
+export type InterviewRoomConfiguration = z.output<typeof interviewRoomConfiguration>;
+
+export async function dispatchHumanTranscription(
+  config: InterviewRoomConfiguration,
+  session: typeof interviewSession.$inferSelect,
+) {
+  const api = new LiveKitAPI({
+    apiKey: config.LIVEKIT_API_KEY,
+    failover: false,
+    host: config.LIVEKIT_URL,
+    requestTimeout: 8,
+    secret: config.LIVEKIT_API_SECRET,
+  });
+  const dispatches = await api.agentDispatch.listDispatch(session.roomName);
+  if (dispatches.some((dispatch) => dispatch.agentName === config.LIVEKIT_AGENT_NAME)) {
+    return;
+  }
+  const contextUrl = new URL(
+    `/api/interview-sessions/${session.interviewRoundId}/transcription`,
+    config.INTERVIEW_AGENT_API_URL,
+  ).toString();
+  await api.agentDispatch.createDispatch(session.roomName, config.LIVEKIT_AGENT_NAME, {
+    metadata: JSON.stringify({
+      contextToken: session.contextToken,
+      contextUrl,
+      mode: "human_transcription",
+      version: 1,
+    }),
+  });
+}
 
 /** 供应商协议只存在于此边界，候选人只能获得所属房间的媒体权限。
  * Vendor protocols stay at this boundary; candidates receive media grants for their own room only. */
 export async function connectInterviewRoom(
-  config: RoomConfiguration,
+  config: InterviewRoomConfiguration,
   session: typeof interviewSession.$inferSelect,
 ) {
   const api = new LiveKitAPI({
@@ -83,12 +112,8 @@ export async function connectHumanMeeting(
   session: { roomName: string; startedAt: Date | null },
   participant: { identity: string; name: string; role: "candidate" | "interviewer" },
 ) {
-  const api = new LiveKitAPI({
-    apiKey: config.LIVEKIT_API_KEY,
-    host: config.LIVEKIT_URL,
-    secret: config.LIVEKIT_API_SECRET,
-  });
-  await api.room.createRoom({ name: session.roomName });
+  // 真人会议使用默认房间配置，由首位参会者入场时自动创建。
+  // Human meetings use default room settings, so the first participant creates the room on join.
   const token = new AccessToken(config.LIVEKIT_API_KEY, config.LIVEKIT_API_SECRET, {
     attributes: { role: participant.role },
     identity: participant.identity,

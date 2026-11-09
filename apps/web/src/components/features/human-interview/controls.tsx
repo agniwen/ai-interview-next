@@ -1,4 +1,4 @@
-import { useTrackToggle, useMediaDeviceSelect } from "@livekit/components-react";
+import { useTrackToggle, useMediaDeviceSelect, useRoomContext } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import {
   IconMicrophone,
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
+import type { InterviewDevices } from "../candidate-interview/device-check";
 
 export const controlClass =
   "max-md:h-12 max-md:flex-1 max-md:flex-col max-md:gap-1 max-md:border-0 max-md:bg-transparent max-md:px-1 max-md:text-[10px] max-md:shadow-none max-md:[&_svg]:size-5";
@@ -27,10 +28,12 @@ function MeetingDeviceSelect({
   kind,
   label,
   onError,
+  onSelect,
 }: {
   kind: MediaDeviceKind;
   label: string;
   onError: () => void;
+  onSelect: (id: string) => void;
 }) {
   const { devices, activeDeviceId, setActiveMediaDevice } = useMediaDeviceSelect({ kind, onError });
   return (
@@ -40,6 +43,7 @@ function MeetingDeviceSelect({
         if (id !== null) {
           try {
             await setActiveMediaDevice(id);
+            onSelect(id);
           } catch {
             onError();
           }
@@ -73,11 +77,14 @@ function MeetingDeviceSelect({
 export function MediaControl({
   source,
   onError,
+  onDevicesChange,
 }: {
   source: Track.Source.Microphone | Track.Source.Camera;
   onError: () => void;
+  onDevicesChange: (patch: Partial<InterviewDevices>) => void;
 }) {
   const microphone = source === Track.Source.Microphone;
+  const { localParticipant } = useRoomContext();
   const { enabled, toggle, pending } = useTrackToggle({ onDeviceError: onError, source });
   const controls = microphone
     ? {
@@ -108,6 +115,11 @@ export function MediaControl({
         onClick={async () => {
           try {
             await toggle();
+            onDevicesChange(
+              microphone
+                ? { microphoneEnabled: localParticipant.isMicrophoneEnabled }
+                : { cameraEnabled: localParticipant.isCameraEnabled },
+            );
           } catch {
             onError();
           }
@@ -121,6 +133,7 @@ export function MediaControl({
         kind={microphone ? "audioinput" : "videoinput"}
         label={label}
         onError={onError}
+        onSelect={(id) => onDevicesChange(microphone ? { microphoneId: id } : { cameraId: id })}
       />
     </Group>
   );
