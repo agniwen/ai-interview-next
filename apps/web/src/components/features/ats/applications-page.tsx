@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { IconListDetails } from "@tabler/icons-react";
+import { InterviewFlowPreview } from "@/components/features/interviews/interview-flow-preview";
 import { Button } from "@/components/ui/button";
 import { TableFilterSelect } from "@/components/layout/table-filters";
 import { DialogCreateHandle as createDialogHandle, DialogTrigger } from "@/components/ui/dialog";
@@ -76,7 +77,14 @@ export function ApplicationsPage({
         </>
       }
       hasRowActions
-      headings={[m.ats_candidate(), m.ats_job(), m.ats_status(), m.ats_evaluation(), m.ats_date()]}
+      headings={[
+        m.ats_candidate(),
+        m.ats_job(),
+        m.ats_evaluation(),
+        m.ats_status(),
+        m.ats_interview_flow(),
+        m.ats_date(),
+      ]}
       rows={data?.rows.map((row) => ({
         action: (
           <Button
@@ -95,11 +103,21 @@ export function ApplicationsPage({
             title={row.jobTitle}
             workspaceId={workspaceId}
           />,
-          <ApplicationStatusBadge closedAt={row.closedAt} key="status" outcome={row.outcome} />,
           row.evaluationRecommendation ? (
             <RecommendationBadge key="evaluation" level={row.evaluationRecommendation} summary />
           ) : (
             atsStatus(row.evaluationStatus === "succeeded" ? null : row.evaluationStatus)
+          ),
+          <ApplicationStatusBadge closedAt={row.closedAt} key="status" outcome={row.outcome} />,
+          row.latestInterview ? (
+            <InterviewFlowPreview
+              applicationId={row.id}
+              key="interview-flow"
+              round={row.latestInterview}
+              workspaceId={workspaceId}
+            />
+          ) : (
+            "—"
           ),
           <LocalTime key="date" value={row.createdAt} format="date" />,
         ],

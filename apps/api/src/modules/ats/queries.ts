@@ -8,6 +8,7 @@ import {
   applicationResume,
   candidate,
   department,
+  interviewRound,
   job,
   recruitmentProject,
   resume,
@@ -564,6 +565,17 @@ export async function listApplications(
     .where(and(eq(run.applicationId, application.id), eq(run.workspaceId, workspaceId)))
     .orderBy(desc(run.createdAt), desc(run.id))
     .limit(1);
+  const latestRound = db
+    .select({ id: interviewRound.id })
+    .from(interviewRound)
+    .where(
+      and(
+        eq(interviewRound.workspaceId, workspaceId),
+        eq(interviewRound.applicationId, application.id),
+      ),
+    )
+    .orderBy(desc(interviewRound.sequence), desc(interviewRound.id))
+    .limit(1);
   const [rows, [result]] = await Promise.all([
     db
       .select({
@@ -582,6 +594,7 @@ export async function listApplications(
         id: application.id,
         jobId: job.id,
         jobTitle: job.title,
+        latestInterview: { kind: interviewRound.kind, sequence: interviewRound.sequence },
         outcome: application.outcome,
         stage: application.stage,
       })
@@ -590,6 +603,7 @@ export async function listApplications(
       .innerJoin(job, eq(job.id, application.jobId))
       .leftJoin(run, eq(run.id, sql`(${latestRun})`))
       .leftJoin(applicationEvaluation, eq(applicationEvaluation.id, run.evaluationId))
+      .leftJoin(interviewRound, eq(interviewRound.id, sql`(${latestRound})`))
       .where(where)
       .orderBy(desc(application.createdAt), desc(application.id))
       .limit(pageSize)

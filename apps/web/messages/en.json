@@ -359,6 +359,7 @@
   "ats_status": "Status",
   "ats_action": "Actions",
   "ats_evaluation": "Evaluation",
+  "ats_interview_flow": "Interview flow",
   "ats_edit": "Edit",
   "ats_edit_job": "Edit job",
   "ats_edit_project": "Edit project",

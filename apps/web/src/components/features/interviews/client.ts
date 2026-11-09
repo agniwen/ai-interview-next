@@ -91,6 +91,7 @@ export function createInterviewMutation(
         client.invalidateQueries({
           queryKey: atsKeys.applications(workspaceId)._ctx.detail(applicationId).queryKey,
         }),
+        client.invalidateQueries({ queryKey: atsKeys.applications(workspaceId)._ctx.list._def }),
       ]);
     },
   });
@@ -149,9 +150,12 @@ export function deleteInterviewMutation(
     mutationFn: async (id: string) =>
       readAts(await interviewsApi[":id"].$delete({ param: { id, workspaceId } })),
     onSuccess: async () => {
-      await client.invalidateQueries({
-        queryKey: interviewKeys.workspace(workspaceId)._ctx.rounds(applicationId).queryKey,
-      });
+      await Promise.all([
+        client.invalidateQueries({
+          queryKey: interviewKeys.workspace(workspaceId)._ctx.rounds(applicationId).queryKey,
+        }),
+        client.invalidateQueries({ queryKey: atsKeys.applications(workspaceId)._ctx.list._def }),
+      ]);
     },
   });
 }

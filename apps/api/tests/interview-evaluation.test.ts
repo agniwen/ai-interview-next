@@ -100,6 +100,9 @@ it("requires the assigned AI reviewer, keeps original output, and unlocks exactl
     canCreateRound: false,
     total: 2,
   });
+  expect(await read(f.owner.ats("applications"))).toMatchObject({
+    rows: [{ id: f.applicationId, latestInterview: { kind: "ai", sequence: 2 } }],
+  });
 });
 
 it("closes the application only after a human confirms a failed AI verdict", async () => {

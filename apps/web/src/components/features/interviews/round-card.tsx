@@ -30,6 +30,7 @@ import { deleteInterviewMutation } from "./client";
 import type { InterviewRound } from "./client";
 import { InvitationButton } from "./invitation-button";
 import { EvaluationStatus } from "./evaluation-status";
+import { interviewKindLabel, interviewRoundStatusLabel } from "./round-labels";
 
 function DeleteInterviewPopover({
   round,
@@ -142,12 +143,6 @@ export function InterviewRoundCard({
   const location = useLocation();
   const { questionSelection } = round;
   const ai = round.kind === "ai";
-  const statusLabels: Record<string, string> = {
-    completed: m.interviews_completed(),
-    in_progress: m.interviews_in_progress(),
-    scheduled: ai ? m.interviews_not_started() : m.interviews_scheduled(),
-  };
-  const statusLabel = statusLabels[round.status];
   return (
     <Frame className="min-w-0">
       <FrameHeader className="flex-row items-start justify-between gap-3 px-4 py-3">
@@ -158,7 +153,9 @@ export function InterviewRoundCard({
           </h4>
         </FrameTitle>
         <div className="flex shrink-0 items-center gap-2">
-          <Badge variant={round.status === "completed" ? "success" : "info"}>{statusLabel}</Badge>
+          <Badge variant={round.status === "completed" ? "success" : "info"}>
+            {interviewRoundStatusLabel(round)}
+          </Badge>
           {round.canEdit && (
             <Tooltip>
               <TooltipTrigger
@@ -199,7 +196,7 @@ export function InterviewRoundCard({
           </dl>
         )}
         <Badge variant="outline" className="w-fit">
-          {ai ? m.interviews_ai() : m.interviews_human()}
+          {interviewKindLabel(round.kind)}
         </Badge>
         {round.kind === "human" ? (
           <dl className="min-w-0">
