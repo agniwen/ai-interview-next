@@ -25,7 +25,7 @@ export function TableFilters({ children, actions }: { children?: ReactNode; acti
 
 export function TableFilterGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Group className="[&>[data-slot=select-trigger][data-disabled]]:shadow-xs/5 [&>[data-slot=select-trigger][data-disabled]]:before:shadow-[0_1px_--theme(--color-black/4%)] dark:[&>[data-slot=select-trigger][data-disabled]]:before:shadow-[0_-1px_--theme(--color-white/6%)]">
+    <Group className="[&:has(>[data-slot=select-trigger][data-disabled])>:is([data-slot=group-text],[data-slot=separator])]:opacity-64 [&>[data-slot=select-trigger][data-disabled]]:shadow-xs/5 [&>[data-slot=select-trigger][data-disabled]]:before:shadow-[0_1px_--theme(--color-black/4%)] dark:[&>[data-slot=select-trigger][data-disabled]]:before:shadow-[0_-1px_--theme(--color-white/6%)]">
       <GroupText aria-hidden="true" className="bg-background dark:bg-input/32">
         {label}
       </GroupText>

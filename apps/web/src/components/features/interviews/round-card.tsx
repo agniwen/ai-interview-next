@@ -261,18 +261,26 @@ export function InterviewRoundCard({
             </span>
           </div>
         )}
-        {round.canJoin && (
-          <Button
-            variant="outline"
-            render={
-              <Link to="/meet/$workspaceId/$roundId" params={{ roundId: round.id, workspaceId }} />
-            }
-          >
-            {m.meeting_join()}
-          </Button>
-        )}
         {round.status !== "completed" && (
-          <InvitationButton workspaceId={workspaceId} roundId={round.id} />
+          <div className="flex flex-wrap items-start gap-2">
+            {round.canJoin && (
+              <Button
+                size="sm"
+                variant="outline"
+                render={
+                  <Link
+                    to="/meet/$workspaceId/$roundId"
+                    params={{ roundId: round.id, workspaceId }}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  />
+                }
+              >
+                {m.meeting_join()}
+              </Button>
+            )}
+            <InvitationButton workspaceId={workspaceId} roundId={round.id} />
+          </div>
         )}
         {(round.status === "completed" || round.status === "in_progress") && (
           <Button

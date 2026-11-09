@@ -558,6 +558,12 @@ export async function listApplications(
     status === "open" ? isNull(application.closedAt) : undefined,
     status === "closed" ? isNotNull(application.closedAt) : undefined,
   );
+  const latestRun = db
+    .select({ id: run.id })
+    .from(run)
+    .where(and(eq(run.applicationId, application.id), eq(run.workspaceId, workspaceId)))
+    .orderBy(desc(run.createdAt), desc(run.id))
+    .limit(1);
   const [rows, [result]] = await Promise.all([
     db
       .select({
@@ -565,15 +571,14 @@ export async function listApplications(
         candidateName: parsedResumeName,
         closedAt: application.closedAt,
         createdAt: application.createdAt,
-        evaluationRunId: sql<
-          string | null
-        >`(${db.select({ id: run.id }).from(run).where(eq(run.applicationId, application.id)).orderBy(desc(run.createdAt), desc(run.id)).limit(1)})`,
-        evaluationStatus: sql<typeof run.$inferSelect.status | null>`(${db
-          .select({ status: displayedRunStatus(db) })
-          .from(run)
-          .where(eq(run.applicationId, application.id))
-          .orderBy(desc(run.createdAt), desc(run.id))
-          .limit(1)})`,
+        evaluationRecommendation: sql<
+          typeof applicationEvaluation.$inferSelect.result.recommendationLevel | null
+        >`case
+          when ${run.status} = 'succeeded' and json_extract(${applicationEvaluation.result}, '$.version') = 3
+          then json_extract(${applicationEvaluation.result}, '$.recommendationLevel')
+        end`,
+        evaluationRunId: run.id,
+        evaluationStatus: displayedRunStatus(db),
         id: application.id,
         jobId: job.id,
         jobTitle: job.title,
@@ -583,6 +588,8 @@ export async function listApplications(
       .from(application)
       .leftJoin(resume, applicationResumeForDisplay(db))
       .innerJoin(job, eq(job.id, application.jobId))
+      .leftJoin(run, eq(run.id, sql`(${latestRun})`))
+      .leftJoin(applicationEvaluation, eq(applicationEvaluation.id, run.evaluationId))
       .where(where)
       .orderBy(desc(application.createdAt), desc(application.id))
       .limit(pageSize)
@@ -615,6 +622,7 @@ export async function applicationDetail(
       id: application.id,
       jobId: job.id,
       jobTitle: job.title,
+      outcome: application.outcome,
       projectId: recruitmentProject.id,
       projectTitle: recruitmentProject.title,
       resumeFilename: item.filename,

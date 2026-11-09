@@ -4,12 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { IconListDetails } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableFilterSelect } from "@/components/layout/table-filters";
 import { DialogCreateHandle as createDialogHandle, DialogTrigger } from "@/components/ui/dialog";
 import { UserColumn } from "@/components/user-column";
 import * as m from "@/paraglide/messages";
+import { ApplicationStatusBadge } from "./application-status-badge";
 import { atsKeys } from "./query-keys";
 import { atsApi, atsStatus, getResumeCandidateDisplay, readAts } from "./client";
 import { CreateApplicationDialog } from "./create-application-dialog";
@@ -19,6 +19,7 @@ import type { AtsPageProps } from "./list-page";
 import { listParams, applicationStatuses } from "./list-search";
 import type { ApplicationListSearch } from "./list-search";
 import { ProjectFilter } from "./project-select";
+import { RecommendationBadge } from "./recommendation-badge";
 
 /**
  * 招聘记录列表，连接 URL 筛选与分页参数、列表查询和创建记录弹窗。
@@ -94,10 +95,12 @@ export function ApplicationsPage({
             title={row.jobTitle}
             workspaceId={workspaceId}
           />,
-          <Badge key="status" variant="outline">
-            {row.closedAt ? m.ats_closed() : m.ats_open()}
-          </Badge>,
-          atsStatus(row.evaluationStatus),
+          <ApplicationStatusBadge closedAt={row.closedAt} key="status" outcome={row.outcome} />,
+          row.evaluationRecommendation ? (
+            <RecommendationBadge key="evaluation" level={row.evaluationRecommendation} summary />
+          ) : (
+            atsStatus(row.evaluationStatus === "succeeded" ? null : row.evaluationStatus)
+          ),
           <LocalTime key="date" value={row.createdAt} format="date" />,
         ],
         id: row.id,

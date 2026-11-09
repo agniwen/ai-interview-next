@@ -34,6 +34,44 @@ import {
 } from "@/components/ui/sidebar";
 import * as m from "@/paraglide/messages";
 
+const hubMenuGroups = [
+  {
+    heading: m.workspace_daily_recruiting,
+    items: [
+      { icon: IconChartBar, label: m.workspace_dashboard, to: "/w/$workspaceId/hub/dashboard" },
+      { icon: IconListDetails, label: m.ats_applications, to: "/w/$workspaceId/hub/applications" },
+      { icon: IconFileCv, label: m.ats_resumes, to: "/w/$workspaceId/hub/resumes" },
+      { icon: IconUsers, label: m.ats_candidates, to: "/w/$workspaceId/hub/candidates" },
+    ],
+  },
+  {
+    heading: m.workspace_organization_and_projects,
+    items: [
+      { icon: IconBriefcase, label: m.ats_job, to: "/w/$workspaceId/hub/jobs" },
+      { icon: IconFolders, label: m.ats_projects, to: "/w/$workspaceId/hub/projects" },
+      { icon: IconBuilding, label: m.ats_departments, to: "/w/$workspaceId/hub/departments" },
+    ],
+  },
+  {
+    heading: m.workspace_interview_resources,
+    items: [
+      { icon: IconListCheck, label: m.question_sets_title, to: "/w/$workspaceId/hub/questions" },
+      {
+        icon: IconRobot,
+        label: m.interviewer_agents_title,
+        to: "/w/$workspaceId/hub/interviewer-agents",
+      },
+    ],
+  },
+  {
+    heading: m.ws_settings_group,
+    items: [
+      { icon: IconSettings, label: m.ws_settings, to: "/w/$workspaceId/settings" },
+      { icon: IconUser, label: m.account_title, to: "/w/$workspaceId/account" },
+    ],
+  },
+] as const;
+
 /**
  * 工作区主侧栏，组织 Agent 与业务导航、页面专属侧栏插槽及底部账号入口。
  * Main workspace sidebar organizing Agent/business navigation, the page-specific sidebar slot and account entry.
@@ -106,126 +144,38 @@ export function AppSidebar({
           </SegmentedControlItem>
         </SegmentedControl>
       </SidebarHeader>
-      <SidebarContent className="overflow-hidden">
+      <SidebarContent className={section === "agent" ? "overflow-hidden" : "h-auto"}>
         {section === "agent" && <SidebarPageTarget className="flex min-h-0 flex-1 flex-col" />}
-        {section === "hub" && (
-          <>
-            <SidebarGroup>
-              <SidebarGroupLabel>{m.workspace_studio()}</SidebarGroupLabel>
+        {section === "hub" &&
+          hubMenuGroups.map(({ heading, items }) => (
+            <SidebarGroup className="py-0" key={items[0].to}>
+              <SidebarGroupLabel>{heading()}</SidebarGroupLabel>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    tooltip={m.workspace_dashboard()}
-                    aria-label={m.workspace_dashboard()}
-                    render={
-                      <Link
-                        to="/w/$workspaceId/hub/dashboard"
-                        params={{ workspaceId }}
-                        activeProps={{ "data-active": true }}
-                      />
-                    }
-                    onClick={() => setOpenMobile(false)}
-                  >
-                    <IconChartBar className="size-4" aria-hidden="true" />
-                    <span>{m.workspace_dashboard()}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                {(
-                  [
-                    { icon: IconFileCv, label: m.ats_resumes(), to: "/w/$workspaceId/hub/resumes" },
-                    {
-                      icon: IconUsers,
-                      label: m.ats_candidates(),
-                      to: "/w/$workspaceId/hub/candidates",
-                    },
-                    {
-                      icon: IconListDetails,
-                      label: m.ats_applications(),
-                      to: "/w/$workspaceId/hub/applications",
-                    },
-                    {
-                      icon: IconFolders,
-                      label: m.ats_projects(),
-                      to: "/w/$workspaceId/hub/projects",
-                    },
-                    {
-                      icon: IconBuilding,
-                      label: m.ats_departments(),
-                      to: "/w/$workspaceId/hub/departments",
-                    },
-                    { icon: IconBriefcase, label: m.ats_job(), to: "/w/$workspaceId/hub/jobs" },
-                    {
-                      icon: IconRobot,
-                      label: m.interviewer_agents_title(),
-                      to: "/w/$workspaceId/hub/interviewer-agents",
-                    },
-                    {
-                      icon: IconListCheck,
-                      label: m.question_sets_title(),
-                      to: "/w/$workspaceId/hub/questions",
-                    },
-                  ] as const
-                ).map(({ icon: Icon, label, to }) => (
-                  <SidebarMenuItem key={to}>
-                    <SidebarMenuButton
-                      tooltip={label}
-                      aria-label={label}
-                      render={
-                        <Link
-                          to={to}
-                          params={{ workspaceId }}
-                          activeProps={{ "data-active": true }}
-                        />
-                      }
-                      onClick={() => setOpenMobile(false)}
-                    >
-                      <Icon className="size-4" aria-hidden="true" />
-                      <span>{label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {items.map(({ icon: Icon, label, to }) => {
+                  const text = label();
+                  return (
+                    <SidebarMenuItem key={to}>
+                      <SidebarMenuButton
+                        tooltip={text}
+                        aria-label={text}
+                        render={
+                          <Link
+                            to={to}
+                            params={{ workspaceId }}
+                            activeProps={{ "data-active": true }}
+                          />
+                        }
+                        onClick={() => setOpenMobile(false)}
+                      >
+                        <Icon className="size-4" aria-hidden="true" />
+                        <span>{text}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroup>
-            <SidebarGroup>
-              <SidebarGroupLabel>{m.ws_settings_group()}</SidebarGroupLabel>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    tooltip={m.ws_settings()}
-                    render={
-                      <Link
-                        to="/w/$workspaceId/settings"
-                        params={{ workspaceId }}
-                        activeProps={{ "data-active": true }}
-                      />
-                    }
-                    onClick={() => setOpenMobile(false)}
-                  >
-                    <IconSettings aria-hidden="true" />
-                    <span>{m.ws_settings()}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    tooltip={m.account_title()}
-                    render={
-                      <Link
-                        to="/w/$workspaceId/account"
-                        params={{ workspaceId }}
-                        activeProps={{ "data-active": true }}
-                      />
-                    }
-                    onClick={() => setOpenMobile(false)}
-                  >
-                    <IconUser aria-hidden="true" />
-                    <span>{m.account_title()}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroup>
-          </>
-        )}
+          ))}
       </SidebarContent>
       <SidebarFooter className="px-1 pt-2 pb-1">
         <UserMenu variant="sidebar" collapsed={collapsed} workspaceId={workspaceId} />

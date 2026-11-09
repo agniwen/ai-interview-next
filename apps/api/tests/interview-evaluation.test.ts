@@ -118,7 +118,7 @@ it("closes the application only after a human confirms a failed AI verdict", asy
         actorId: f.reviewer.userId,
       }),
     ]),
-    application: { closedAt: expect.any(String) },
+    application: { closedAt: expect.any(String), outcome: "rejected" },
   });
   expect(
     await f.owner.call(

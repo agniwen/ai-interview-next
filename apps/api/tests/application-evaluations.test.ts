@@ -136,6 +136,9 @@ it("shares member evaluations and appends AI reevaluations with immutable input 
   const queued = await read(owner.ats(path));
   expect(queued.activity.map((entry: { action: string }) => entry.action)).toEqual(["created"]);
   await completeEvaluation(created.runId, "First evaluation");
+  expect(await read(owner.ats("applications"))).toMatchObject({
+    rows: [{ evaluationRecommendation: "recommended", evaluationStatus: "succeeded" }],
+  });
 
   const response1 = await owner.ats(`${path}/feedback`, { body: "   ", version: 1 });
   expect(response1.status).toBe(400);
@@ -171,6 +174,9 @@ it("shares member evaluations and appends AI reevaluations with immutable input 
   const pending = await read(owner.ats(path));
   expect(pending.evaluations).toHaveLength(1);
   expect(pending.application.evaluationStatus).toBe("queued");
+  expect(await read(owner.ats("applications"))).toMatchObject({
+    rows: [{ evaluationRecommendation: null, evaluationRunId: runId, evaluationStatus: "queued" }],
+  });
   expect(pending.activity).toHaveLength(3);
   const dependencies = await completeEvaluation(runId, "Updated evaluation");
   await consumeResumeStage(db, dependencies, {
@@ -346,6 +352,9 @@ it("shares member evaluations and appends AI reevaluations with immutable input 
   await completeEvaluation(failed.runId, "", () => Promise.reject(new Error("Model unavailable")));
   const afterFailure = await read(owner.ats(path));
   expect(afterFailure.application.evaluationStatus).toBe("failed");
+  expect(await read(owner.ats("applications"))).toMatchObject({
+    rows: [{ evaluationRecommendation: null, evaluationStatus: "failed" }],
+  });
   expect(afterFailure.activity).toEqual(detail.activity);
   expect(afterFailure.evaluations).toEqual(detail.evaluations);
   await owner.ats(`${path}/close`, {});

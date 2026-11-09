@@ -264,7 +264,7 @@ it("lists projects by page and filters recruitment records by the job's project"
   expect(closed.status).toBe(200);
   expect(await read(owner.ats(detailPath))).toMatchObject({
     activity: [{ actorId: owner.userId, result: { outcome: "closed" } }],
-    application: { closedAt: expect.any(String) },
+    application: { closedAt: expect.any(String), outcome: "closed" },
   });
 });
 

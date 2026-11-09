@@ -1,46 +1,14 @@
-import {
-  IconAlertTriangle,
-  IconBriefcase,
-  IconFileText,
-  IconQuestionMark,
-  IconSparkles,
-  IconThumbUp,
-  IconX,
-} from "@tabler/icons-react";
+import { IconAlertTriangle, IconBriefcase, IconFileText, IconThumbUp } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 import type { ApplicationDetail } from "./application-detail-page";
+import { RecommendationBadge } from "./recommendation-badge";
 
 type ApplicationEvaluationResult = ApplicationDetail["evaluations"][number]["result"];
 type QualitativeEvaluation = Extract<ApplicationEvaluationResult, { version: 3 }>;
 type EvidenceKind = "matching" | "risk";
-
-function RecommendationBadge({ level }: { level: QualitativeEvaluation["recommendationLevel"] }) {
-  const {
-    icon: Icon,
-    label,
-    variant,
-  } = (
-    {
-      highly_recommended: {
-        icon: IconSparkles,
-        label: m.ats_evaluation_highly_recommended,
-        variant: "info",
-      },
-      not_recommended: { icon: IconX, label: m.ats_evaluation_not_recommended, variant: "error" },
-      recommended: { icon: IconThumbUp, label: m.ats_evaluation_recommended, variant: "success" },
-      undecided: { icon: IconQuestionMark, label: m.ats_evaluation_undecided, variant: "warning" },
-    } as const
-  )[level];
-  return (
-    <Badge variant={variant} className="w-fit">
-      <Icon aria-hidden="true" />
-      {label()}
-    </Badge>
-  );
-}
 
 function EvaluationEvidence({
   kind,

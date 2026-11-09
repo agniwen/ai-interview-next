@@ -19,7 +19,6 @@ import {
 import { ApplicationDetailSkeleton } from "@/components/skeletons/pages/application-detail-skeleton";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -50,6 +49,7 @@ import { ProjectPreviewCard } from "./project-preview-card";
 import { JobPreviewCard } from "./job-preview-card";
 import { ApplicationEvaluations } from "./application-evaluations";
 import { ApplicationEvaluationComposer } from "./application-evaluation-composer";
+import { ApplicationStatusBadge } from "./application-status-badge";
 import { atsApi, readAts } from "./client";
 import type { ApplicationDetailSearch, ApplicationTab } from "./list-search";
 import { atsKeys } from "./query-keys";
@@ -267,7 +267,7 @@ function ApplicationHeader({
 }: Pick<ApplicationDetail, "application" | "resume" | "resumeProfile"> & {
   workspaceId: string;
 }) {
-  const { candidateName, closedAt, createdAt, jobId, jobTitle, projectId, projectTitle } =
+  const { candidateName, closedAt, createdAt, jobId, jobTitle, outcome, projectId, projectTitle } =
     application;
   const basics = resumeProfile && getResumeProfileBasics(resumeProfile);
   return (
@@ -286,7 +286,7 @@ function ApplicationHeader({
           <h1 className="wrap-anywhere text-2xl font-semibold tracking-tight">
             {candidateName ?? m.ats_application_detail()}
           </h1>
-          <Badge variant="outline">{closedAt ? m.ats_closed() : m.ats_open()}</Badge>
+          <ApplicationStatusBadge closedAt={closedAt} outcome={outcome} />
         </div>
       </div>
       <dl className="grid grid-cols-1 gap-x-6 gap-y-3 @min-[23.5rem]:grid-cols-2 @min-[36rem]:grid-cols-3 @min-[48.5rem]:grid-cols-4 *:min-w-0 [&_dd]:mt-0.5 [&_dd]:truncate [&_dd]:text-sm [&_dt]:text-xs [&_dt]:text-muted-foreground">
