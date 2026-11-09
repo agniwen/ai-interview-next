@@ -228,22 +228,6 @@ export async function listJobs(
   return { page, pageSize, rows, total: result?.count ?? 0, version: 1 as const };
 }
 
-export function findDepartment(db: Database, workspaceId: string, id: string) {
-  return db
-    .select({ id: department.id })
-    .from(department)
-    .where(and(eq(department.id, id), eq(department.workspaceId, workspaceId)))
-    .get();
-}
-
-export function findRecruitmentProject(db: Database, workspaceId: string, id: string) {
-  return db
-    .select({ id: recruitmentProject.id })
-    .from(recruitmentProject)
-    .where(and(eq(recruitmentProject.id, id), eq(recruitmentProject.workspaceId, workspaceId)))
-    .get();
-}
-
 export async function listRecruitmentProjects(
   db: Database,
   workspaceId: string,
@@ -345,7 +329,10 @@ export async function listResumes(
   workspaceId: string,
   { page, pageSize, search, status }: ResumeListQuery,
 ) {
-  const workspace = eq(item.workspaceId, workspaceId);
+  const workspace = and(
+    eq(item.workspaceId, workspaceId),
+    or(eq(batch.source, "manual_upload"), eq(item.status, "accepted")),
+  );
   const effectiveStatus = sql`coalesce(${displayedRunStatus(db)}, ${item.status})`;
   const where = and(
     workspace,
@@ -402,7 +389,13 @@ export async function listResumes(
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
       .leftJoin(resume, eq(resume.id, submission.resumeId))
-      .leftJoin(candidate, eq(candidate.id, resume.candidateId))
+      .leftJoin(
+        candidate,
+        eq(
+          candidate.id,
+          sql`case when ${batch.source} = 'external_import' then coalesce(${submission.resolvedCandidateId}, ${resume.candidateId}) else ${resume.candidateId} end`,
+        ),
+      )
       .leftJoin(job, eq(job.id, submission.jobId))
       .where(where)
       .orderBy(desc(batch.createdAt), desc(item.id))
@@ -416,7 +409,13 @@ export async function listResumes(
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
       .leftJoin(resume, eq(resume.id, submission.resumeId))
-      .leftJoin(candidate, eq(candidate.id, resume.candidateId))
+      .leftJoin(
+        candidate,
+        eq(
+          candidate.id,
+          sql`case when ${batch.source} = 'external_import' then coalesce(${submission.resolvedCandidateId}, ${resume.candidateId}) else ${resume.candidateId} end`,
+        ),
+      )
       .where(where),
   ]);
   const batches = rows.length
@@ -429,7 +428,12 @@ export async function listResumes(
         })
         .from(item)
         .leftJoin(run, eq(run.id, item.runId))
-        .where(and(workspace, inArray(item.batchId, [...new Set(rows.map((row) => row.batchId))])))
+        .where(
+          and(
+            eq(item.workspaceId, workspaceId),
+            inArray(item.batchId, [...new Set(rows.map((row) => row.batchId))]),
+          ),
+        )
         .groupBy(item.batchId)
     : [];
   return {
@@ -460,9 +464,11 @@ export async function getUploadProcessing(db: Database, workspaceId: string, id:
         stage: run.stage,
         status: sql<typeof run.$inferSelect.status>`${displayedRunStatus(db)}`,
       },
+      source: batch.source,
       upload: { filename: item.filename, id: item.id, size: item.size, status: item.status },
     })
     .from(item)
+    .innerJoin(batch, eq(batch.id, item.batchId))
     .leftJoin(run, and(eq(run.id, item.runId), eq(run.workspaceId, workspaceId)))
     .leftJoin(resume, and(eq(resume.id, run.resumeId), eq(resume.workspaceId, workspaceId)))
     .where(and(eq(item.id, id), eq(item.workspaceId, workspaceId)))

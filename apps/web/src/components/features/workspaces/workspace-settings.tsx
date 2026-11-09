@@ -38,6 +38,7 @@ import {
   AlertDialogFooter,
   AlertDialogClose,
 } from "@/components/ui/alert-dialog";
+import { McpSettings } from "@/components/features/mcp/mcp-settings";
 import { WorkspaceFeedback } from "./workspace-feedback";
 import { CreateWorkspaceModal } from "./create-workspace-modal";
 import { AutoSaveInput } from "@/components/features/settings/auto-save-input";
@@ -176,6 +177,8 @@ export function WorkspaceSettings({
           />
         </SettingsRow>
       </SettingsGroup>
+
+      <McpSettings workspaceId={workspaceId} manage={manage} />
 
       <SettingsGroup title={m.ws_members()}>
         {members.map((member) => (

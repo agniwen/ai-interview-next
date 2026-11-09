@@ -3,6 +3,8 @@ import * as schema from "@ai-interview/db/schema";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins";
+import { jwt } from "better-auth/plugins/jwt";
+import { mcpAuth } from "../mcp/auth";
 import { z } from "zod";
 import type { Database } from "@ai-interview/db";
 import type { ApiBindings } from "../../env";
@@ -24,7 +26,10 @@ export function createAuth(config: z.infer<typeof configSchema>, database: Datab
     databaseHooks: {
       user: { create: { after: (user) => createInitialWorkspace(database, user) } },
     },
+    disabledPaths: ["/token"],
     plugins: [
+      jwt(),
+      mcpAuth(config.BETTER_AUTH_URL, database),
       organization({
         organizationHooks: {
           beforeCreateOrganization: async () => {

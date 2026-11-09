@@ -1,5 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
 import { openDurableObjectSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/cloudflare";
+import { createDatabase } from "@ai-interview/db";
+import { createRegistry } from "@earendil-works/pi-durable";
+import { recruitingTools } from "./recruiting-tools";
 import type { Wake } from "@earendil-works/pi-durable";
 import { chatEvents } from "./events";
 import { AgentRuntime } from "./runtime";
@@ -25,6 +28,15 @@ export class AgentSessionObject extends DurableObject<ApiBindings> {
       throw new Error("CHAT_NOT_FOUND");
     }
     const { models } = createAgentModels(this.env);
+    const [workspaceId, userId]: [string, string] = JSON.parse(identity.scope);
+    const registry = createRegistry();
+    registry.install(
+      recruitingTools({
+        actor: { source: "internal_agent", userId, workspaceId },
+        db: createDatabase(this.env.AUTH_DB),
+        env: this.env,
+      }),
+    );
     const runtime = await AgentRuntime.open(
       await openDurableObjectSqliteStorage(this.ctx.storage),
       {
@@ -40,6 +52,7 @@ export class AgentSessionObject extends DurableObject<ApiBindings> {
         onWake: () => {
           this.ctx.waitUntil(this.refreshAlarm());
         },
+        registry,
       },
     );
     await runtime.initialize(identity.id);

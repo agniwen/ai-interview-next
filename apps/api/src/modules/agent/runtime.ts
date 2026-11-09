@@ -6,6 +6,7 @@ import type {
   SubmissionId,
   Wake,
   Cursor,
+  Registry,
   Tx,
   WatchHandle,
   Submission,
@@ -144,6 +145,7 @@ export class AgentRuntime {
     options: {
       models: Models;
       modelId: string;
+      registry?: Registry;
       onWake?: (wake: Wake) => void;
       changed: (summary: ChatSummary) => Promise<void>;
       background: (work: Promise<unknown>) => void;
@@ -151,7 +153,11 @@ export class AgentRuntime {
   ) {
     const harness = await Harness.open(
       storage,
-      { models: options.models, onWake: options.onWake, registry: createRegistry() },
+      {
+        models: options.models,
+        onWake: options.onWake,
+        registry: options.registry ?? createRegistry(),
+      },
       context,
     );
     const conversation = await harness.root(context, {

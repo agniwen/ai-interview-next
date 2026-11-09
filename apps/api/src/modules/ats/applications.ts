@@ -1,3 +1,4 @@
+import type { OperationAudit } from "../mcp/audit";
 import type { Database } from "@ai-interview/db";
 import {
   application,
@@ -318,6 +319,7 @@ export async function closeApplication(
             reason: "manual",
             version: 1,
           })}`.as("result"),
+          source: sql<null>`null`.as("source"),
           workspaceId: application.workspaceId,
         })
         .from(application)
@@ -337,6 +339,7 @@ export async function addApplicationFeedback(
   applicationId: string,
   authorUserId: string,
   body: string,
+  audit?: OperationAudit,
 ) {
   const record = await db
     .select({ id: application.id })
@@ -371,8 +374,17 @@ export async function addApplicationFeedback(
       id: `feedback-${id}`,
       occurredAt: createdAt,
       result: { feedbackId: id, outcome: "feedback_added", reason: "manual", version: 1 },
+      source: audit?.source,
       workspaceId,
     }),
+    ...(audit
+      ? [
+          audit.success(
+            { applicationId, changes: { body: { after: body, before: null } }, id },
+            createdAt,
+          ),
+        ]
+      : []),
   ]);
   return { id, version: 1 as const };
 }

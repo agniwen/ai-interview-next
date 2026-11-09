@@ -5,6 +5,7 @@ export const organization = sqliteTable("organization", {
   createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
   id: text("id").primaryKey(),
   logo: text("logo"),
+  mcpEnabled: integer("mcpEnabled", { mode: "boolean" }).notNull().default(true),
   metadata: text("metadata"),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),

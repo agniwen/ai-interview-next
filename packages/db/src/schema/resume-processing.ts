@@ -21,7 +21,7 @@ export const resumeUploadBatch = sqliteTable("resume_upload_batch", {
   createdAt: time("createdAt").notNull(),
   createdBy: text("createdBy").notNull(),
   id: text("id").primaryKey(),
-  source: text("source", { enum: ["manual_upload"] })
+  source: text("source", { enum: ["manual_upload", "external_import"] })
     .notNull()
     .default("manual_upload"),
   workspaceId: workspace(),
@@ -175,6 +175,7 @@ export const applicationActivity = sqliteTable(
         interview?: { id: string; kind: "ai" | "human"; sequence: number; label: string };
       }>()
       .notNull(),
+    source: text({ enum: ["remote_mcp", "internal_agent"] }),
     workspaceId: workspace(),
   },
   (table) => [

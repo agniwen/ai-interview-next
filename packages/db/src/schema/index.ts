@@ -41,3 +41,16 @@ export {
   interviewTranscript,
   interviewEvent,
 } from "./interview-session";
+
+export {
+  jwks,
+  oauthAccessToken,
+  oauthClient,
+  oauthClientAssertion,
+  oauthClientResource,
+  oauthConsent,
+  oauthRefreshToken,
+  oauthResource,
+} from "./oauth";
+export { agentOperation, mcpGrant } from "./mcp";
+export type { AgentOperationSource } from "./mcp";

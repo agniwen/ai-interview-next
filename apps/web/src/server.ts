@@ -14,6 +14,9 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/u, "") || "/";
     const [, prefix, ...segments] = path.split("/");
+    if (prefix === ".well-known" && path.startsWith("/.well-known/oauth-")) {
+      return env.API.fetch(request);
+    }
     if (isLocale(prefix)) {
       url.pathname = `/${segments.join("/")}`;
       return new Response(null, {

@@ -344,7 +344,10 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
             >
               {atsStatus(row.parseStatus ?? row.status)}
             </Badge>,
-            { manual_upload: m.ats_source_manual_upload() }[row.source],
+            {
+              external_import: m.ats_source_external_import(),
+              manual_upload: m.ats_source_manual_upload(),
+            }[row.source],
             <UserColumn key="creator" user={row.creator} />,
             <LocalTime key="date" value={row.createdAt} format="date" />,
           ],

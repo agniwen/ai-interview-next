@@ -1,14 +1,6 @@
-import {
-  candidate,
-  department as departmentTable,
-  job,
-  recruitmentProject,
-  resume,
-  resumeSubmission as submission,
-  resumeUploadItem as item,
-} from "@ai-interview/db/schema";
+import { job, recruitmentProject, resume, resumeUploadItem as item } from "@ai-interview/db/schema";
 import { sValidator } from "@hono/standard-validator";
-import { and, asc, count, eq, isNull } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { resumeFileExtension, resumeMediaType } from "../../lib/resume-file";
@@ -38,8 +30,6 @@ import {
   applicationDetail,
   applicationOptions,
   applicationResumeOptions,
-  findRecruitmentProject,
-  findDepartment,
   getUploadResumeProfile,
   getUploadProcessing,
   listApplications,
@@ -50,6 +40,8 @@ import {
   listRecruitmentProjects,
   listResumes,
 } from "./queries";
+import { getJob, saveDepartment, saveJob, saveProject } from "./service";
+import { resolveSubmissionCandidate } from "./external-resumes";
 import { flushResumeOutbox } from "./runtime";
 import { resumeFiles, resumeObjectStore } from "./storage";
 import {
@@ -222,42 +214,24 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     ),
   )
   .post("/:workspaceId/departments", sValidator("json", departmentInput), async (c) => {
-    const { name, description } = c.req.valid("json");
-    const id = crypto.randomUUID();
-    await c
-      .get("database")
-      .insert(departmentTable)
-      .values({
-        createdAt: new Date(),
-        createdBy: c.get("userId"),
-        description,
-        id,
-        name,
-        workspaceId: c.get("workspaceId"),
-      });
-    return c.json({ id, version: 1 as const }, 201);
+    const { version: _, ...values } = c.req.valid("json");
+    const result = await saveDepartment(c.get("database"), c.get("workspaceId"), c.get("userId"), {
+      values,
+    });
+    return "error" in result
+      ? c.json({ error: result.error, version: 1 as const }, 404)
+      : c.json(result, 201);
   })
-  .put(
-    "/:workspaceId/departments/:id",
-    applicationParams,
-    sValidator("json", departmentInput),
-    async (c) => {
-      const { id } = c.req.valid("param");
-      const { name, description } = c.req.valid("json");
-      const [record] = await c
-        .get("database")
-        .update(departmentTable)
-        .set({ description, name })
-        .where(
-          and(eq(departmentTable.id, id), eq(departmentTable.workspaceId, c.get("workspaceId"))),
-        )
-        .returning({ id: departmentTable.id });
-      if (!record) {
-        return c.json({ error: "DEPARTMENT_UNAVAILABLE", version: 1 as const }, 404);
-      }
-      return c.json({ id: record.id, version: 1 as const }, 200);
-    },
-  )
+  .put("/:workspaceId/departments/:id", sValidator("json", departmentInput), async (c) => {
+    const { version: _, ...values } = c.req.valid("json");
+    const result = await saveDepartment(c.get("database"), c.get("workspaceId"), c.get("userId"), {
+      id: c.req.param("id"),
+      values,
+    });
+    return "error" in result
+      ? c.json({ error: result.error, version: 1 as const }, 404)
+      : c.json(result, 200);
+  })
   .get("/:workspaceId/jobs", sValidator("query", jobListQuery), async (c) =>
     c.json(await listJobs(c.get("database"), c.get("workspaceId"), c.req.valid("query")), 200),
   )
@@ -306,116 +280,48 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     return c.json({ ...project, version: 1 as const }, 200);
   })
   .post("/:workspaceId/projects", sValidator("json", projectDetailsInput), async (c) => {
-    const { title, description } = c.req.valid("json");
-    const id = crypto.randomUUID();
-    await c
-      .get("database")
-      .insert(recruitmentProject)
-      .values({
-        createdAt: new Date(),
-        createdBy: c.get("userId"),
-        description,
-        id,
-        title,
-        workspaceId: c.get("workspaceId"),
-      });
-    return c.json({ id, version: 1 as const }, 201);
+    const { version: _, ...values } = c.req.valid("json");
+    const result = await saveProject(c.get("database"), c.get("workspaceId"), c.get("userId"), {
+      values,
+    });
+    return "error" in result
+      ? c.json({ error: result.error, version: 1 as const }, 404)
+      : c.json(result, 201);
   })
   .put("/:workspaceId/projects/:id", sValidator("json", projectDetailsInput), async (c) => {
-    const { title, description } = c.req.valid("json");
-    const workspaceId = c.get("workspaceId");
-    const id = c.req.param("id");
-    const [project] = await c
-      .get("database")
-      .update(recruitmentProject)
-      .set({ description, title })
-      .where(and(eq(recruitmentProject.id, id), eq(recruitmentProject.workspaceId, workspaceId)))
-      .returning({ id: recruitmentProject.id });
-    if (!project) {
-      return c.json({ error: "PROJECT_UNAVAILABLE", version: 1 as const }, 404);
-    }
-    return c.json({ id: project.id, version: 1 as const }, 200);
+    const { version: _, ...values } = c.req.valid("json");
+    const result = await saveProject(c.get("database"), c.get("workspaceId"), c.get("userId"), {
+      id: c.req.param("id"),
+      values,
+    });
+    return "error" in result
+      ? c.json({ error: result.error, version: 1 as const }, 404)
+      : c.json(result, 200);
   })
   .post("/:workspaceId/jobs", sValidator("json", jobInput), async (c) => {
-    const { departmentId, projectId, requirements, internalCriteria, title } = c.req.valid("json");
-    const db = c.get("database");
-    const workspaceId = c.get("workspaceId");
-    if (departmentId && !(await findDepartment(db, workspaceId, departmentId))) {
-      return c.json({ error: "DEPARTMENT_UNAVAILABLE", version: 1 as const }, 404);
-    }
-    if (projectId && !(await findRecruitmentProject(db, workspaceId, projectId))) {
-      return c.json({ error: "PROJECT_UNAVAILABLE", version: 1 as const }, 404);
-    }
-    const id = crypto.randomUUID();
-    await db.insert(job).values({
-      createdAt: new Date(),
-      createdBy: c.get("userId"),
-      departmentId,
-      id,
-      internalCriteria,
-      projectId,
-      requirements,
-      title,
-      workspaceId,
+    const { version: _, ...values } = c.req.valid("json");
+    const result = await saveJob(c.get("database"), c.get("workspaceId"), c.get("userId"), {
+      values,
     });
-    return c.json({ id, version: 1 as const }, 201);
+    return "error" in result
+      ? c.json({ error: result.error, version: 1 as const }, 404)
+      : c.json(result, 201);
   })
   .get("/:workspaceId/jobs/:id", async (c) => {
-    const record = await c
-      .get("database")
-      .select({
-        createdBy: job.createdBy,
-        department: departmentTable.name,
-        departmentId: job.departmentId,
-        id: job.id,
-        internalCriteria: job.internalCriteria,
-        projectId: job.projectId,
-        projectTitle: recruitmentProject.title,
-        requirements: job.requirements,
-        title: job.title,
-      })
-      .from(job)
-      .leftJoin(
-        recruitmentProject,
-        and(
-          eq(recruitmentProject.id, job.projectId),
-          eq(recruitmentProject.workspaceId, job.workspaceId),
-        ),
-      )
-      .leftJoin(
-        departmentTable,
-        and(
-          eq(departmentTable.id, job.departmentId),
-          eq(departmentTable.workspaceId, job.workspaceId),
-        ),
-      )
-      .where(and(eq(job.id, c.req.param("id")), eq(job.workspaceId, c.get("workspaceId"))))
-      .get();
-    if (!record) {
-      return c.json({ error: "JOB_UNAVAILABLE", version: 1 as const }, 404);
-    }
-    return c.json({ ...record, version: 1 as const }, 200);
+    const record = await getJob(c.get("database"), c.get("workspaceId"), c.req.param("id"));
+    return record
+      ? c.json({ ...record, version: 1 as const }, 200)
+      : c.json({ error: "JOB_UNAVAILABLE", version: 1 as const }, 404);
   })
   .put("/:workspaceId/jobs/:id", sValidator("json", updateJobInput), async (c) => {
-    const { departmentId, projectId, requirements, internalCriteria, title } = c.req.valid("json");
-    const db = c.get("database");
-    const workspaceId = c.get("workspaceId");
-    const id = c.req.param("id");
-    if (departmentId && !(await findDepartment(db, workspaceId, departmentId))) {
-      return c.json({ error: "DEPARTMENT_UNAVAILABLE", version: 1 as const }, 404);
-    }
-    if (projectId && !(await findRecruitmentProject(db, workspaceId, projectId))) {
-      return c.json({ error: "PROJECT_UNAVAILABLE", version: 1 as const }, 404);
-    }
-    const [record] = await db
-      .update(job)
-      .set({ departmentId, internalCriteria, projectId, requirements, title })
-      .where(and(eq(job.id, id), eq(job.workspaceId, workspaceId)))
-      .returning({ id: job.id });
-    if (!record) {
-      return c.json({ error: "JOB_UNAVAILABLE", version: 1 as const }, 404);
-    }
-    return c.json({ id: record.id, version: 1 as const }, 200);
+    const { version: _, ...values } = c.req.valid("json");
+    const result = await saveJob(c.get("database"), c.get("workspaceId"), c.get("userId"), {
+      id: c.req.param("id"),
+      values,
+    });
+    return "error" in result
+      ? c.json({ error: result.error, version: 1 as const }, 404)
+      : c.json(result, 200);
   })
   .post("/:workspaceId/uploads", sValidator("json", files), async (c) => {
     const workspaceId = c.get("workspaceId");
@@ -586,50 +492,13 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
     async (c) => {
       const db = c.get("database");
       const workspaceId = c.get("workspaceId");
-      const [record] = await db
-        .select()
-        .from(submission)
-        .where(
-          and(
-            eq(submission.id, c.req.param("id")),
-            eq(submission.workspaceId, workspaceId),
-            eq(submission.identityStatus, "pending_review"),
-          ),
-        );
-      if (!record) {
-        return c.json({ error: "SUBMISSION_NOT_FOUND", version: 1 as const }, 404);
+      const id = c.req.param("id");
+      const resolved = await resolveSubmissionCandidate(db, workspaceId, id, c.req.valid("json"));
+      if ("error" in resolved) {
+        return c.json({ error: resolved.error, version: 1 as const }, 404);
       }
-      const input = c.req.valid("json");
-      const candidateId = "candidateId" in input ? input.candidateId : crypto.randomUUID();
-      if ("candidateId" in input) {
-        const [existing] = await db
-          .select()
-          .from(candidate)
-          .where(and(eq(candidate.id, candidateId), eq(candidate.workspaceId, workspaceId)));
-        if (!existing) {
-          return c.json({ error: "CANDIDATE_NOT_FOUND", version: 1 as const }, 404);
-        }
-      } else {
-        await db.insert(candidate).values({
-          createdAt: new Date(),
-          creationSource: "manual",
-          id: candidateId,
-          name: input.name,
-          workspaceId,
-        });
-      }
-      await db.batch([
-        db
-          .update(resume)
-          .set({ candidateId })
-          .where(and(eq(resume.id, record.resumeId), isNull(resume.candidateId))),
-        db
-          .update(submission)
-          .set({ identityStatus: "resolved", resolvedCandidateId: candidateId })
-          .where(eq(submission.id, record.id)),
-      ]);
-      if (record.jobId) {
-        const result = await matchSubmissionJob(db, workspaceId, record.id, record.jobId, {
+      if (resolved.jobId) {
+        const result = await matchSubmissionJob(db, workspaceId, id, resolved.jobId, {
           id: c.get("userId"),
           type: "user",
         });

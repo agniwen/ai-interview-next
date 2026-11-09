@@ -8,6 +8,7 @@ import {
 } from "@ai-interview/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { resumeMediaType } from "../../lib/resume-file";
+import type { OperationAudit } from "../mcp/audit";
 import type { ResumeObjectStore } from "./contracts";
 import { outboxEntry } from "./outbox";
 
@@ -17,6 +18,8 @@ export async function createUploadBatch(
   workspaceId: string,
   userId: string,
   files: { filename: string; size: number }[],
+  source: typeof batch.$inferSelect.source = "manual_upload",
+  audit?: OperationAudit,
 ) {
   const id = crypto.randomUUID();
   const items = files.map((file) => {
@@ -40,15 +43,19 @@ export async function createUploadBatch(
       };
     }),
   );
+  const createdAt = new Date();
   await db.batch([
     db.insert(batch).values({
-      createdAt: new Date(),
+      createdAt,
       createdBy: userId,
       id,
-      source: "manual_upload",
+      source,
       workspaceId,
     }),
     db.insert(item).values(items),
+    ...(audit
+      ? [audit.success({ batchId: id, uploadIds: items.map((file) => file.id) }, createdAt)]
+      : []),
   ]);
   return { id, uploads, version: 1 as const };
 }
@@ -90,7 +97,15 @@ export async function acceptUpload(
   workspaceId: string,
   id: string,
 ) {
-  const file = await findUploadItem(db, workspaceId, id);
+  const record = await db
+    .select({ file: item })
+    .from(item)
+    .innerJoin(batch, eq(batch.id, item.batchId))
+    .where(
+      and(eq(item.workspaceId, workspaceId), eq(item.id, id), eq(batch.source, "manual_upload")),
+    )
+    .get();
+  const file = record?.file;
   if (!file) {
     return;
   }

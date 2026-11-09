@@ -389,8 +389,10 @@ function ApplicationActivityItem({
   body,
   label,
   occurredAt,
+  delegated,
 }: {
   actor?: ApplicationActorDetails | null;
+  delegated?: boolean;
   body?: string;
   label: string;
   occurredAt: string;
@@ -400,6 +402,7 @@ function ApplicationActivityItem({
       <p className="text-sm font-medium">{label}</p>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
         <ApplicationActor actor={actor} />
+        {delegated && <span>{m.ats_agent_delegated()}</span>}
         <LocalTime className="text-xs" value={occurredAt} />
       </div>
       {body && (
@@ -446,6 +449,7 @@ function ApplicationActivity({
           return (
             <ApplicationActivityItem
               actor={entry}
+              delegated={Boolean(entry.source)}
               body={entry.result.feedbackId ? feedbackById.get(entry.result.feedbackId) : undefined}
               key={entry.id}
               label={

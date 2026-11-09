@@ -45,18 +45,23 @@ export function processingStepStatus(detail: ProcessingDetail, step: ProcessingS
   if (latest) {
     return latest.status;
   }
-  if (detail.run?.stage === step && detail.run.status !== "succeeded") {
-    return detail.run.status;
+  const { run } = detail;
+  if (!run) {
+    return "waiting";
+  }
+  if (run.stage === step && run.status !== "succeeded") {
+    return run.status;
   }
   const output = step === "extract_text" ? detail.resume?.markdown : detail.resume?.profile;
-  if (output && (detail.run?.status === "succeeded" || detail.run?.stage === "structure")) {
-    return "reused";
+  if (detail.source === "external_import" && run.status === "succeeded") {
+    return output ? "external_import" : "skipped";
   }
-  return "waiting";
+  return output && (run.status === "succeeded" || run.stage === "structure") ? "reused" : "waiting";
 }
 
 const statusIndicators: Record<string, { icon: typeof IconCheck; className: string }> = {
   available: { className: "bg-success/10 text-success-foreground", icon: IconCheck },
+  external_import: { className: "bg-success/10 text-success-foreground", icon: IconCheck },
   failed: { className: "bg-destructive/10 text-destructive-foreground", icon: IconX },
   queued: { className: "bg-muted text-muted-foreground", icon: IconClock },
   reused: { className: "bg-muted text-muted-foreground", icon: IconRefresh },
@@ -74,6 +79,7 @@ export function ProcessingStatus({
 }) {
   const variants: Record<string, BadgeProps["variant"]> = {
     available: "success",
+    external_import: "success",
     failed: "error",
     running: "info",
     succeeded: "success",
@@ -81,6 +87,7 @@ export function ProcessingStatus({
   };
   const labels: Record<string, string> = {
     available: m.resume_processing_available(),
+    external_import: m.ats_source_external_import(),
     reused: m.resume_processing_reused(),
     unknown: m.resume_processing_no_avatar(),
   };

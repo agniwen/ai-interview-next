@@ -32,6 +32,9 @@
     "turbo": "2.11.10",
     "ultracite": "8.1.0"
   },
+  "overrides": {
+    "@better-auth/oauth-provider": "1.7.15"
+  },
   "packageManager": "bun@1.4.2",
   "catalog": {
     "@cloudflare/workers-types": "^5.20261102.1",

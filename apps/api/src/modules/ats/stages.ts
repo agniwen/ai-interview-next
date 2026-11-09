@@ -15,7 +15,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { ResumeObjectStore, StageMessage } from "./contracts";
 import type { PdfTextExtractor } from "../../lib/pdf-text";
-import { matchesResumeMediaType, resumeMediaType } from "../../lib/resume-file";
+import { matchesResumeMediaType, resumeFileDigest, resumeMediaType } from "../../lib/resume-file";
 import type { ResumeMediaType } from "../../lib/resume-file";
 import type { ResumeStructurer } from "../../lib/resume-structuring";
 import { normalizedPhone, resolveParsedResume } from "./identity";
@@ -75,10 +75,7 @@ async function registerResume(
   file: typeof item.$inferSelect,
   bytes: Uint8Array,
 ) {
-  const sha256 = Array.from(
-    new Uint8Array(await crypto.subtle.digest("SHA-256", new Uint8Array(bytes).buffer)),
-    (byte) => byte.toString(16).padStart(2, "0"),
-  ).join("");
+  const sha256 = await resumeFileDigest(bytes);
   await db
     .insert(resume)
     .values({
@@ -370,6 +367,7 @@ export async function consumeResumeStage(
               reason: "ai",
               version: 1,
             })}`.as("result"),
+            source: sql<null>`null`.as("source"),
             workspaceId: sql<string>`${entry!.workspaceId}`.as("workspaceId"),
           })
           .from(attempt)

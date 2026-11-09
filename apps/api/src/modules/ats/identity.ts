@@ -22,9 +22,27 @@ export function normalizedPhone(profile: ResumeParsedProfile) {
   return digits && /^1[3-9]\d{9}$/u.test(digits) ? `+86${digits}` : null;
 }
 
-function findCandidateByEmail(db: Database, workspaceId: string, email: string) {
+export function findCandidateByPhone(db: Database, workspaceId: string, phone: string) {
   return db
-    .select({ id: candidate.id })
+    .select({ id: candidate.id, name: candidate.name })
+    .from(candidate)
+    .where(
+      and(
+        eq(candidate.workspaceId, workspaceId),
+        eq(candidate.phoneNormalized, phone),
+        isNull(candidate.archivedAt),
+      ),
+    )
+    .get();
+}
+
+export function preferredEmail(profile: ResumeParsedProfile) {
+  return preferredContact(profile.identity?.emails)?.trim().toLowerCase() || null;
+}
+
+export function candidatesByEmail(db: Database, workspaceId: string, email: string) {
+  return db
+    .select({ id: candidate.id, name: candidate.name })
     .from(candidate)
     .where(
       and(
@@ -33,10 +51,10 @@ function findCandidateByEmail(db: Database, workspaceId: string, email: string) 
         isNull(candidate.archivedAt),
       ),
     )
-    .get();
+    .orderBy(candidate.id);
 }
 
-function latestEmployer(profile: ResumeParsedProfile) {
+export function latestEmployer(profile: ResumeParsedProfile) {
   const ranked = (profile.employment ?? []).flatMap(({ employer, period }) => {
     if (!employer) {
       return [];
@@ -102,19 +120,8 @@ async function resolveResumeSubmission(
 ) {
   const profile = pdf.parsedProfile!;
   const phone = pdf.phoneMatchDisabledAt ? null : pdf.extractedPhoneNormalized;
-  const email = preferredContact(profile.identity?.emails)?.trim().toLowerCase() || null;
-  const [matchedPhone] = phone
-    ? await db
-        .select({ id: candidate.id })
-        .from(candidate)
-        .where(
-          and(
-            eq(candidate.workspaceId, pdf.workspaceId),
-            eq(candidate.phoneNormalized, phone),
-            isNull(candidate.archivedAt),
-          ),
-        )
-    : [];
+  const email = preferredEmail(profile);
+  const matchedPhone = phone ? await findCandidateByPhone(db, pdf.workspaceId, phone) : undefined;
   let owner = matchedPhone?.id ?? pdf.candidateId;
   const lookup = {
     pdfMatchedCandidateId: pdf.candidateId,
@@ -122,7 +129,7 @@ async function resolveResumeSubmission(
   };
   if (!owner) {
     const name = profile.identity?.name?.trim();
-    const sameEmail = email && (await findCandidateByEmail(db, pdf.workspaceId, email));
+    const sameEmail = email && (await candidatesByEmail(db, pdf.workspaceId, email).get());
     if (sameEmail || !name) {
       await db
         .update(submission)
