@@ -3,11 +3,11 @@ import {
   member,
   user,
   questionSet,
-  questionSetJob,
   interviewerAgent,
   interviewQuestionSnapshot,
 } from "@ai-interview/db/schema";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { questionSetMatchesJob } from "../question-sets/service";
 import type { ListQuery } from "../ats/input";
 import { interviewApplication, editableInterview } from "./service";
 
@@ -31,9 +31,8 @@ export async function interviewSetup(
         name: questionSet.name,
         questionCount: sql<number>`json_array_length(${questionSet.content}, '$.questions')`,
       })
-      .from(questionSetJob)
-      .innerJoin(questionSet, eq(questionSet.id, questionSetJob.questionSetId))
-      .where(and(eq(questionSetJob.jobId, record.jobId), eq(questionSet.workspaceId, workspaceId)))
+      .from(questionSet)
+      .where(and(questionSetMatchesJob(db, record.jobId), eq(questionSet.workspaceId, workspaceId)))
       .orderBy(asc(questionSet.createdAt), asc(questionSet.id)),
     db
       .select({ email: user.email, id: user.id, image: user.image, name: user.name })

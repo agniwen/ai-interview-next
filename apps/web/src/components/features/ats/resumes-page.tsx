@@ -239,6 +239,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
       hasRowActions
       headings={[
         m.ats_filename(),
+        m.ats_name(),
         m.ats_candidate(),
         m.ats_status(),
         m.ats_source(),
@@ -247,7 +248,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
       ]}
       rows={data?.rows.map((row) => {
         const { runId } = row;
-        const candidate = getResumeCandidateDisplay(workspaceId, row);
+        const parsedIdentity = getResumeCandidateDisplay(workspaceId, row);
         const recruitmentResumeId = recruitmentResumes.get(row.id);
         const previewPayload = { filename: row.filename, id: row.id };
         const filename = (
@@ -309,6 +310,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
                 </span>
               )}
             </div>,
+            <UserColumn key="parsedName" user={parsedIdentity} />,
             row.identityStatus === "pending_review" ? (
               <Tooltip key="candidate">
                 <TooltipTrigger
@@ -316,13 +318,18 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
                   render={<span />}
                   tabIndex={0}
                 >
-                  {candidate ? <UserColumn user={candidate} /> : m.ats_candidate_pending_review()}
+                  {row.linkedCandidateName ?? m.ats_candidate_pending_review()}
                   <IconAlertCircle aria-hidden="true" className="size-4 shrink-0" />
                 </TooltipTrigger>
                 <TooltipPopup>{m.ats_review_in_resume_details()}</TooltipPopup>
               </Tooltip>
             ) : (
-              <UserColumn key="candidate" user={candidate} />
+              <span
+                key="candidate"
+                className={row.linkedCandidateName ? undefined : "text-muted-foreground"}
+              >
+                {row.linkedCandidateName ?? "—"}
+              </span>
             ),
             <Badge
               key="status"

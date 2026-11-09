@@ -17,6 +17,8 @@ import * as m from "@/paraglide/messages";
 import { atsApi, readAts } from "./client";
 import { atsKeys } from "./query-keys";
 
+export const allJobsOptionId = "all";
+
 export interface JobOption {
   id: string;
   title: string;
@@ -76,13 +78,14 @@ export function JobSelect({
   });
   const pending = search !== debouncedSearch || query.isPending;
   const rows = pending ? [] : (query.data?.pages.flatMap((page) => page.rows) ?? []);
+  const allOption = { id: allJobsOptionId, title: m.question_sets_all_jobs() };
   return (
     <Combobox
       multiple
       disabled={disabled}
       filter={null}
       isItemEqualToValue={(item, selected) => item.id === selected.id}
-      items={rows}
+      items={[allOption, ...rows]}
       itemToStringLabel={(row) => row.title}
       itemToStringValue={(row) => row.id}
       onInputValueChange={(input, details) => {
@@ -96,7 +99,12 @@ export function JobSelect({
           setSearch("");
         }
       }}
-      onValueChange={onChange}
+      onValueChange={(selected) => {
+        const addedAll =
+          selected.some((row) => row.id === allJobsOptionId) &&
+          !value.some((row) => row.id === allJobsOptionId);
+        onChange(addedAll ? [allOption] : selected.filter((row) => row.id !== allJobsOptionId));
+      }}
       value={value}
     >
       <ComboboxChips>

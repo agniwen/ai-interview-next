@@ -4,6 +4,20 @@ import { job, questionSet, questionSetJob } from "@ai-interview/db/schema";
 import { and, asc, desc, eq, exists, inArray, or, sql } from "drizzle-orm";
 import type { QuestionSetInput, QuestionSetListQuery } from "./input";
 
+export function questionSetMatchesJob(db: Database, jobId: string) {
+  return or(
+    eq(questionSet.defaultAllJobs, true),
+    exists(
+      db
+        .select({ id: questionSetJob.jobId })
+        .from(questionSetJob)
+        .where(
+          and(eq(questionSetJob.questionSetId, questionSet.id), eq(questionSetJob.jobId, jobId)),
+        ),
+    ),
+  );
+}
+
 /** 列表只投影摘要；按 version 1 的内容结构读取类型与题数，不加载完整题目。
  * Project summaries only, reading kind and counts from the version 1 content format without loading full questions. */
 export async function listQuestionSets(
@@ -15,19 +29,7 @@ export async function listQuestionSets(
   const where = and(
     eq(questionSet.workspaceId, workspaceId),
     kind ? eq(kindValue, kind) : undefined,
-    jobId
-      ? exists(
-          db
-            .select({ id: questionSetJob.jobId })
-            .from(questionSetJob)
-            .where(
-              and(
-                eq(questionSetJob.questionSetId, questionSet.id),
-                eq(questionSetJob.jobId, jobId),
-              ),
-            ),
-        )
-      : undefined,
+    jobId ? questionSetMatchesJob(db, jobId) : undefined,
     search
       ? or(
           sql`instr(lower(${questionSet.name}), lower(${search})) > 0`,
@@ -42,6 +44,7 @@ export async function listQuestionSets(
       .select({
         createdAt: questionSet.createdAt,
         createdBy: questionSet.createdBy,
+        defaultAllJobs: questionSet.defaultAllJobs,
         description: questionSet.description,
         id: questionSet.id,
         kind: kindValue,
@@ -56,7 +59,29 @@ export async function listQuestionSets(
       .offset((page - 1) * pageSize),
     db.$count(questionSet, where),
   ]);
-  return { page, pageSize, rows, total, version: 1 as const };
+  const bindings = await db
+    .select({ id: job.id, questionSetId: questionSetJob.questionSetId, title: job.title })
+    .from(questionSetJob)
+    .innerJoin(job, eq(job.id, questionSetJob.jobId))
+    .where(
+      inArray(
+        questionSetJob.questionSetId,
+        rows.map((row) => row.id),
+      ),
+    )
+    .orderBy(asc(job.title), asc(job.id));
+  return {
+    page,
+    pageSize,
+    rows: rows.map((row) => ({
+      ...row,
+      defaultJobs: bindings
+        .filter((binding) => binding.questionSetId === row.id)
+        .map(({ id, title }) => ({ id, title })),
+    })),
+    total,
+    version: 1 as const,
+  };
 }
 
 export async function getQuestionSet(db: Database, workspaceId: string, id: string) {
@@ -93,7 +118,7 @@ export async function createQuestionSet(
   db: Database,
   workspaceId: string,
   userId: string,
-  { content, defaultJobIds, description, name }: QuestionSetInput,
+  { content, defaultAllJobs, defaultJobIds, description, name }: QuestionSetInput,
 ) {
   if (!(await jobsBelongToWorkspace(db, workspaceId, defaultJobIds))) {
     return { error: "JOB_UNAVAILABLE" as const, version: 1 as const };
@@ -104,6 +129,7 @@ export async function createQuestionSet(
     content,
     createdAt: now,
     createdBy: userId,
+    defaultAllJobs,
     description,
     id,
     name,
@@ -125,7 +151,7 @@ export async function updateQuestionSet(
   db: Database,
   workspaceId: string,
   id: string,
-  { content, defaultJobIds, description, name }: QuestionSetInput,
+  { content, defaultAllJobs, defaultJobIds, description, name }: QuestionSetInput,
 ) {
   const record = await db
     .select({ id: questionSet.id })
@@ -141,7 +167,7 @@ export async function updateQuestionSet(
   await db.batch([
     db
       .update(questionSet)
-      .set({ content, description, name, updatedAt: new Date() })
+      .set({ content, defaultAllJobs, description, name, updatedAt: new Date() })
       .where(eq(questionSet.id, id)),
     ...(defaultJobIds === undefined
       ? []

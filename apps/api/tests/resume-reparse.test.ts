@@ -237,3 +237,59 @@ it.each([{ missingAvatar: true }, { missingAvatar: false }])(
     expect(attempts.every((entry) => entry.status === "succeeded")).toBe(true);
   },
 );
+
+it("reports queued stage attempts as queued in resume lists, filters and processing details", async () => {
+  const owner = await account("resume-queue-status@example.com");
+  const batch = await read(
+    owner.ats("uploads", {
+      files: [{ filename: "queued.pdf", size: 1 }],
+      version: 1,
+    }),
+  );
+  const [upload] = batch.uploads;
+  await owner.request(upload.url, {
+    body: new Uint8Array([1]),
+    headers: { "content-type": upload.contentType },
+    method: "PUT",
+  });
+  const { runId } = await read(owner.ats(`uploads/${upload.id}/confirm`, {}));
+  const db = atsTest.platform.database;
+  await db
+    .update(resumeProcessingRun)
+    .set({ status: "running" })
+    .where(eq(resumeProcessingRun.id, runId));
+  const attemptId = `${runId}-extract_text-1`;
+  await db.insert(resumeProcessingAttempt).values({
+    createdAt: new Date(),
+    executionId: runId,
+    id: attemptId,
+    ordinal: 1,
+    runId,
+    stage: "extract_text",
+    status: "queued",
+  });
+  expect(await read(owner.ats("resumes?status=queued"))).toMatchObject({
+    rows: [{ id: upload.id, parseStatus: "queued" }],
+    total: 1,
+  });
+  expect(await read(owner.ats("resumes?status=running"))).toMatchObject({ rows: [], total: 0 });
+  expect(await read(owner.ats(`uploads/${upload.id}/processing`))).toMatchObject({
+    run: { status: "queued" },
+  });
+  await db
+    .update(resumeProcessingAttempt)
+    .set({ status: "running" })
+    .where(eq(resumeProcessingAttempt.id, attemptId));
+  expect(await read(owner.ats("resumes?status=running"))).toMatchObject({
+    rows: [{ id: upload.id, parseStatus: "running" }],
+    total: 1,
+  });
+  await db
+    .update(resumeProcessingRun)
+    .set({ status: "succeeded" })
+    .where(eq(resumeProcessingRun.id, runId));
+  expect(await read(owner.ats("resumes?status=succeeded"))).toMatchObject({
+    rows: [{ id: upload.id, parseStatus: "succeeded" }],
+    total: 1,
+  });
+});

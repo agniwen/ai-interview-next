@@ -717,3 +717,31 @@ it("clears an AI confirmation assignee when editing without a reviewer", async (
   expect(await editRound(f.owner, path, f.input)).toMatchObject({ status: 200 });
   expect(await read(f.owner.call(path))).toMatchObject({ assignments: [] });
 });
+
+it("includes workspace-wide form and conversation defaults in new interview setup", async () => {
+  const f = await fixture("interview-all-job-defaults@example.com");
+  const other = await fixture("interview-all-job-defaults-other@example.com");
+  await Promise.all(
+    [f, other].flatMap((current) =>
+      [current.form.id, current.conversation.id].map(async (id) => {
+        const path = `question-sets/${current.owner.workspaceId}/${id}`;
+        const record = await read(current.owner.call(path));
+        const response = await current.owner.request(path, {
+          body: JSON.stringify({
+            content: record.content,
+            defaultAllJobs: true,
+            name: record.name,
+            version: 1,
+          }),
+          headers: { "content-type": "application/json" },
+          method: "PUT",
+        });
+        expect(response.status).toBe(200);
+      }),
+    ),
+  );
+  const setup = await read(f.owner.call(`${f.path}/setup`));
+  expect(setup.sets.map((set: { id: string }) => set.id).toSorted()).toEqual(
+    [f.form.id, f.conversation.id].toSorted(),
+  );
+});

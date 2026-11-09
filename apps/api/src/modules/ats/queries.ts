@@ -53,6 +53,27 @@ const candidateAvatarResumeId = sql<string | null>`case
   when ${resume.avatarObjectKey} is not null then ${resume.id}
 end`;
 
+/** 工作流已启动但阶段仍在排队时，展示排队状态；终态以工作流为准。
+ * Show queued while the current stage waits, even after workflow start; keep workflow terminal states. */
+function displayedRunStatus(db: Database) {
+  const stageStatus = db
+    .select({ status: attempt.status })
+    .from(attempt)
+    .where(
+      and(
+        eq(attempt.runId, run.id),
+        eq(attempt.executionId, run.executionId),
+        eq(attempt.stage, run.stage),
+      ),
+    )
+    .orderBy(desc(attempt.ordinal))
+    .limit(1);
+  return sql<typeof run.$inferSelect.status | null>`case
+    when ${run.status} = 'running' and (${stageStatus}) = 'queued' then 'queued'
+    else ${run.status}
+  end`;
+}
+
 export function completedResumeFilter(db: Database, workspaceId: string) {
   return and(
     eq(resume.workspaceId, workspaceId),
@@ -324,13 +345,14 @@ export async function listResumes(
   { page, pageSize, search, status }: ResumeListQuery,
 ) {
   const workspace = eq(item.workspaceId, workspaceId);
-  const effectiveStatus = sql`coalesce(${run.status}, ${item.status})`;
+  const effectiveStatus = sql`coalesce(${displayedRunStatus(db)}, ${item.status})`;
   const where = and(
     workspace,
     search
       ? or(
           includesText(item.filename, search),
           includesText(parsedResumeName, search),
+          includesText(candidate.name, search),
           includesText(user.name, search),
         )
       : undefined,
@@ -364,8 +386,9 @@ export async function listResumes(
         identityStatus: submission.identityStatus,
         jobId: submission.jobId,
         jobTitle: job.title,
+        linkedCandidateName: candidate.name,
         parseStage: run.stage,
-        parseStatus: run.status,
+        parseStatus: displayedRunStatus(db),
         resumeId: resume.id,
         runId: item.runId,
         source: batch.source,
@@ -378,6 +401,7 @@ export async function listResumes(
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
       .leftJoin(resume, eq(resume.id, submission.resumeId))
+      .leftJoin(candidate, eq(candidate.id, resume.candidateId))
       .leftJoin(job, eq(job.id, submission.jobId))
       .where(where)
       .orderBy(desc(batch.createdAt), desc(item.id))
@@ -391,6 +415,7 @@ export async function listResumes(
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
       .leftJoin(resume, eq(resume.id, submission.resumeId))
+      .leftJoin(candidate, eq(candidate.id, resume.candidateId))
       .where(where),
   ]);
   const batches = rows.length
@@ -428,7 +453,12 @@ export async function getUploadProcessing(db: Database, workspaceId: string, id:
         markdown: resume.markdown,
         profile: resume.parsedProfile,
       },
-      run: { executionId: run.executionId, id: run.id, stage: run.stage, status: run.status },
+      run: {
+        executionId: run.executionId,
+        id: run.id,
+        stage: run.stage,
+        status: sql<typeof run.$inferSelect.status>`${displayedRunStatus(db)}`,
+      },
       upload: { filename: item.filename, id: item.id, size: item.size, status: item.status },
     })
     .from(item)
@@ -465,7 +495,7 @@ export async function getUploadResumeProfile(db: Database, workspaceId: string, 
   const [result] = await db
     .select({
       avatarObjectKey: resume.avatarObjectKey,
-      parseStatus: run.status,
+      parseStatus: displayedRunStatus(db),
       profile: resume.parsedProfile,
       resumeId: resume.id,
     })
@@ -538,9 +568,12 @@ export async function listApplications(
         evaluationRunId: sql<
           string | null
         >`(${db.select({ id: run.id }).from(run).where(eq(run.applicationId, application.id)).orderBy(desc(run.createdAt), desc(run.id)).limit(1)})`,
-        evaluationStatus: sql<
-          typeof run.$inferSelect.status | null
-        >`(${db.select({ status: run.status }).from(run).where(eq(run.applicationId, application.id)).orderBy(desc(run.createdAt), desc(run.id)).limit(1)})`,
+        evaluationStatus: sql<typeof run.$inferSelect.status | null>`(${db
+          .select({ status: displayedRunStatus(db) })
+          .from(run)
+          .where(eq(run.applicationId, application.id))
+          .orderBy(desc(run.createdAt), desc(run.id))
+          .limit(1)})`,
         id: application.id,
         jobId: job.id,
         jobTitle: job.title,
@@ -683,7 +716,7 @@ export async function applicationDetail(
       )
       .orderBy(asc(applicationFeedback.createdAt), asc(applicationFeedback.id)),
     db
-      .select({ id: run.id, status: run.status })
+      .select({ id: run.id, status: displayedRunStatus(db) })
       .from(run)
       .where(and(eq(run.workspaceId, workspaceId), eq(run.applicationId, id)))
       .orderBy(desc(run.createdAt), desc(run.id))

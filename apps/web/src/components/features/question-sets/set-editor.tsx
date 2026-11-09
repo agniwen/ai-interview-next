@@ -1,4 +1,4 @@
-import { JobSelect } from "../ats/job-select";
+import { allJobsOptionId, JobSelect } from "../ats/job-select";
 import type { JobOption } from "../ats/job-select";
 import { IconDeviceFloppy, IconPlus } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -35,6 +35,7 @@ export interface QuestionSetEditorProps<Content extends QuestionSetInput["conten
     id: string;
     name: string;
     description: string;
+    defaultAllJobs?: boolean;
     defaultJobs?: JobOption[];
     content: Content;
   };
@@ -75,7 +76,11 @@ export function QuestionSetEditor<
   const formId = useId();
   const client = useQueryClient();
   const mutation = useMutation(saveQuestionSetMutation(client, workspaceId, record?.id));
-  const [defaultJobs, setDefaultJobs] = useState<JobOption[]>(record?.defaultJobs ?? []);
+  const [defaultJobs, setDefaultJobs] = useState<JobOption[]>(() =>
+    record?.defaultAllJobs
+      ? [{ id: allJobsOptionId, title: m.question_sets_all_jobs() }]
+      : (record?.defaultJobs ?? []),
+  );
   const [name, setName] = useState(record?.name ?? "");
   const [description, setDescription] = useState(record?.description ?? "");
   const [questions, setQuestions] = useState(() => (record ? config.drafts(record.content) : []));
@@ -94,7 +99,10 @@ export function QuestionSetEditor<
         mutation.mutate(
           {
             ...config.toInput(name, description, questions),
-            defaultJobIds: defaultJobs.map((job) => job.id),
+            defaultAllJobs: defaultJobs.some((job) => job.id === allJobsOptionId),
+            defaultJobIds: defaultJobs
+              .filter((job) => job.id !== allJobsOptionId)
+              .map((job) => job.id),
           },
           { onSuccess },
         );

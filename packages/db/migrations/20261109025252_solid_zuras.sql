@@ -1,0 +1,1 @@
+ALTER TABLE `question_set` ADD `defaultAllJobs` integer DEFAULT false NOT NULL;

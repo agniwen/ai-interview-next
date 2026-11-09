@@ -562,7 +562,7 @@ it("filters resume files before pagination and keeps full upload batch totals", 
   });
 });
 
-it("shows and searches the extracted candidate name until identity is confirmed", async () => {
+it("shows and searches parsed and linked candidate names separately", async () => {
   const { ats, userId, workspaceId } = await account("resume-review@example.com");
   const batchId = crypto.randomUUID();
   const resumeId = crypto.randomUUID();
@@ -606,6 +606,7 @@ it("shows and searches the extracted candidate name until identity is confirmed"
         candidateAvatarResumeId: null,
         candidateName: "Extracted Name",
         identityStatus: "pending_review",
+        linkedCandidateName: null,
       },
     ],
     total: 1,
@@ -616,8 +617,17 @@ it("shows and searches the extracted candidate name until identity is confirmed"
   });
   expect(confirmed.status).toBe(200);
   expect(await read(ats("resumes?search=extracted"))).toMatchObject({
-    rows: [{ candidateName: "Extracted Name", identityStatus: "resolved" }],
+    rows: [
+      {
+        candidateName: "Extracted Name",
+        identityStatus: "resolved",
+        linkedCandidateName: "Confirmed Name",
+      },
+    ],
     total: 1,
   });
-  expect(await read(ats("resumes?search=confirmed"))).toMatchObject({ rows: [], total: 0 });
+  expect(await read(ats("resumes?search=confirmed"))).toMatchObject({
+    rows: [{ candidateName: "Extracted Name", linkedCandidateName: "Confirmed Name" }],
+    total: 1,
+  });
 });

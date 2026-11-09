@@ -3,6 +3,7 @@ import { questionSetEditorLinkOptions } from "./navigation";
 import { IconListCheck } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
 import * as m from "@/paraglide/messages";
@@ -63,6 +64,7 @@ export function QuestionSetsPage({
       headings={[
         m.question_sets_name(),
         m.question_sets_count_heading(),
+        m.question_sets_default_jobs(),
         m.interviewer_agents_updated_at(),
       ]}
       rows={data?.rows.map((row) => ({
@@ -86,6 +88,33 @@ export function QuestionSetsPage({
             )}
           </div>,
           row.questionCount,
+          <div key="jobs" className="flex max-w-lg flex-wrap items-center gap-1">
+            {row.defaultAllJobs ? (
+              <Badge variant="secondary">{m.question_sets_all_jobs()}</Badge>
+            ) : (
+              <>
+                {row.defaultJobs.length === 0 && <span className="text-muted-foreground">—</span>}
+                {row.defaultJobs.slice(0, 3).map((job) => (
+                  <Badge key={job.id} variant="secondary" className="max-w-40">
+                    <span className="truncate" title={job.title}>
+                      {job.title}
+                    </span>
+                  </Badge>
+                ))}
+                {row.defaultJobs.length > 3 && (
+                  <Badge
+                    variant="secondary"
+                    title={row.defaultJobs
+                      .slice(3)
+                      .map((job) => job.title)
+                      .join("、")}
+                  >
+                    +{row.defaultJobs.length - 3}
+                  </Badge>
+                )}
+              </>
+            )}
+          </div>,
           <LocalTime key="date" value={row.updatedAt} />,
         ],
         id: row.id,

@@ -17,6 +17,7 @@ export const questionSet = sqliteTable(
     createdBy: text("createdBy")
       .notNull()
       .references(() => user.id),
+    defaultAllJobs: integer("defaultAllJobs", { mode: "boolean" }).notNull().default(false),
     description: text("description").notNull().default(""),
     id: text("id").primaryKey(),
     name: text("name").notNull(),

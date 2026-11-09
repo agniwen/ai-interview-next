@@ -411,7 +411,16 @@ it("binds multiple jobs, filters sets before paging, replaces and clears default
   );
   await owner.call(path, { ...input, content: conversationContent, name: "Second" });
   expect(await read(owner.call(`${path}?jobId=${jobs[0].id}&pageSize=1&page=2`))).toMatchObject({
-    rows: [{ id }],
+    rows: [
+      {
+        defaultAllJobs: false,
+        defaultJobs: [
+          { id: jobs[1].id, title: "Backend" },
+          { id: jobs[0].id, title: "Frontend" },
+        ],
+        id,
+      },
+    ],
     total: 2,
   });
   expect(await read(owner.call(`${path}?jobId=${jobs[0].id}&pageSize=1&page=3`))).toMatchObject({
@@ -452,4 +461,51 @@ it("binds multiple jobs, filters sets before paging, replaces and clears default
   expect(await put({ ...input, defaultJobIds: [] })).toMatchObject({ status: 200 });
   const cleared = await detail();
   expect(cleared.defaultJobs).toEqual([]);
+});
+
+it("applies all-job defaults to future jobs and switches back to specific jobs", async () => {
+  const owner = await account("question-all-jobs@example.com");
+  const other = await account("question-all-jobs-other@example.com");
+  const path = `question-sets/${owner.workspaceId}`;
+  const input = { content: formContent, defaultAllJobs: true, name: "All jobs", version: 1 };
+  const { id } = await read(owner.call(path, input));
+  const newJob = await read(
+    owner.ats("jobs", { requirements: "Experience", title: "Future job", version: 1 }),
+  );
+  expect(await read(owner.call(`${path}/${id}`))).toMatchObject({
+    defaultAllJobs: true,
+    defaultJobs: [],
+  });
+  expect(await read(owner.call(`${path}?jobId=${newJob.id}`))).toMatchObject({
+    rows: [{ defaultAllJobs: true, defaultJobs: [], id }],
+    total: 1,
+  });
+  expect(
+    await read(other.call(`question-sets/${other.workspaceId}?jobId=${newJob.id}`)),
+  ).toMatchObject({ rows: [], total: 0 });
+  const put = (body: object) =>
+    owner.request(`${path}/${id}`, {
+      body: JSON.stringify(body),
+      headers: { "content-type": "application/json" },
+      method: "PUT",
+    });
+  expect(await put({ ...input, defaultAllJobs: false, defaultJobIds: [newJob.id] })).toMatchObject({
+    status: 200,
+  });
+  expect(await read(owner.call(`${path}/${id}`))).toMatchObject({
+    defaultAllJobs: false,
+    defaultJobs: [{ id: newJob.id }],
+  });
+  expect(await put({ ...input, defaultJobIds: [newJob.id] })).toMatchObject({ status: 200 });
+  expect(await read(owner.call(`${path}/${id}`))).toMatchObject({
+    defaultAllJobs: true,
+    defaultJobs: [],
+  });
+  expect(await put({ ...input, defaultAllJobs: false, defaultJobIds: [] })).toMatchObject({
+    status: 200,
+  });
+  expect(await read(owner.call(`${path}?jobId=${newJob.id}`))).toMatchObject({
+    rows: [],
+    total: 0,
+  });
 });
