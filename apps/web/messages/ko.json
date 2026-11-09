@@ -738,6 +738,7 @@
   "mcp_select_workspace": "작업 공간 선택",
   "mcp_no_workspace": "승인할 수 있는 작업 공간이 없습니다.",
   "mcp_scopes": "허용할 권한",
+  "mcp_tool_requires": "추가로 필요한 권한은 {permissions}입니다",
   "mcp_allow": "승인",
   "mcp_deny": "거부",
   "mcp_applications_read": "지원 내역 읽기",

@@ -935,6 +935,7 @@
   "mcp_select_workspace": "Select a workspace",
   "mcp_no_workspace": "No workspaces are available to authorize.",
   "mcp_scopes": "Allowed permissions",
+  "mcp_tool_requires": "Also requires {permissions}",
   "mcp_allow": "Authorize",
   "mcp_deny": "Deny",
   "mcp_applications_read": "Read applications",

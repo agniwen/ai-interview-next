@@ -241,12 +241,27 @@ it("authorizes one workspace, enforces scopes, audits the actual changes, and re
     "/.well-known/oauth-protected-resource/api/mcp",
   );
   const readOnly = await connect(actor, ["jobs:read"]);
+  const contextResponse = await fetch(
+    `${origin}/api/mcp-management/context?${new URLSearchParams({ clientId: readOnly.clientId })}`,
+    { headers: { cookie: actor.cookie } },
+  );
+  expect(contextResponse.status).toBe(200);
+  const context = (await contextResponse.json()) as {
+    tools: { name: string; scopes: string[] }[];
+    version: number;
+  };
+  expect(context.version).toBe(1);
+  expect(context.tools).toContainEqual({
+    name: "list_candidate_resumes",
+    scopes: ["candidates:read", "resumes:read"],
+  });
   const catalogResponse = await callMcp(readOnly.access_token, "tools/list");
   const catalog = await catalogResponse.json();
-  expect(catalog.result.tools.map(({ name }: { name: string }) => name)).toEqual([
-    "search_jobs",
-    "get_job",
-  ]);
+  const jobTools = context.tools
+    .filter(({ scopes }) => scopes.every((scope) => scope === "jobs:read"))
+    .map(({ name }) => name);
+  expect(jobTools).toEqual(["search_jobs", "get_job"]);
+  expect(catalog.result.tools.map(({ name }: { name: string }) => name)).toEqual(jobTools);
   expect(
     await tool(readOnly.access_token, "create_job", { requirements: "Denied", title: "Denied" }),
   ).toMatchObject({ error: "FORBIDDEN" });

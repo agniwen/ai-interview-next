@@ -738,6 +738,7 @@
   "mcp_select_workspace": "ワークスペースを選択",
   "mcp_no_workspace": "承認できるワークスペースがありません。",
   "mcp_scopes": "許可する権限",
+  "mcp_tool_requires": "追加で必要な権限は {permissions} です",
   "mcp_allow": "承認",
   "mcp_deny": "拒否",
   "mcp_applications_read": "応募を表示",

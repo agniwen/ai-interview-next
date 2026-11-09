@@ -13,6 +13,7 @@ import type { AuthenticatedEnv } from "../../middleware/authenticated";
 import { requireWorkspace } from "../../middleware/workspace";
 import { getAuth } from "../auth/auth";
 import { authorization, mcpScopes, workspaceMembership } from "./access";
+import { businessTools } from "./tools";
 
 const scope = z.enum(mcpScopes);
 const consentInput = z.strictObject({
@@ -23,6 +24,7 @@ const consentInput = z.strictObject({
   workspaceId: z.string().min(1).optional(),
 });
 const consentResponse = z.object({ url: z.url() });
+const toolCatalog = businessTools.map(({ name, scopes }) => ({ name, scopes }));
 
 export const mcpManagement = new Hono<AuthenticatedEnv>()
   .get(
@@ -49,7 +51,10 @@ export const mcpManagement = new Hono<AuthenticatedEnv>()
         .innerJoin(organization, eq(organization.id, member.organizationId))
         .where(and(eq(member.userId, c.get("userId")), eq(organization.mcpEnabled, true)))
         .orderBy(asc(organization.name), asc(organization.id));
-      return c.json({ client, scopes: mcpScopes, version: 1 as const, workspaces }, 200);
+      return c.json(
+        { client, scopes: mcpScopes, tools: toolCatalog, version: 1 as const, workspaces },
+        200,
+      );
     },
   )
   .post("/consent", sValidator("json", consentInput), async (c) => {

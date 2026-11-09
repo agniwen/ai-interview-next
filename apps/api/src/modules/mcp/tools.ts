@@ -77,7 +77,7 @@ function tool<S extends z.ZodObject>(
 ) {
   const schema = input.extend({ version: z.literal(1) });
   const kind = scope.endsWith(":write") ? "write" : "read";
-  const scopes = [scope, ...additionalScopes];
+  const scopes: [McpScope, ...McpScope[]] = [scope, ...additionalScopes];
   const available = (context: ToolContext) =>
     !context.scopes || scopes.every((value) => context.scopes?.has(value));
   return {
@@ -137,6 +137,7 @@ function tool<S extends z.ZodObject>(
     inputSchema: z.toJSONSchema(schema, { io: "input" }),
     kind,
     name,
+    scopes,
   };
 }
 
