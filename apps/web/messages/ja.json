@@ -625,6 +625,7 @@
   "interviews_closed": "応募プロセスは終了しています。面接は作成できません。",
   "interviews_round": "第 {number} 回",
   "interviews_scheduled": "予約済み",
+  "interviews_not_scheduled": "未設定",
   "interviews_recorded": "登録済み",
   "interviews_selected_counts": "会話セット {conversation} 件 · フォームセット {form} 件",
   "interviews_next_round_help": "今回の評価が完了・確認されてから次の面接に進めます。",

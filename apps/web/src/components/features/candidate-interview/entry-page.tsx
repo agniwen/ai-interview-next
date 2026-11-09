@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { InterviewEntryShell } from "@/components/interview-entry-shell";
 import { CandidateInterviewSkeleton } from "@/components/skeletons/pages/candidate-interview-skeleton";
+import { HumanInterviewPreparationSkeleton } from "@/components/skeletons/pages/human-interview-preparation-skeleton";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
 import { candidateInterviewQuery } from "./client";
@@ -17,7 +18,12 @@ export function CandidateInterviewEntry({ token }: { token: string }) {
   const phase = useSkeletonPhase(query.isPending);
   return (
     <InterviewEntryShell>
-      {phase === "skeleton" && <CandidateInterviewSkeleton />}
+      {phase === "skeleton" &&
+        (query.data?.kind === "human" ? (
+          <HumanInterviewPreparationSkeleton />
+        ) : (
+          <CandidateInterviewSkeleton />
+        ))}
       {phase === "ready" && query.isError && !query.data && (
         <div role="alert" className="flex max-w-sm flex-col items-center gap-4">
           <h1 className="text-xl font-medium">{m.candidate_interview_load_error()}</h1>

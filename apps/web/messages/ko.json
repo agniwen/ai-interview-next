@@ -625,6 +625,7 @@
   "interviews_closed": "채용 절차가 종료되어 면접을 생성할 수 없습니다.",
   "interviews_round": "{number}차 면접",
   "interviews_scheduled": "예약됨",
+  "interviews_not_scheduled": "미정",
   "interviews_recorded": "등록됨",
   "interviews_selected_counts": "대화 세트 {conversation}개 · 설문 세트 {form}개",
   "interviews_next_round_help": "현재 면접 평가가 완료되고 확인된 후 다음 면접으로 진행할 수 있습니다.",

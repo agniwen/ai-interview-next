@@ -1,14 +1,42 @@
+import { IconRobot } from "@tabler/icons-react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { applicationDetailLinkOptions } from "@/components/features/ats/detail-navigation";
+import type { ApplicationListSearch } from "@/components/features/ats/list-search";
 import { RecordPreviewCard } from "@/components/features/ats/record-preview-card";
 import { LocalTime } from "@/components/local-time";
 import { InterviewFlowPreviewSkeleton } from "@/components/skeletons/components/interview-flow-preview-skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { UserColumn } from "@/components/user-column";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
 import { roundsQuery } from "./client";
 import type { InterviewRound } from "./client";
-import { interviewKindLabel, interviewRoundStatusLabel } from "./round-labels";
+import { interviewFlowStatus, interviewKindLabel } from "./round-labels";
+
+function RoundInterviewers({ round }: { round: InterviewRound }) {
+  if (round.kind === "human") {
+    return round.interviewers.map((person) => (
+      <UserColumn className="max-w-full text-xs" key={person.id} user={person} />
+    ));
+  }
+  return (
+    round.interviewerName && (
+      <span className="inline-flex min-w-0 items-center gap-2 text-xs">
+        <Avatar aria-hidden="true" className="[--avatar-size:18px]">
+          <AvatarFallback>
+            <IconRobot className="size-3" />
+          </AvatarFallback>
+        </Avatar>
+        <span className="truncate" title={round.interviewerName}>
+          {round.interviewerName}
+        </span>
+      </span>
+    )
+  );
+}
 
 function InterviewFlowContent({
   applicationId,
@@ -37,10 +65,7 @@ function InterviewFlowContent({
     <>
       <ol className="flex flex-col gap-3">
         {rounds.map((round) => {
-          const interviewers =
-            round.kind === "ai"
-              ? round.interviewerName
-              : round.interviewers.map(({ name }) => name).join(", ");
+          const status = interviewFlowStatus(round.status);
           return (
             <li key={round.id} className="flex min-w-0 flex-col gap-1.5 border-t pt-3">
               <div className="flex items-start justify-between gap-2">
@@ -48,12 +73,14 @@ function InterviewFlowContent({
                   {m.interviews_round({ number: round.sequence })}
                   {round.label && ` · ${round.label}`}
                 </span>
-                <Badge variant="secondary">{interviewRoundStatusLabel(round)}</Badge>
+                <Badge variant={status.variant}>{status.label()}</Badge>
               </div>
-              <p className="text-xs text-muted-foreground wrap-anywhere">
-                {interviewKindLabel(round.kind)}
-                {interviewers && ` · ${interviewers}`}
-              </p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-xs text-muted-foreground">
+                  {interviewKindLabel(round.kind)}
+                </span>
+                <RoundInterviewers round={round} />
+              </div>
               {round.scheduledAt && (
                 <dl className="grid grid-cols-2 gap-2 text-xs">
                   <div>
@@ -91,19 +118,42 @@ function InterviewFlowContent({
 export function InterviewFlowPreview({
   applicationId,
   round,
+  search,
   workspaceId,
 }: {
   applicationId: string;
-  round: Pick<InterviewRound, "kind" | "sequence">;
+  round: Pick<InterviewRound, "kind" | "sequence" | "status"> | null;
+  search: ApplicationListSearch;
   workspaceId: string;
 }) {
-  const label = `${m.interviews_round({ number: round.sequence })} · ${interviewKindLabel(round.kind)}`;
+  const link = (
+    <Link
+      {...applicationDetailLinkOptions(workspaceId, applicationId, {
+        ...search,
+        tab: "interviews",
+      })}
+      preload={false}
+    />
+  );
+  if (!round) {
+    return (
+      <Badge render={link} variant="outline">
+        {m.interviews_not_scheduled()}
+      </Badge>
+    );
+  }
+  const status = interviewFlowStatus(round.status);
   return (
     <RecordPreviewCard
       title={m.ats_interview_flow()}
       trigger={{
-        content: <Badge variant={round.kind === "ai" ? "info" : "secondary"}>{label}</Badge>,
-        label,
+        content: (
+          <Badge variant={status.variant}>
+            {m.interviews_round({ number: round.sequence })} · {interviewKindLabel(round.kind)} ·{" "}
+            {status.label()}
+          </Badge>
+        ),
+        link,
       }}
     >
       <InterviewFlowContent applicationId={applicationId} workspaceId={workspaceId} />

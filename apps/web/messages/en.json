@@ -625,6 +625,7 @@
   "interviews_closed": "This application is closed. New interviews are unavailable.",
   "interviews_round": "Round {number}",
   "interviews_scheduled": "Scheduled",
+  "interviews_not_scheduled": "Not scheduled",
   "interviews_recorded": "Recorded",
   "interviews_selected_counts": "Conversation sets: {conversation} · Form sets: {form}",
   "interviews_next_round_help": "The current round must be evaluated and confirmed before proceeding.",

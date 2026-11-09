@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { InterviewEntryShell } from "@/components/interview-entry-shell";
 import { SkeletonSuspense } from "@/components/skeletons/skeleton-suspense";
-import { CandidateInterviewSkeleton } from "@/components/skeletons/pages/candidate-interview-skeleton";
+import { HumanInterviewPreparationSkeleton } from "@/components/skeletons/pages/human-interview-preparation-skeleton";
 import { HumanMeetingSkeleton } from "@/components/skeletons/pages/human-meeting-skeleton";
 import { Button } from "@/components/ui/button";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
@@ -154,7 +154,7 @@ export function InterviewerMeetingPage({
   const phase = useSkeletonPhase(query.isPending);
   return (
     <InterviewEntryShell>
-      {phase === "skeleton" && <CandidateInterviewSkeleton />}
+      {phase === "skeleton" && <HumanInterviewPreparationSkeleton />}
       {phase === "ready" && query.data && <InterviewerMeeting key={roundId} data={query.data} />}
       {phase === "ready" && query.isError && !query.data && (
         <div className="flex max-w-md flex-col gap-4">

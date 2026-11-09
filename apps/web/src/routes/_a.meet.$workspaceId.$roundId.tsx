@@ -1,6 +1,6 @@
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { InterviewerMeetingPage } from "@/components/features/human-interview/interviewer";
-import { CandidateInterviewPageSkeleton } from "@/components/skeletons/pages/candidate-interview-skeleton";
+import { HumanInterviewPreparationPageSkeleton } from "@/components/skeletons/pages/human-interview-preparation-skeleton";
 import * as m from "@/paraglide/messages";
 
 const routeApi = getRouteApi("/_a/meet/$workspaceId/$roundId");
@@ -12,7 +12,7 @@ function MeetingPage() {
 
 export const Route = createFileRoute("/_a/meet/$workspaceId/$roundId")({
   component: MeetingPage,
-  pendingComponent: CandidateInterviewPageSkeleton,
+  pendingComponent: HumanInterviewPreparationPageSkeleton,
   head: () => ({
     meta: [
       { title: `${m.meeting_title()} — Sainoa` },

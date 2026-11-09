@@ -625,6 +625,7 @@
   "interviews_closed": "招聘流程已结束，无法新建面试。",
   "interviews_round": "第 {number} 轮",
   "interviews_scheduled": "已预约",
+  "interviews_not_scheduled": "未安排",
   "interviews_recorded": "已记录",
   "interviews_selected_counts": "沟通题套 {conversation} 套 · 表单题套 {form} 套",
   "interviews_next_round_help": "本轮评价完成并确认后才能推进下一轮。",

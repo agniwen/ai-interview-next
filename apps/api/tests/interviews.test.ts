@@ -59,7 +59,9 @@ it("creates the first AI round through the typed API, preserving selection order
     version: 1,
   });
   expect(await read(f.owner.ats("applications"))).toMatchObject({
-    rows: [{ id: f.applicationId, latestInterview: { kind: "ai", sequence: 1 } }],
+    rows: [
+      { id: f.applicationId, latestInterview: { kind: "ai", sequence: 1, status: "scheduled" } },
+    ],
   });
   expect(await read(f.owner.call(`${f.path}?pageSize=1&page=2`))).toMatchObject({
     rows: [],

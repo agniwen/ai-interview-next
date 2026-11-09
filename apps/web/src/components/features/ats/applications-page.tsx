@@ -109,16 +109,13 @@ export function ApplicationsPage({
             atsStatus(row.evaluationStatus === "succeeded" ? null : row.evaluationStatus)
           ),
           <ApplicationStatusBadge closedAt={row.closedAt} key="status" outcome={row.outcome} />,
-          row.latestInterview ? (
-            <InterviewFlowPreview
-              applicationId={row.id}
-              key="interview-flow"
-              round={row.latestInterview}
-              workspaceId={workspaceId}
-            />
-          ) : (
-            "—"
-          ),
+          <InterviewFlowPreview
+            applicationId={row.id}
+            key="interview-flow"
+            round={row.latestInterview}
+            search={query}
+            workspaceId={workspaceId}
+          />,
           <LocalTime key="date" value={row.createdAt} format="date" />,
         ],
         id: row.id,

@@ -594,7 +594,11 @@ export async function listApplications(
         id: application.id,
         jobId: job.id,
         jobTitle: job.title,
-        latestInterview: { kind: interviewRound.kind, sequence: interviewRound.sequence },
+        latestInterview: {
+          kind: interviewRound.kind,
+          sequence: interviewRound.sequence,
+          status: interviewRound.status,
+        },
         outcome: application.outcome,
         stage: application.stage,
       })

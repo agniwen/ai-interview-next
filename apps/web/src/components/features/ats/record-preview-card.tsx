@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { PreviewCard, PreviewCardPopup, PreviewCardTrigger } from "@/components/ui/preview-card";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ export function RecordPreviewCard({
   children,
 }: {
   title: string;
-  trigger?: { content: ReactNode; label: string };
+  trigger?: { content: ReactNode; link: ReactElement };
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -27,8 +27,8 @@ export function RecordPreviewCard({
             "underline decoration-muted-foreground/40 underline-offset-2 hover:decoration-foreground",
         )}
         delay={200}
-        onClick={() => setOpen(true)}
-        render={<button aria-label={trigger?.label ?? title} type="button" />}
+        onClick={trigger ? undefined : () => setOpen(true)}
+        render={trigger?.link ?? <button aria-label={title} type="button" />}
       >
         {trigger?.content ?? title}
       </PreviewCardTrigger>
