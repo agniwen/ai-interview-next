@@ -276,7 +276,7 @@ export function InterviewRoundCard({
                 {m.meeting_join()}
               </Button>
             )}
-            <InvitationButton workspaceId={workspaceId} roundId={round.id} />
+            <InvitationButton kind={round.kind} workspaceId={workspaceId} roundId={round.id} />
           </div>
         )}
         {(round.status === "completed" || round.status === "in_progress") && (

@@ -1,14 +1,19 @@
 import {
   applicationActivity,
+  applicationResume,
   interviewRound,
   interviewEvaluation,
   interviewSession,
   job,
+  resume,
+  resumeUploadBatch,
+  resumeUploadItem,
 } from "@ai-interview/db/schema";
 import { and, eq } from "drizzle-orm";
 import { AgentDispatchClient, Room, RoomServiceClient, TokenVerifier } from "livekit-server-sdk";
 import { afterEach, expect, it, vi } from "vitest";
 import { app } from "../src/app";
+import { resumeFiles } from "../src/modules/ats/storage";
 import { atsTest, read } from "./ats-fixture";
 import { fixture, addInterviewMember } from "./interview-fixture";
 
@@ -97,6 +102,51 @@ it("restricts interviewer materials and room admission to authenticated assigned
   const candidate = await read(f.candidate("entry"));
   expect(candidate).not.toHaveProperty("materials");
   expect(candidate).not.toHaveProperty("internalCriteria");
+});
+
+it("serves the original image resume with its filename and media type before entry", async () => {
+  const f = await setup("original-resume");
+  const { userId, workspaceId } = f.owner;
+  const id = crypto.randomUUID();
+  const filename = "Original resume.png";
+  const png = Uint8Array.from(
+    Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWioAAAAASUVORK5CYII=",
+      "base64",
+    ),
+  );
+  const createdAt = new Date();
+  const db = atsTest.platform.database;
+  await db.batch([
+    db.insert(resume).values({ createdAt, id, pdfObjectKey: id, sha256: id, workspaceId }),
+    db.insert(applicationResume).values({
+      applicationId: f.applicationId,
+      createdAt,
+      id,
+      resumeId: id,
+      status: "available",
+      workspaceId,
+    }),
+    db.insert(resumeUploadBatch).values({ createdAt, createdBy: userId, id, workspaceId }),
+    db.insert(resumeUploadItem).values({
+      batchId: id,
+      filename,
+      id,
+      objectKey: id,
+      size: png.byteLength,
+      status: "accepted",
+      workspaceId,
+    }),
+  ]);
+  await resumeFiles(atsTest.env).upload(id, png, { contentType: "image/png" });
+  const documentUrl = `/api/${f.path}/resumes/${id}`;
+  expect(await read(f.owner.call(f.path))).toMatchObject({
+    materials: { resumes: [{ documentUrl, filename }] },
+  });
+  const original = await f.owner.call(`${f.path}/resumes/${id}`);
+  expect(original.status).toBe(200);
+  expect(original.headers.get("content-type")).toBe("image/png");
+  expect(new Uint8Array(await original.arrayBuffer())).toEqual(png);
 });
 
 it("issues media-only tokens without starting, then snapshots the first successful entry and preserves it on reconnect", async () => {

@@ -11,9 +11,11 @@ import { createInvitationMutation } from "./client";
  * Creates or retrieves a round invitation link, copies it to the clipboard and reports request/copy feedback.
  */
 export function InvitationButton({
+  kind,
   workspaceId,
   roundId,
 }: {
+  kind: "ai" | "human";
   workspaceId: string;
   roundId: string;
 }) {
@@ -32,9 +34,11 @@ export function InvitationButton({
           setCopied(false);
           try {
             const { token } = await invitation.mutateAsync(roundId);
-            await navigator.clipboard.writeText(
-              new URL(`/interview/${token}`, window.location.origin).href,
-            );
+            const url = new URL(`/interview/${token}`, window.location.origin);
+            if (kind === "human") {
+              url.searchParams.set("kind", kind);
+            }
+            await navigator.clipboard.writeText(url.href);
             setCopied(true);
           } catch {
             setCopyError(true);

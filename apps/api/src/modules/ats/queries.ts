@@ -630,6 +630,7 @@ export async function applicationDetail(
 ) {
   const [details] = await db
     .select({
+      candidateId: application.candidateId,
       candidateName: parsedResumeName,
       closedAt: application.closedAt,
       createdAt: application.createdAt,
@@ -640,6 +641,7 @@ export async function applicationDetail(
       id: application.id,
       jobId: job.id,
       jobTitle: job.title,
+      linkedCandidateName: candidate.name,
       outcome: application.outcome,
       projectId: recruitmentProject.id,
       projectTitle: recruitmentProject.title,
@@ -650,6 +652,13 @@ export async function applicationDetail(
       resumeUploadId: item.id,
     })
     .from(application)
+    .innerJoin(
+      candidate,
+      and(
+        eq(candidate.workspaceId, application.workspaceId),
+        eq(candidate.id, application.candidateId),
+      ),
+    )
     .leftJoin(resume, applicationResumeForDisplay(db))
     .innerJoin(job, eq(job.id, application.jobId))
     .leftJoin(recruitmentProject, eq(recruitmentProject.id, job.projectId))

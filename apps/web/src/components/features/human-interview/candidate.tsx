@@ -29,12 +29,13 @@ export function HumanCandidateInterview({
     await client.invalidateQueries({ queryKey: candidateInterviewQuery(token).queryKey });
   }
   if (devices && join.data) {
+    const title = `${interview.jobTitle} · ${interview.candidateName}`;
     return (
-      <SkeletonSuspense fallback={<HumanMeetingSkeleton />}>
+      <SkeletonSuspense fallback={<HumanMeetingSkeleton title={title} />}>
         <MeetingRoom
           connection={join.data}
           devices={devices}
-          title={`${interview.jobTitle} · ${interview.candidateName}`}
+          title={title}
           onLeave={leave}
           onEntered={async () => {
             const result = await enterCandidateMeeting(token);

@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
 import { HumanInterviewPreparation } from "../src/components/features/candidate-interview/human-preparation";
 import { MeetingError } from "../src/components/features/human-interview/error";
+import { MeetingCandidateMaterials } from "../src/components/features/human-interview/materials";
 import { loginSearch } from "../src/lib/workspaces/client";
 import * as m from "../src/paraglide/messages";
 
@@ -13,30 +14,69 @@ const interview = {
   label: "Technical interview",
   scheduledAt: "2026-11-09T02:00:00Z",
   sequence: 1,
-  startedAt: null,
   workspaceName: "Hiring team",
 };
 
 afterEach(() => vi.restoreAllMocks());
 
-it("keeps the appointment visible before admission and disables preparation until the window opens", () => {
+it("keeps the appointment and device controls visible before joining is available", () => {
   vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-09T01:45:00Z"));
-  const html = renderToStaticMarkup(<HumanInterviewPreparation interview={interview} />);
+  const html = renderToStaticMarkup(
+    <HumanInterviewPreparation interview={interview} onStart={vi.fn()} />,
+  );
   expect(html).toContain("Engineer");
   expect(html).toContain("Public requirements");
+  expect(html).not.toContain(interview.workspaceName);
   expect(html).toContain(m.meeting_too_early());
+  expect(html).toContain(m.meeting_mic_enabled());
+  expect(html).toContain(m.meeting_camera_disabled());
   expect(html).toMatch(/<button[^>]* disabled=""/u);
 });
 
-it("opens preparation within ten minutes and explains expired admission", () => {
+it("opens admission within ten minutes and explains expired admission", () => {
   const clock = vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-09T01:51:00Z"));
-  const ready = renderToStaticMarkup(<HumanInterviewPreparation interview={interview} />);
+  const page = <HumanInterviewPreparation interview={interview} onStart={vi.fn()} />;
+  const ready = renderToStaticMarkup(page);
   expect(ready).not.toContain(m.meeting_too_early());
+  expect(ready).toContain(m.meeting_enter_room());
   expect(ready).not.toMatch(/<button[^>]* disabled=""/u);
   clock.mockReturnValue(Date.parse("2026-11-09T03:01:00Z"));
-  const expired = renderToStaticMarkup(<HumanInterviewPreparation interview={interview} />);
+  const expired = renderToStaticMarkup(page);
   expect(expired).toContain(m.meeting_closed());
   expect(expired).toMatch(/<button[^>]* disabled=""/u);
+});
+
+it("shows the original resume in interviewer preparation instead of the job description", () => {
+  const url = "/api/interviews/workspace/round/meeting/resumes/resume";
+  const html = renderToStaticMarkup(
+    <HumanInterviewPreparation
+      interview={interview}
+      interviewerMaterials={
+        <MeetingCandidateMaterials
+          materials={{
+            history: [],
+            resumes: [
+              {
+                documentUrl: url,
+                filename: "original.png",
+                id: "resume",
+                markdown: "Extracted resume text",
+                parsedProfile: null,
+                pdfObjectKey: "original",
+              },
+            ],
+          }}
+          showTimeline={false}
+        />
+      }
+      onStart={vi.fn()}
+    />,
+  );
+  expect(html).toContain(m.meeting_materials());
+  expect(html).toContain(`src="${url}"`);
+  expect(html).toContain("original.png");
+  expect(html).not.toContain(interview.jobDescription);
+  expect(html).not.toContain("Extracted resume text");
 });
 
 it("distinguishes assignment denial from a retryable connection failure", () => {

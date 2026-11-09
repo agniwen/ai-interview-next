@@ -1,12 +1,32 @@
 import { MeetingMarkdown } from "./markdown";
 import { useState } from "react";
-import { ResumeProfileDocument } from "@/components/features/document-preview/resume-profile-document";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MeetingHistory } from "./history";
 import { Tabs, TabsList, TabsTab, TabsPanel } from "@/components/ui/tabs";
 import * as m from "@/paraglide/messages";
 import type { HumanMeeting } from "./client";
 import { MeetingResume } from "./resume";
+
+export function MeetingCandidateMaterials({
+  materials,
+  showTimeline,
+}: {
+  materials: Pick<HumanMeeting["materials"], "history" | "resumes">;
+  showTimeline?: boolean;
+}) {
+  return (
+    <MeetingHistory history={materials.history} showTimeline={showTimeline}>
+      <div className="flex flex-col gap-4 pb-6">
+        {materials.resumes.length === 0 && (
+          <p className="text-sm text-muted-foreground">{m.meeting_no_resume()}</p>
+        )}
+        {materials.resumes.map((resume) => (
+          <MeetingResume key={resume.id} filename={resume.filename} url={resume.documentUrl} />
+        ))}
+      </div>
+    </MeetingHistory>
+  );
+}
 
 export function MeetingMaterials({ materials }: { materials: HumanMeeting["materials"] }) {
   const [tab, setTab] = useState("candidate");
@@ -22,19 +42,7 @@ export function MeetingMaterials({ materials }: { materials: HumanMeeting["mater
       <ScrollArea className="min-h-0 flex-1" overscrollContain>
         <div className="p-4 md:px-8 md:py-6">
           <TabsPanel value="candidate" className="mx-auto max-w-5xl">
-            <MeetingHistory history={materials.history}>
-              <div className="flex flex-col gap-4 pb-6">
-                {materials.resumes.map((resume) => (
-                  <MeetingResume key={resume.id} url={resume.documentUrl}>
-                    {resume.parsedProfile ? (
-                      <ResumeProfileDocument profile={resume.parsedProfile} />
-                    ) : (
-                      <MeetingMarkdown>{resume.markdown || m.meeting_no_resume()}</MeetingMarkdown>
-                    )}
-                  </MeetingResume>
-                ))}
-              </div>
-            </MeetingHistory>
+            <MeetingCandidateMaterials materials={materials} />
           </TabsPanel>
           <TabsPanel value="job" className="mx-auto max-w-4xl">
             <h2 className="mb-6 text-2xl font-medium">{materials.job.title}</h2>

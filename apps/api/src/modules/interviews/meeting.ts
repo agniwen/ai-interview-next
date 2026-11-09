@@ -6,6 +6,7 @@ import {
   interviewEvaluation,
   organization,
   resume,
+  resumeUploadItem,
   user,
 } from "@ai-interview/db/schema";
 import { and, asc, eq, inArray, isNotNull, lt } from "drizzle-orm";
@@ -94,21 +95,36 @@ export async function readHumanMeeting(
       ),
   ]);
   const materials = session?.content ?? (await readInterviewMaterials(db, round));
-  const avatar = await db
-    .select({ id: resume.id })
-    .from(resume)
-    .where(
-      and(
-        eq(resume.workspaceId, workspaceId),
-        inArray(
-          resume.id,
-          materials.resumes.map((item) => item.id),
+  const [avatar, uploads] = await Promise.all([
+    db
+      .select({ id: resume.id })
+      .from(resume)
+      .where(
+        and(
+          eq(resume.workspaceId, workspaceId),
+          inArray(
+            resume.id,
+            materials.resumes.map((item) => item.id),
+          ),
+          isNotNull(resume.avatarObjectKey),
         ),
-        isNotNull(resume.avatarObjectKey),
+      )
+      .orderBy(asc(resume.id))
+      .get(),
+    db
+      .select({ filename: resumeUploadItem.filename, objectKey: resumeUploadItem.objectKey })
+      .from(resumeUploadItem)
+      .where(
+        and(
+          eq(resumeUploadItem.workspaceId, workspaceId),
+          inArray(
+            resumeUploadItem.objectKey,
+            materials.resumes.map((item) => item.pdfObjectKey),
+          ),
+        ),
       ),
-    )
-    .orderBy(asc(resume.id))
-    .get();
+  ]);
+  const filenames = new Map(uploads.map(({ filename, objectKey }) => [objectKey, filename]));
   return {
     admissionError: admissionError(round, entry.closedAt) ?? null,
     candidateName: materials.candidate.name,
@@ -130,6 +146,7 @@ export async function readHumanMeeting(
       resumes: materials.resumes.map((item) => ({
         ...item,
         documentUrl: `/api/interviews/${workspaceId}/${id}/meeting/resumes/${item.id}`,
+        filename: filenames.get(item.pdfObjectKey) ?? "resume.pdf",
       })),
       version: 1 as const,
     },

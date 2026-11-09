@@ -19,6 +19,7 @@ import type { Context } from "hono";
 import { z } from "zod";
 import type { AuthenticatedEnv } from "../../middleware/authenticated";
 import { requireWorkspace } from "../../middleware/workspace";
+import { resumeMediaType } from "../../lib/resume-file";
 import { interviewSetup, interviewMembers, interviewEditSetup } from "./options";
 import { listQuery, paginationQuery } from "../ats/input";
 import { createInterviewInput, updateInterviewInput } from "./input";
@@ -78,8 +79,8 @@ export const interviewRoutes = new Hono<AuthenticatedEnv>()
       const file = await resumeFiles(c.env).download(resume.pdfObjectKey, { as: "stream" });
       return c.body(file.stream(), 200, {
         "Cache-Control": "private, no-store",
-        "Content-Disposition": 'inline; filename="resume.pdf"',
-        "Content-Type": "application/pdf",
+        "Content-Disposition": "inline",
+        "Content-Type": resumeMediaType(resume.filename),
         "X-Content-Type-Options": "nosniff",
       });
     },

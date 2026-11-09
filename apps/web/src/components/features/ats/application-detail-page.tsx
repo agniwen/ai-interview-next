@@ -44,12 +44,14 @@ import { Toolbar, ToolbarButton, ToolbarSeparator } from "@/components/ui/toolba
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserColumn } from "@/components/user-column";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
+import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 import { ProjectPreviewCard } from "./project-preview-card";
 import { JobPreviewCard } from "./job-preview-card";
 import { ApplicationEvaluations } from "./application-evaluations";
 import { ApplicationEvaluationComposer } from "./application-evaluation-composer";
 import { ApplicationStatusBadge } from "./application-status-badge";
+import { CandidateResumesDialog } from "./candidate-resumes-dialog";
 import { atsApi, readAts } from "./client";
 import type { ApplicationDetailSearch, ApplicationTab } from "./list-search";
 import { atsKeys } from "./query-keys";
@@ -267,8 +269,18 @@ function ApplicationHeader({
 }: Pick<ApplicationDetail, "application" | "resume" | "resumeProfile"> & {
   workspaceId: string;
 }) {
-  const { candidateName, closedAt, createdAt, jobId, jobTitle, outcome, projectId, projectTitle } =
-    application;
+  const {
+    candidateId,
+    candidateName,
+    closedAt,
+    createdAt,
+    jobId,
+    jobTitle,
+    linkedCandidateName,
+    outcome,
+    projectId,
+    projectTitle,
+  } = application;
   const basics = resumeProfile && getResumeProfileBasics(resumeProfile);
   return (
     <header className="flex min-w-0 flex-col gap-4">
@@ -291,8 +303,29 @@ function ApplicationHeader({
       </div>
       <dl className="grid grid-cols-1 gap-x-6 gap-y-3 @min-[23.5rem]:grid-cols-2 @min-[36rem]:grid-cols-3 @min-[48.5rem]:grid-cols-4 *:min-w-0 [&_dd]:mt-0.5 [&_dd]:truncate [&_dd]:text-sm [&_dt]:text-xs [&_dt]:text-muted-foreground">
         <div>
-          <dt>{m.ats_candidate()}</dt>
-          <dd title={candidateName ?? undefined}>{candidateName ?? "—"}</dd>
+          <dt>{m.ats_linked_candidate()}</dt>
+          <dd>
+            <Dialog<string>>
+              {({ payload }) => (
+                <>
+                  <DialogTrigger
+                    className="block max-w-full cursor-pointer truncate rounded-sm text-start underline decoration-muted-foreground/40 underline-offset-2 hover:decoration-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                    payload={candidateId}
+                    title={linkedCandidateName}
+                  >
+                    {linkedCandidateName}
+                  </DialogTrigger>
+                  {payload && (
+                    <CandidateResumesDialog
+                      id={payload}
+                      name={linkedCandidateName}
+                      workspaceId={workspaceId}
+                    />
+                  )}
+                </>
+              )}
+            </Dialog>
+          </dd>
         </div>
         <div>
           <dt>{m.ats_job()}</dt>
@@ -533,30 +566,37 @@ function ApplicationDetailContent({
       </div>
       {tab === "overview" &&
         (resume?.uploadId || !application.closedAt || application.canDelete) && (
-          <Toolbar
-            aria-label={m.ats_action()}
-            className="sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 mx-auto mb-[env(safe-area-inset-bottom)] w-fit max-w-full shrink-0 items-center gap-1 border-border/70 bg-card/95 p-1.5 shadow-xs/5 backdrop-blur-md md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]"
+          <div
+            className={cn(
+              applicationColumnsClassName,
+              "pointer-events-none sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 mb-[env(safe-area-inset-bottom)] w-full shrink-0 md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
+            )}
           >
-            {resume?.uploadId && (
-              <ApplicationResumeFile resume={resume} variant="icon" workspaceId={workspaceId} />
-            )}
-            {resume?.uploadId && (!application.closedAt || application.canDelete) && (
-              <ToolbarSeparator orientation="vertical" />
-            )}
-            {!application.closedAt && (
-              <CloseApplicationDialog id={application.id} workspaceId={workspaceId} />
-            )}
-            {!application.closedAt && application.canDelete && (
-              <ToolbarSeparator orientation="vertical" />
-            )}
-            {application.canDelete && (
-              <DeleteApplicationPopover
-                id={application.id}
-                onDeleted={onDeleted}
-                workspaceId={workspaceId}
-              />
-            )}
-          </Toolbar>
+            <Toolbar
+              aria-label={m.ats_action()}
+              className="pointer-events-auto w-fit max-w-full items-center justify-self-center gap-1 border-border/70 bg-card/95 p-1.5 shadow-xs/5 backdrop-blur-md"
+            >
+              {resume?.uploadId && (
+                <ApplicationResumeFile resume={resume} variant="icon" workspaceId={workspaceId} />
+              )}
+              {resume?.uploadId && (!application.closedAt || application.canDelete) && (
+                <ToolbarSeparator orientation="vertical" />
+              )}
+              {!application.closedAt && (
+                <CloseApplicationDialog id={application.id} workspaceId={workspaceId} />
+              )}
+              {!application.closedAt && application.canDelete && (
+                <ToolbarSeparator orientation="vertical" />
+              )}
+              {application.canDelete && (
+                <DeleteApplicationPopover
+                  id={application.id}
+                  onDeleted={onDeleted}
+                  workspaceId={workspaceId}
+                />
+              )}
+            </Toolbar>
+          </div>
         )}
     </>
   );

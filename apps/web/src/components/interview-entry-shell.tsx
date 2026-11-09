@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BrandMark } from "@/components/brand-mark";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { InterviewEntryBackground } from "@/components/interview-entry-background";
@@ -13,7 +14,10 @@ export function InterviewEntryShell({ children }: { children: ReactNode }) {
     <div className="relative isolate h-dvh overflow-hidden bg-background">
       <InterviewEntryBackground />
       <header className="fixed inset-x-0 top-0 z-10 flex items-center justify-between gap-3 bg-linear-to-b from-background via-background/95 to-transparent px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-6 sm:px-6">
-        <span className="text-sm font-medium">Sainoa</span>
+        <span className="inline-flex items-center gap-2 text-sm font-medium">
+          <BrandMark />
+          Sainoa
+        </span>
         <div className="flex items-center gap-1">
           <LanguageSwitcher iconOnly />
           <ThemeSwitcher />

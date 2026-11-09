@@ -296,6 +296,7 @@
   "ats_contact": "연락처",
   "ats_date": "생성일",
   "ats_candidate": "후보자",
+  "ats_linked_candidate": "연결된 인재",
   "ats_job": "채용 공고",
   "ats_department": "부서",
   "document_preview_download": "원본 다운로드",
@@ -717,5 +718,14 @@
   "candidate_device_busy": "기기를 열 수 없습니다. 이 기기를 사용하는 다른 앱을 닫은 후 다시 시도해 주세요.",
   "candidate_device_unsupported": "기기에 접근할 수 없습니다. 최신 브라우저에서 HTTPS 또는 localhost를 사용해 주세요.",
   "candidate_device_disconnected": "기기가 연결 해제되었거나 권한이 변경되었습니다. 다시 연결하고 확인해 주세요.",
-  "candidate_device_unavailable": "기기에 접근할 수 없습니다. 시스템 설정을 확인한 후 다시 시도해 주세요."
+  "candidate_device_unavailable": "기기에 접근할 수 없습니다. 시스템 설정을 확인한 후 다시 시도해 주세요.",
+  "meeting_prejoin_help": "마이크와 카메라 설정을 확인해 주세요. 회의에 참가하면 이번 면접이 시작됩니다.",
+  "meeting_enter_room": "회의 참가",
+  "meeting_mic_enabled": "마이크 켜짐",
+  "meeting_mic_disabled": "마이크 꺼짐",
+  "meeting_camera_enabled": "카메라 켜짐",
+  "meeting_camera_disabled": "카메라 꺼짐",
+  "meeting_select_microphone": "마이크 선택",
+  "meeting_default_microphone": "시스템 기본 마이크",
+  "meeting_loading_microphones": "마이크 목록을 불러오는 중…"
 }

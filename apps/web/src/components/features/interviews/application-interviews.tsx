@@ -1,9 +1,16 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { IconPlus } from "@tabler/icons-react";
+import { IconCalendarEvent, IconPlus } from "@tabler/icons-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { InterviewListSkeleton } from "@/components/skeletons/components/interview-list-skeleton";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import * as m from "@/paraglide/messages";
@@ -48,6 +55,17 @@ export function ApplicationInterviews({
     );
   }
   const rows = query.data?.pages.flatMap((page) => page.rows) ?? [];
+  const createButton = (
+    <Button
+      variant="outline"
+      className="w-48 max-w-full self-center"
+      disabled={closed || !query.data?.pages[0].canCreateRound}
+      onClick={() => setCreating(true)}
+    >
+      <IconPlus aria-hidden="true" />
+      {m.interviews_create()}
+    </Button>
+  );
   return (
     <section className="flex min-w-0 flex-col gap-4">
       {phase === "skeleton" && <InterviewListSkeleton />}
@@ -60,16 +78,6 @@ export function ApplicationInterviews({
             </Button>
           </AlertDescription>
         </Alert>
-      )}
-      {phase === "ready" && query.data && rows.length === 0 && (
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>{m.interviews_empty()}</EmptyTitle>
-            <EmptyDescription>
-              {closed ? m.interviews_closed() : m.interviews_empty_help()}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
       )}
       {phase === "ready" &&
         rows.map((row) => (
@@ -90,17 +98,24 @@ export function ApplicationInterviews({
           {m.ats_load_more()}
         </Button>
       )}
-      <Button
-        variant="outline"
-        className="w-48 max-w-full self-center"
-        disabled={closed || !query.data?.pages[0].canCreateRound}
-        onClick={() => setCreating(true)}
-      >
-        <IconPlus aria-hidden="true" />
-        {m.interviews_create()}
-      </Button>
+      {phase === "ready" && query.data && rows.length === 0 ? (
+        <Empty className="gap-4">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <IconCalendarEvent aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyTitle>{m.interviews_empty()}</EmptyTitle>
+            <EmptyDescription>
+              {closed ? m.interviews_closed() : m.interviews_empty_help()}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>{createButton}</EmptyContent>
+        </Empty>
+      ) : (
+        createButton
+      )}
       {rows.length > 0 && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-center text-xs text-muted-foreground">
           {query.data?.pages[0].canCreateRound
             ? m.interview_evaluation_next_ready()
             : m.interviews_next_round_help()}

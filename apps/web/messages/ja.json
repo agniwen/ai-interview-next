@@ -296,6 +296,7 @@
   "ats_contact": "連絡先",
   "ats_date": "作成日",
   "ats_candidate": "候補者",
+  "ats_linked_candidate": "関連する人材",
   "ats_job": "求人",
   "ats_department": "部署",
   "document_preview_download": "元のファイルをダウンロード",
@@ -717,5 +718,14 @@
   "candidate_device_busy": "デバイスを開けません。このデバイスを使用している他のアプリを閉じて、再試行してください。",
   "candidate_device_unsupported": "デバイスにアクセスできません。最新のブラウザで HTTPS または localhost を使用してください。",
   "candidate_device_disconnected": "デバイスが切断されたか、権限が変更されました。再接続して再確認してください。",
-  "candidate_device_unavailable": "デバイスにアクセスできません。システム設定を確認して再試行してください。"
+  "candidate_device_unavailable": "デバイスにアクセスできません。システム設定を確認して再試行してください。",
+  "meeting_prejoin_help": "マイクとカメラの設定を確認してください。入室すると、この面接が始まります。",
+  "meeting_enter_room": "会議に参加",
+  "meeting_mic_enabled": "マイクはオン",
+  "meeting_mic_disabled": "マイクはオフ",
+  "meeting_camera_enabled": "カメラはオン",
+  "meeting_camera_disabled": "カメラはオフ",
+  "meeting_select_microphone": "マイクを選択",
+  "meeting_default_microphone": "システム既定のマイク",
+  "meeting_loading_microphones": "マイクを読み込み中…"
 }

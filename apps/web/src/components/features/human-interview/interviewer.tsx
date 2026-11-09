@@ -20,6 +20,7 @@ import { interviewKeys } from "../interviews/client";
 import { atsKeys } from "../ats/query-keys";
 import { MeetingError } from "./error";
 import { MeetingEvaluation } from "./evaluation";
+import { MeetingCandidateMaterials } from "./materials";
 import * as m from "@/paraglide/messages";
 
 const MeetingRoom = lazy(() => import("./room"));
@@ -43,20 +44,6 @@ function InterviewerMeeting({ data }: { data: HumanMeeting }) {
       queryKey: meetingQuery(round.workspaceId, round.id).queryKey,
     });
   }
-  const back = (
-    <Button
-      variant="outline"
-      render={
-        <Link
-          to="/w/$workspaceId/hub/applications/$id"
-          params={{ id: round.applicationId, workspaceId: round.workspaceId }}
-          search={{ page: 1, pageSize: 20, search: "", tab: "interviews" }}
-        />
-      }
-    >
-      {m.meeting_return()}
-    </Button>
-  );
   if (round.status === "completed") {
     return (
       <div className="flex max-w-md flex-col items-center gap-5">
@@ -77,17 +64,17 @@ function InterviewerMeeting({ data }: { data: HumanMeeting }) {
         >
           {m.interview_evaluation_review()}
         </Button>
-        {back}
       </div>
     );
   }
   if (devices && join.data) {
+    const title = `${data.jobTitle} · ${data.candidateName}`;
     return (
-      <SkeletonSuspense fallback={<HumanMeetingSkeleton />}>
+      <SkeletonSuspense fallback={<HumanMeetingSkeleton interviewer title={title} />}>
         <MeetingRoom
           connection={join.data}
           devices={devices}
-          title={`${data.jobTitle} · ${data.candidateName}`}
+          title={title}
           materials={data.materials}
           evaluation={<MeetingEvaluation workspaceId={round.workspaceId} roundId={round.id} />}
           onLeave={leave}
@@ -119,7 +106,9 @@ function InterviewerMeeting({ data }: { data: HumanMeeting }) {
   }
   return (
     <HumanInterviewPreparation
-      interviewer
+      interviewerMaterials={
+        <MeetingCandidateMaterials materials={data.materials} showTimeline={false} />
+      }
       interview={{ ...data, ...round }}
       starting={join.isPending}
       error={join.error}
@@ -138,7 +127,6 @@ function InterviewerMeeting({ data }: { data: HumanMeeting }) {
       {left && (
         <output className="text-sm text-muted-foreground">{m.meeting_disconnected()}</output>
       )}
-      <div>{back}</div>
     </HumanInterviewPreparation>
   );
 }
@@ -154,7 +142,7 @@ export function InterviewerMeetingPage({
   const phase = useSkeletonPhase(query.isPending);
   return (
     <InterviewEntryShell>
-      {phase === "skeleton" && <HumanInterviewPreparationSkeleton />}
+      {phase === "skeleton" && <HumanInterviewPreparationSkeleton interviewer />}
       {phase === "ready" && query.data && <InterviewerMeeting key={roundId} data={query.data} />}
       {phase === "ready" && query.isError && !query.data && (
         <div className="flex max-w-md flex-col gap-4">

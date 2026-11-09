@@ -1,6 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { InterviewEntryShell } from "@/components/interview-entry-shell";
 import * as m from "@/paraglide/messages";
+import { HumanInterviewPreparationSkeleton } from "./human-interview-preparation-skeleton";
 
 /**
  * 在邀请数据返回前显示通用占位，此时面试类型尚未确定。
@@ -27,10 +28,10 @@ export function CandidateInterviewSkeleton() {
  * 路由加载时使用的整页骨架，自带候选人入口外壳。
  * Full-page route fallback including the candidate-entry shell.
  */
-export function CandidateInterviewPageSkeleton() {
+export function CandidateInterviewPageSkeleton({ humanInvitation }: { humanInvitation: boolean }) {
   return (
     <InterviewEntryShell>
-      <CandidateInterviewSkeleton />
+      {humanInvitation ? <HumanInterviewPreparationSkeleton /> : <CandidateInterviewSkeleton />}
     </InterviewEntryShell>
   );
 }

@@ -137,7 +137,7 @@ export function InterviewFlowPreview({
   );
   if (!round) {
     return (
-      <Badge render={link} variant="outline">
+      <Badge render={link} variant="secondary">
         {m.interviews_not_scheduled()}
       </Badge>
     );

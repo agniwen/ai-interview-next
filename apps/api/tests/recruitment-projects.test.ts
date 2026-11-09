@@ -360,8 +360,10 @@ it("records the signed-in creator, shows the associated resume, and only allows 
     activity: [{ action: "created", actorId: userId, actorName: email, actorType: "user" }],
     application: {
       canDelete: true,
+      candidateId,
       candidateName: "Name on Resume",
       creator: { actorId: userId, actorName: email, actorType: "user" },
+      linkedCandidateName: "Candidate",
     },
     resume: { filename, id: resumeId, uploadId: resumeId },
   });

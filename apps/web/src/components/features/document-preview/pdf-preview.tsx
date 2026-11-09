@@ -53,14 +53,14 @@ function PdfPreviewContent({
   toolbarTargets,
 }: {
   documentId: string;
-  toolbarTargets: DocumentPreviewToolbarTargets;
+  toolbarTargets?: DocumentPreviewToolbarTargets;
 }) {
   const { provides: zoom, state: zoomState } = useZoom(documentId);
   const { provides: scroll, state: scrollState } = useScroll(documentId);
 
   return (
     <>
-      {zoom && (
+      {zoom && toolbarTargets && (
         <DocumentPreviewToolbar
           pages={
             scroll
@@ -124,7 +124,7 @@ export default function PdfPreview({
   visible,
 }: {
   onLoadingChange: (loading: boolean) => void;
-  toolbarTargets: DocumentPreviewToolbarTargets;
+  toolbarTargets?: DocumentPreviewToolbarTargets;
   url: string;
   visible: boolean;
 }) {
