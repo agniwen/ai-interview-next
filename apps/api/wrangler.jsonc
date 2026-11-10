@@ -10,7 +10,12 @@
   ],
   "main": "src/index.ts",
   "compatibility_date": "2026-10-30",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat",
+    // Better Auth 从同一域区的 Web Worker 获取 MCP 令牌验签所需的 JWKS。
+    // Better Auth fetches the JWKS for MCP token verification through the Web Worker in the same zone.
+    "global_fetch_strictly_public",
+  ],
   "vars": {
     "AGENT_CHAT_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
     "AGENT_CHAT_MODEL": "deepseek-v4.1-flash",
