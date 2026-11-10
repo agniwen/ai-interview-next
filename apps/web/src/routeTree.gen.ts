@@ -16,6 +16,7 @@ import { Route as AAccountRouteImport } from './routes/_a.account'
 import { Route as AWorkspacesRouteImport } from './routes/_a.workspaces'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as InterviewTokenRouteImport } from './routes/interview.$token'
+import { Route as McpIndexRouteImport } from './routes/mcp.index'
 import { Route as McpAuthorizeRouteImport } from './routes/mcp.authorize'
 import { Route as AInviteInvitationIdRouteImport } from './routes/_a.invite.$invitationId'
 import { Route as AWWorkspaceIdRouteImport } from './routes/_a.w.$workspaceId'
@@ -79,6 +80,11 @@ const ApiSplatRoute = ApiSplatRouteImport.update({
 const InterviewTokenRoute = InterviewTokenRouteImport.update({
   id: '/interview/$token',
   path: '/interview/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpIndexRoute = McpIndexRouteImport.update({
+  id: '/mcp/',
+  path: '/mcp/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpAuthorizeRoute = McpAuthorizeRouteImport.update({
@@ -258,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/api/$': typeof ApiSplatRoute
   '/interview/$token': typeof InterviewTokenRoute
   '/mcp/authorize': typeof McpAuthorizeRoute
+  '/mcp/': typeof McpIndexRoute
   '/invite/$invitationId': typeof AInviteInvitationIdRoute
   '/w/$workspaceId': typeof AWWorkspaceIdRouteWithChildren
   '/meet/$workspaceId/$roundId': typeof AMeetWorkspaceIdRoundIdRoute
@@ -296,6 +303,7 @@ export interface FileRoutesByTo {
   '/api/$': typeof ApiSplatRoute
   '/interview/$token': typeof InterviewTokenRoute
   '/mcp/authorize': typeof McpAuthorizeRoute
+  '/mcp': typeof McpIndexRoute
   '/invite/$invitationId': typeof AInviteInvitationIdRoute
   '/meet/$workspaceId/$roundId': typeof AMeetWorkspaceIdRoundIdRoute
   '/w/$workspaceId/account': typeof AWWorkspaceIdAccountRoute
@@ -335,6 +343,7 @@ export interface FileRoutesById {
   '/api/$': typeof ApiSplatRoute
   '/interview/$token': typeof InterviewTokenRoute
   '/mcp/authorize': typeof McpAuthorizeRoute
+  '/mcp/': typeof McpIndexRoute
   '/_a/invite/$invitationId': typeof AInviteInvitationIdRoute
   '/_a/w/$workspaceId': typeof AWWorkspaceIdRouteWithChildren
   '/_a/meet/$workspaceId/$roundId': typeof AMeetWorkspaceIdRoundIdRoute
@@ -375,6 +384,7 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/interview/$token'
     | '/mcp/authorize'
+    | '/mcp/'
     | '/invite/$invitationId'
     | '/w/$workspaceId'
     | '/meet/$workspaceId/$roundId'
@@ -413,6 +423,7 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/interview/$token'
     | '/mcp/authorize'
+    | '/mcp'
     | '/invite/$invitationId'
     | '/meet/$workspaceId/$roundId'
     | '/w/$workspaceId/account'
@@ -451,6 +462,7 @@ export interface FileRouteTypes {
     | '/api/$'
     | '/interview/$token'
     | '/mcp/authorize'
+    | '/mcp/'
     | '/_a/invite/$invitationId'
     | '/_a/w/$workspaceId'
     | '/_a/meet/$workspaceId/$roundId'
@@ -489,6 +501,7 @@ export interface RootRouteChildren {
   ApiSplatRoute: typeof ApiSplatRoute
   InterviewTokenRoute: typeof InterviewTokenRoute
   McpAuthorizeRoute: typeof McpAuthorizeRoute
+  McpIndexRoute: typeof McpIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -540,6 +553,13 @@ declare module '@tanstack/react-router' {
       path: '/interview/$token'
       fullPath: '/interview/$token'
       preLoaderRoute: typeof InterviewTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp/': {
+      id: '/mcp/'
+      path: '/mcp'
+      fullPath: '/mcp/'
+      preLoaderRoute: typeof McpIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp/authorize': {
@@ -915,6 +935,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSplatRoute: ApiSplatRoute,
   InterviewTokenRoute: InterviewTokenRoute,
   McpAuthorizeRoute: McpAuthorizeRoute,
+  McpIndexRoute: McpIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

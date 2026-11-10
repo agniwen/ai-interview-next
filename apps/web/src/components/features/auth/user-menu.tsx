@@ -1,7 +1,13 @@
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { UserMenuSkeleton } from "@/components/skeletons/components/user-menu-skeleton";
 import { useState } from "react";
-import { IconChevronDown, IconLogin, IconLogout, IconUser } from "@tabler/icons-react";
+import {
+  IconChevronDown,
+  IconLogin,
+  IconLogout,
+  IconPlugConnected,
+  IconUser,
+} from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,6 +15,7 @@ import {
   Menu,
   MenuGroup,
   MenuItem,
+  MenuLinkItem,
   MenuPopup,
   MenuTrigger,
   MenuSeparator,
@@ -41,20 +48,28 @@ function userMenuLayout(sidebar: boolean, collapsed: boolean, iconOnly: boolean)
   return { avatarClassName, iconSlotClassName, labelClassName, triggerClassName };
 }
 
-function AccountMenuItem({ workspaceId }: { workspaceId?: string }) {
+function AccountMenuLinks({ sidebar, workspaceId }: { sidebar: boolean; workspaceId?: string }) {
   return (
-    <MenuItem
-      render={
-        workspaceId ? (
-          <Link to="/w/$workspaceId/account" params={{ workspaceId }} />
-        ) : (
-          <Link to="/account" />
-        )
-      }
-    >
-      <IconUser aria-hidden="true" />
-      {m.account_title()}
-    </MenuItem>
+    <MenuGroup>
+      <MenuItem
+        render={
+          workspaceId ? (
+            <Link to="/w/$workspaceId/account" params={{ workspaceId }} />
+          ) : (
+            <Link to="/account" />
+          )
+        }
+      >
+        <IconUser aria-hidden="true" />
+        {m.account_title()}
+      </MenuItem>
+      {sidebar && workspaceId ? (
+        <MenuLinkItem render={<Link to="/mcp" />}>
+          <IconPlugConnected aria-hidden="true" />
+          {m.mcp_intro_menu()}
+        </MenuLinkItem>
+      ) : null}
+    </MenuGroup>
   );
 }
 
@@ -167,9 +182,7 @@ export function UserMenu({
         side={sidebar ? "top" : "bottom"}
         className="w-52"
       >
-        <MenuGroup>
-          <AccountMenuItem workspaceId={workspaceId} />
-        </MenuGroup>
+        <AccountMenuLinks sidebar={sidebar} workspaceId={workspaceId} />
         <MenuSeparator />
         <MenuGroup>
           <MenuItem disabled={pending} closeOnClick={false} onClick={signOut}>
