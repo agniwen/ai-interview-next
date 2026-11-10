@@ -4,7 +4,10 @@ import { useState } from "react";
 import { AuthPageLayout } from "@/components/features/auth/auth-page-layout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { mcpScopeLabels } from "@/lib/mcp/scope-labels";
 import * as m from "@/paraglide/messages";
+
+const scopes = Object.keys(mcpScopeLabels).join(",");
 
 function McpIntro() {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
@@ -12,7 +15,7 @@ function McpIntro() {
   async function copyPrompt() {
     const endpoint = new URL("/api/mcp", window.location.origin).href;
     try {
-      await navigator.clipboard.writeText(m.mcp_intro_prompt({ endpoint }));
+      await navigator.clipboard.writeText(m.mcp_intro_prompt({ endpoint, scopes }));
       setCopyState("copied");
     } catch {
       setCopyState("error");

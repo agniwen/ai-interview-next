@@ -22,26 +22,15 @@ import { Spinner } from "@/components/ui/spinner";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { authClient } from "@/lib/auth/client";
 import { mcpKeys } from "@/lib/mcp/query-keys";
+import { mcpScopeLabels } from "@/lib/mcp/scope-labels";
 import { cn } from "@/lib/utils";
 import { workspaceApi } from "@/lib/workspaces/client";
 import * as m from "@/paraglide/messages";
 import { getLocale } from "@/paraglide/runtime";
 
 const api = workspaceApi.api["mcp-management"];
-const scopeLabels = {
-  "applications:read": m.mcp_applications_read,
-  "applications:write": m.mcp_applications_write,
-  "candidates:read": m.mcp_candidates_read,
-  "candidates:write": m.mcp_candidates_write,
-  "jobs:read": m.mcp_jobs_read,
-  "jobs:write": m.mcp_jobs_write,
-  "organization:read": m.mcp_organization_read,
-  "organization:write": m.mcp_organization_write,
-  "resumes:read": m.mcp_resumes_read,
-  "resumes:write": m.mcp_resumes_write,
-};
 
-type Scope = keyof typeof scopeLabels;
+type Scope = keyof typeof mcpScopeLabels;
 interface ConsentTool {
   name: string;
   scopes: [Scope, ...Scope[]];
@@ -74,7 +63,7 @@ function ScopePicker({
                 onCheckedChange={(checked) => onScopeChange(scope, checked)}
               />
               <Label className="wrap-anywhere min-w-0" htmlFor={scope}>
-                {scopeLabels[scope]()}
+                {mcpScopeLabels[scope]()}
               </Label>
             </div>
             <ul className="flex min-w-0 flex-wrap items-start gap-1.5 ps-6">
@@ -84,7 +73,7 @@ function ScopePicker({
                   const enabled = requiredScopes.every((required) => scopes.includes(required));
                   const additionalPermissions = requiredScopes
                     .slice(1)
-                    .map((required) => scopeLabels[required]());
+                    .map((required) => mcpScopeLabels[required]());
                   return (
                     <li
                       key={name}
@@ -226,7 +215,7 @@ function ConsentForm({ oauthQuery, userId }: { oauthQuery: string; userId: strin
           value={workspaceId}
           onValueChange={(value) => {
             setWorkspaceId(value);
-            setScopes(availableScopes);
+            setScopes([]);
           }}
         >
           <SelectTrigger id="mcp-workspace" className="w-full min-w-0" size="lg">
