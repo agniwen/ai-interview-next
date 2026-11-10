@@ -244,7 +244,7 @@ function ConsentForm({ oauthQuery, userId }: { oauthQuery: string; userId: strin
           value={workspaceId}
           onValueChange={(value) => {
             setWorkspaceId(value);
-            setScopes([]);
+            setScopes(availableScopes);
           }}
         >
           <SelectTrigger id="mcp-workspace" className="w-full min-w-0" size="lg">
