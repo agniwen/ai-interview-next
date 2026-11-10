@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { IconAlertCircle } from "@tabler/icons-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useHydrated } from "@tanstack/react-router";
@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Fieldset, FieldsetLegend } from "@/components/ui/fieldset";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectGroup,
@@ -50,53 +51,81 @@ function ScopePicker({
   tools: ConsentTool[];
 }) {
   const permissionList = new Intl.ListFormat(getLocale());
+  const visibleScopeCount = Math.min(availableScopes.length, 3);
+  const [viewportHeight, setViewportHeight] = useState<number>();
+  const measureScopes = useCallback(
+    (list: HTMLDivElement) => {
+      const rows = [...list.children].slice(0, visibleScopeCount);
+      const updateHeight = () => {
+        setViewportHeight(
+          rows.reduce((height, row) => height + row.getBoundingClientRect().height, 0),
+        );
+      };
+
+      updateHeight();
+      const observer = new ResizeObserver(updateHeight);
+      for (const row of rows) {
+        observer.observe(row, { box: "border-box" });
+      }
+      return () => observer.disconnect();
+    },
+    [visibleScopeCount],
+  );
   return (
     <Fieldset disabled={disabled} className="min-w-0">
       <FieldsetLegend className="mb-2.5 text-sm">{m.mcp_scopes()}</FieldsetLegend>
-      <div className="divide-y rounded-xl border bg-background">
-        {availableScopes.map((scope) => (
-          <div key={scope} className="flex min-w-0 flex-col gap-2 px-3 py-3.5 sm:px-4">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <Checkbox
-                id={scope}
-                checked={scopes.includes(scope)}
-                onCheckedChange={(checked) => onScopeChange(scope, checked)}
-              />
-              <Label className="wrap-anywhere min-w-0" htmlFor={scope}>
-                {mcpScopeLabels[scope]()}
-              </Label>
+      <ScrollArea
+        className="h-auto rounded-xl border bg-background"
+        viewportClassName="h-auto"
+        viewportProps={{ style: { maxHeight: viewportHeight } }}
+        overscrollContain
+        scrollbarGutter
+      >
+        <div className="divide-y" ref={measureScopes}>
+          {availableScopes.map((scope) => (
+            <div key={scope} className="flex min-w-0 flex-col gap-2 px-3 py-3.5 sm:px-4">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Checkbox
+                  id={scope}
+                  checked={scopes.includes(scope)}
+                  onCheckedChange={(checked) => onScopeChange(scope, checked)}
+                />
+                <Label className="wrap-anywhere min-w-0" htmlFor={scope}>
+                  {mcpScopeLabels[scope]()}
+                </Label>
+              </div>
+              <ul className="flex min-w-0 flex-wrap items-start gap-1.5 ps-6">
+                {tools
+                  .filter(({ scopes: [primary] }) => primary === scope)
+                  .map(({ name, scopes: requiredScopes }) => {
+                    const enabled = requiredScopes.every((required) => scopes.includes(required));
+                    const additionalPermissions = requiredScopes
+                      .slice(1)
+                      .map((required) => mcpScopeLabels[required]());
+                    return (
+                      <li
+                        key={name}
+                        className={cn(
+                          "flex min-w-0 max-w-full flex-col gap-0.5 rounded-md bg-muted px-2 py-1 text-xs",
+                          !enabled && "text-muted-foreground",
+                        )}
+                      >
+                        <code className="wrap-anywhere font-mono">{name}</code>
+                        {additionalPermissions.length > 0 && (
+                          <span className="wrap-anywhere text-muted-foreground">
+                            {m.mcp_tool_requires({
+                              permissions: permissionList.format(additionalPermissions),
+                            })}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+              </ul>
             </div>
-            <ul className="flex min-w-0 flex-wrap items-start gap-1.5 ps-6">
-              {tools
-                .filter(({ scopes: [primary] }) => primary === scope)
-                .map(({ name, scopes: requiredScopes }) => {
-                  const enabled = requiredScopes.every((required) => scopes.includes(required));
-                  const additionalPermissions = requiredScopes
-                    .slice(1)
-                    .map((required) => mcpScopeLabels[required]());
-                  return (
-                    <li
-                      key={name}
-                      className={cn(
-                        "flex min-w-0 max-w-full flex-col gap-0.5 rounded-md bg-muted px-2 py-1 text-xs",
-                        !enabled && "text-muted-foreground",
-                      )}
-                    >
-                      <code className="wrap-anywhere font-mono">{name}</code>
-                      {additionalPermissions.length > 0 && (
-                        <span className="wrap-anywhere text-muted-foreground">
-                          {m.mcp_tool_requires({
-                            permissions: permissionList.format(additionalPermissions),
-                          })}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-            </ul>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </ScrollArea>
     </Fieldset>
   );
 }
