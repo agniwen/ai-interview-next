@@ -7,6 +7,7 @@ import {
   ComposerActions,
   ComposerInput,
   ComposerSubmit,
+  getComposerText,
 } from "@/components/ui/composer";
 import type { ComposerValue } from "@/components/ui/composer";
 
@@ -60,7 +61,7 @@ export function PromptInput({
         <ComposerActions className="mx-0 px-0.5 pt-1">
           {actions && <ComposerActionGroup>{actions}</ComposerActionGroup>}
           <ComposerActionGroup align="end">
-            {running ? (
+            {running && !getComposerText(value).trim() ? (
               <Button
                 aria-label={stopLabel}
                 disabled={disabled}

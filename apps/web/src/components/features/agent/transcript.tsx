@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useLayoutEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { IconArrowDown } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,6 @@ import {
   useMessageScroller,
   useMessageScrollerScrollable,
 } from "@/components/ui/message-scroller";
-import { ScrollAreaPrimitive, ScrollBar } from "@/components/ui/scroll-area";
 import { MessageResponse } from "@/components/ai-elements/message-response";
 import { Reasoning } from "@/components/ai-elements/reasoning";
 import { Trace } from "@/components/ui/trace";
@@ -30,7 +29,16 @@ function TranscriptMessageContent({
   streaming: boolean;
 }) {
   return (
-    <MessageScrollerItem messageId={message.id} key={message.id}>
+    <MessageScrollerItem
+      messageId={message.id}
+      key={message.id}
+      data-reasoning={message.role === "assistant" && message.reasoning ? "" : undefined}
+      data-reasoning-only={
+        message.role === "assistant" && message.reasoning && !message.text && !message.interrupted
+          ? ""
+          : undefined
+      }
+    >
       <Message align={message.role === "user" ? "end" : "start"}>
         <MessageContent className="gap-1">
           {message.role === "user" ? (
@@ -51,7 +59,9 @@ function TranscriptMessageContent({
                   </Reasoning>
                 </Trace>
               )}
-              <MessageResponse streaming={streaming}>{message.text}</MessageResponse>
+              {message.text && (
+                <MessageResponse streaming={streaming}>{message.text}</MessageResponse>
+              )}
               {message.interrupted && (
                 <p className="text-xs text-muted-foreground">{m.agent_interrupted()}</p>
               )}
@@ -81,9 +91,21 @@ const TranscriptMessage = memo(TranscriptMessageContent);
 const floatingControlClass =
   "flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-popover/85 text-xs text-muted-foreground shadow-xs/5 backdrop-blur-sm transition-colors hover:bg-popover hover:text-foreground";
 
-function TranscriptControls({ status }: { status: ChatSnapshot["status"] }) {
+function TranscriptControls({
+  status,
+  latestUserMessageId,
+}: {
+  status: ChatSnapshot["status"];
+  latestUserMessageId?: string;
+}) {
   const { end } = useMessageScrollerScrollable();
   const { scrollToEnd } = useMessageScroller();
+  useLayoutEffect(() => {
+    if (latestUserMessageId) {
+      scrollToEnd();
+    }
+  }, [latestUserMessageId, scrollToEnd]);
+
   const reduceMotion = useReducedMotion();
   const responding = status === "running" || status === "stopping";
   const transition = { duration: reduceMotion ? 0 : 0.18 };
@@ -142,34 +164,33 @@ function TranscriptControls({ status }: { status: ChatSnapshot["status"] }) {
 
 function TranscriptContent({ snapshot }: { snapshot: ChatSnapshot }) {
   const responding = snapshot.status === "running" || snapshot.status === "stopping";
+  let latestUserMessageId: string | undefined;
+  for (const message of snapshot.messages) {
+    if (message.role === "user") {
+      latestUserMessageId = message.id;
+    }
+  }
   return (
     <MessageScrollerProvider autoScroll scrollEdgeThreshold={64}>
-      <ScrollAreaPrimitive.Root render={<MessageScroller />} className="min-h-0 flex-1">
-        <ScrollAreaPrimitive.Viewport
-          render={<MessageScrollerViewport />}
-          aria-label={m.agent_chats()}
-          className="outline-none focus-visible:ring-0 [scrollbar-width:none]"
-        >
-          <ScrollAreaPrimitive.Content className="min-h-full" style={{ minWidth: 0 }}>
-            <MessageScrollerContent
-              className={`mx-auto w-full max-w-3xl gap-5 px-4 pt-18 md:px-6 ${responding ? "pb-14" : "pb-3"}`}
-            >
-              {snapshot.messages.map((message) => (
-                <TranscriptMessage
-                  message={message}
-                  key={message.id}
-                  streaming={
-                    message.id.startsWith("live-") &&
-                    (snapshot.status === "running" || snapshot.status === "stopping")
-                  }
-                />
-              ))}
-            </MessageScrollerContent>
-          </ScrollAreaPrimitive.Content>
-        </ScrollAreaPrimitive.Viewport>
-        <ScrollBar />
-        <TranscriptControls status={snapshot.status} />
-      </ScrollAreaPrimitive.Root>
+      <MessageScroller className="flex-1">
+        <MessageScrollerViewport aria-label={m.agent_chats()} className="focus-visible:ring-0">
+          <MessageScrollerContent
+            className={`mx-auto w-full max-w-3xl gap-2 px-4 pt-18 md:px-6 [&>*+*:not([data-reasoning-only]+[data-reasoning])]:mt-3 ${responding ? "pb-14" : "pb-3"}`}
+          >
+            {snapshot.messages.map((message) => (
+              <TranscriptMessage
+                message={message}
+                key={message.id}
+                streaming={
+                  message.id.startsWith("live-") &&
+                  (snapshot.status === "running" || snapshot.status === "stopping")
+                }
+              />
+            ))}
+          </MessageScrollerContent>
+        </MessageScrollerViewport>
+        <TranscriptControls status={snapshot.status} latestUserMessageId={latestUserMessageId} />
+      </MessageScroller>
     </MessageScrollerProvider>
   );
 }

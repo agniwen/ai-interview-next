@@ -1,4 +1,5 @@
 import { IconSparkles } from "@tabler/icons-react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -20,16 +21,22 @@ export function Reasoning({
   duration,
   streaming = false,
   children,
-  defaultOpen = false,
 }: {
   title: string;
   duration?: string;
   streaming?: boolean;
   children: ReactNode;
-  defaultOpen?: boolean;
 }) {
+  const [previousStreaming, setPreviousStreaming] = useState(streaming);
+  const [open, setOpen] = useState(streaming);
+
+  if (streaming !== previousStreaming) {
+    setPreviousStreaming(streaming);
+    setOpen(streaming);
+  }
+
   return (
-    <TraceCollapsible defaultOpen={defaultOpen}>
+    <TraceCollapsible open={open} onOpenChange={setOpen}>
       <TraceCollapsibleTrigger>
         <TraceLine status={streaming ? "running" : undefined}>
           <TraceIcon>{streaming ? <Spinner /> : <IconSparkles />}</TraceIcon>

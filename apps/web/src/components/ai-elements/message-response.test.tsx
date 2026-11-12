@@ -7,9 +7,20 @@ describe("MessageResponse", () => {
     const live = renderToStaticMarkup(<MessageResponse streaming>**正在输出</MessageResponse>);
     const history = renderToStaticMarkup(<MessageResponse>**正在输出</MessageResponse>);
     expect(live).toContain('data-streamdown="strong"');
-    expect(live).toContain("正在输出</span>");
+    expect(live.replaceAll(/<[^>]+>/gu, "")).toBe("正在输出");
+    expect(live).toContain('data-sd-animate="true"');
     expect(history).toContain("**正在输出");
     expect(history).not.toContain('data-streamdown="strong"');
+    expect(history).not.toContain("data-sd-animate");
+  });
+
+  it("initially reveals only the first block of a streamed batch", () => {
+    const markdown = "第一段\n\n第二段";
+    const live = renderToStaticMarkup(<MessageResponse streaming>{markdown}</MessageResponse>);
+    const history = renderToStaticMarkup(<MessageResponse>{markdown}</MessageResponse>);
+
+    expect(live.replaceAll(/<[^>]+>/gu, "")).toBe("第一段");
+    expect(history.replaceAll(/<[^>]+>/gu, "")).toBe("第一段\n第二段");
   });
 
   it("renders CJK emphasis and GFM tables with the local table wrapper", () => {

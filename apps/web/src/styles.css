@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 @import "tw-animate-css";
+@import "streamdown/styles.css";
 @import "misans/lib/Normal/MiSans-Regular.min.css";
 @import "misans/lib/Normal/MiSans-Semibold.min.css";
 @import "@fontsource-variable/geist-mono";
