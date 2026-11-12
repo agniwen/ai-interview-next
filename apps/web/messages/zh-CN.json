@@ -961,5 +961,22 @@
   "mcp_connected": "已授权给此工作区",
   "mcp_revoke": "撤销授权",
   "ats_agent_delegated": "通过 Sainoa Agent 处理",
-  "ats_source_external_import": "外部录入"
+  "ats_source_external_import": "外部录入",
+  "dashboard_my_interviews": "我的面试",
+  "dashboard_followed_resumes": "我跟进的简历",
+  "dashboard_view_all": "查看全部",
+  "dashboard_show_overview": "返回概览",
+  "dashboard_all_roles": "全部身份",
+  "dashboard_uploader": "上传人",
+  "dashboard_all_uploaders": "所有上传人",
+  "dashboard_my_uploads": "我上传的",
+  "dashboard_no_interviews": "暂无与你相关的面试",
+  "dashboard_no_resumes": "你还没有上传简历",
+  "dashboard_attention": "待处理上传",
+  "dashboard_resume_versions": "简历版本",
+  "dashboard_interview_details": "查看面试详情",
+  "dashboard_page_count": "第 {page} 页，共 {total} 页",
+  "interviews_all_types": "全部类型",
+  "interviews_scheduled_time": "计划时间",
+  "interviews_search": "搜索候选人、岗位或面试标签"
 }

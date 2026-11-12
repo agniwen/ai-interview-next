@@ -2,17 +2,20 @@ import type { Database } from "@ai-interview/db";
 import {
   application,
   applicationActivity,
+  candidate,
   interviewerAgent,
   interviewRound,
   interviewAssignment,
   interviewQuestionSnapshot,
   interviewEvaluation,
+  job,
   member,
   user,
   questionSet,
 } from "@ai-interview/db/schema";
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
-import type { CreateInterviewInput } from "./input";
+import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import type { z } from "zod";
+import type { CreateInterviewInput, workspaceInterviewQuery } from "./input";
 import { interviewActivityValues } from "./activity";
 import type { ListQuery } from "../ats/input";
 import { canConfirmEvaluation, evaluationSummary, readEvaluationSummary } from "./evaluation-state";
@@ -262,6 +265,79 @@ async function roundAssignments(db: Database, workspaceId: string, ids: string[]
     grouped.set(row.roundId, list);
   }
   return grouped;
+}
+
+export async function listWorkspaceInterviews(
+  db: Database,
+  workspaceId: string,
+  { kind, page, pageSize, search, status }: z.output<typeof workspaceInterviewQuery>,
+) {
+  const where = and(
+    eq(interviewRound.workspaceId, workspaceId),
+    isNull(application.deletedAt),
+    kind ? eq(interviewRound.kind, kind) : undefined,
+    status ? eq(interviewRound.status, status) : undefined,
+    search
+      ? or(
+          sql`instr(lower(${candidate.name}), lower(${search})) > 0`,
+          sql`instr(lower(${job.title}), lower(${search})) > 0`,
+          sql`instr(lower(${interviewRound.label}), lower(${search})) > 0`,
+        )
+      : undefined,
+  );
+  const fromRounds = db
+    .select({
+      agentName: sql<string | null>`${interviewerAgent.name}`.as("agent_name"),
+      applicationId: interviewRound.applicationId,
+      candidateName: candidate.name,
+      createdAt: interviewRound.createdAt,
+      id: interviewRound.id,
+      jobTitle: job.title,
+      kind: interviewRound.kind,
+      label: interviewRound.label,
+      scheduledAt: interviewRound.scheduledAt,
+      sequence: interviewRound.sequence,
+      status: interviewRound.status,
+    })
+    .from(interviewRound)
+    .innerJoin(
+      application,
+      and(
+        eq(application.id, interviewRound.applicationId),
+        eq(application.workspaceId, interviewRound.workspaceId),
+      ),
+    )
+    .innerJoin(candidate, eq(candidate.id, application.candidateId))
+    .innerJoin(job, eq(job.id, application.jobId))
+    .leftJoin(interviewerAgent, eq(interviewerAgent.id, interviewRound.interviewerAgentId))
+    .where(where)
+    .as("workspace_interviews");
+  const [rows, total] = await Promise.all([
+    db
+      .select()
+      .from(fromRounds)
+      .orderBy(desc(fromRounds.createdAt), desc(fromRounds.id))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
+    db.$count(fromRounds),
+  ]);
+  const assignments = await roundAssignments(
+    db,
+    workspaceId,
+    rows.map(({ id }) => id),
+  );
+  return {
+    page,
+    pageSize,
+    rows: rows.map((row) => ({
+      ...row,
+      interviewers: (assignments.get(row.id) ?? [])
+        .filter(({ role }) => role === "interviewer")
+        .map(({ id, name }) => ({ id, name })),
+    })),
+    total,
+    version: 1 as const,
+  };
 }
 
 export async function listInterviews(

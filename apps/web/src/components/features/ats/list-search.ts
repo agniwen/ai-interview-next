@@ -36,6 +36,7 @@ export type ApplicationDetailSearch = z.output<typeof applicationDetailSearch>;
 export type ApplicationTab = ApplicationDetailSearch["tab"];
 
 export const resumeListSearch = listSearch.extend({
+  owner: z.literal("me").optional().catch(undefined),
   status: z.enum(resumeStatuses).optional().catch(undefined),
 });
 

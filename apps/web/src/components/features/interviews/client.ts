@@ -5,6 +5,8 @@ import { workspaceApi } from "@/lib/workspaces/client";
 import { readAts } from "../ats/client";
 import { questionSetKeys } from "../question-sets/query-keys";
 import { interviewerAgentKeys } from "../interviewer-agents/query-keys";
+import type { workspaceInterviewsSearch } from "./workspace-interviews-page";
+import type { z } from "zod";
 import { atsKeys } from "../ats/query-keys";
 
 export const interviewsApi = workspaceApi.api.interviews[":workspaceId"];
@@ -12,8 +14,12 @@ export const interviewKeys = createQueryKeys("interviews", {
   workspace: (workspaceId: string) => ({
     contextQueries: {
       edit: (id: string) => [id],
+      list: (query: z.output<typeof workspaceInterviewsSearch>) => [query],
       meeting: (id: string) => [id],
       members: (search: string) => [search],
+      personal: (query: { page: string; pageSize: string; role?: "interviewer" | "uploader" }) => [
+        query,
+      ],
       result: (id: string) => [id],
       rounds: (applicationId: string) => [applicationId],
       setup: (applicationId: string) => [applicationId],
@@ -151,6 +157,7 @@ export function deleteInterviewMutation(
       readAts(await interviewsApi[":id"].$delete({ param: { id, workspaceId } })),
     onSuccess: async () => {
       await Promise.all([
+        client.invalidateQueries({ queryKey: interviewKeys.workspace(workspaceId)._ctx.list._def }),
         client.invalidateQueries({
           queryKey: interviewKeys.workspace(workspaceId)._ctx.rounds(applicationId).queryKey,
         }),
@@ -183,6 +190,7 @@ export function updateInterviewMutation(
       readAts(await interviewsApi[":id"].$put({ json, param: { id, workspaceId } })),
     onSuccess: async () => {
       await Promise.all([
+        client.invalidateQueries({ queryKey: interviewKeys.workspace(workspaceId)._ctx.list._def }),
         client.invalidateQueries({
           queryKey: interviewKeys.workspace(workspaceId)._ctx.rounds(applicationId).queryKey,
         }),

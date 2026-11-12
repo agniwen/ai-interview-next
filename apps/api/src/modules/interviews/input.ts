@@ -1,4 +1,14 @@
 import { z } from "zod";
+import { listQuery, paginationQuery } from "../ats/input";
+
+export const workspaceInterviewQuery = listQuery.extend({
+  kind: z.enum(["human", "ai"]).optional(),
+  status: z.enum(["scheduled", "in_progress", "completed"]).optional(),
+});
+
+export const personalInterviewQuery = paginationQuery.extend({
+  role: z.enum(["interviewer", "uploader"]).optional(),
+});
 
 const orderedIds = z.array(z.uuid()).refine((ids) => new Set(ids).size === ids.length);
 const common = {

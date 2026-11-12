@@ -82,12 +82,14 @@ function ChatFeedback({
 function ChatContent({
   workspaceId,
   sessionId,
+  focusRequest,
   onSummary,
   onCreated,
   onRestore,
 }: {
   workspaceId: string;
   sessionId?: string;
+  focusRequest: number;
   onSummary: (summary: ChatSummary) => void;
   onCreated: (id: string) => Promise<void>;
   onRestore: () => void;
@@ -180,6 +182,7 @@ function ChatContent({
         ) : (
           <div className="relative">
             <PromptInput
+              focusRequest={focusRequest}
               value={value}
               onValueChange={setValue}
               onSubmit={(next) => {
@@ -234,6 +237,7 @@ function ChatContent({
  * Workspace Agent page connecting sessions, live chat state, the composer and queued messages.
  */
 export function AgentPage({ workspaceId, sessionId }: { workspaceId: string; sessionId?: string }) {
+  const [focusRequest, setFocusRequest] = useState(0);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const api = agentClient(workspaceId);
@@ -309,6 +313,11 @@ export function AgentPage({ workspaceId, sessionId }: { workspaceId: string; ses
         </h1>
       </PageHeaderContent>
       <AgentSidebar
+        onNew={() => {
+          if (!sessionId) {
+            setFocusRequest((request) => request + 1);
+          }
+        }}
         workspaceId={workspaceId}
         sessions={list.data?.sessions ?? []}
         selected={sessionId}
@@ -332,6 +341,7 @@ export function AgentPage({ workspaceId, sessionId }: { workspaceId: string; ses
         </p>
       )}
       <ChatContent
+        focusRequest={focusRequest}
         key={`${workspaceId}:${sessionId ?? "new"}`}
         workspaceId={workspaceId}
         sessionId={sessionId}

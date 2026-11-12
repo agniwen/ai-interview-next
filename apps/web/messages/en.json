@@ -961,5 +961,22 @@
   "mcp_connected": "Authorized for this workspace",
   "mcp_revoke": "Revoke access",
   "ats_agent_delegated": "via Sainoa Agent",
-  "ats_source_external_import": "External import"
+  "ats_source_external_import": "External import",
+  "dashboard_my_interviews": "My interviews",
+  "dashboard_followed_resumes": "Resumes I follow",
+  "dashboard_view_all": "View all",
+  "dashboard_show_overview": "Back to overview",
+  "dashboard_all_roles": "All roles",
+  "dashboard_uploader": "Uploader",
+  "dashboard_all_uploaders": "All uploaders",
+  "dashboard_my_uploads": "My uploads",
+  "dashboard_no_interviews": "No interviews linked to you yet",
+  "dashboard_no_resumes": "You haven’t uploaded any resumes yet",
+  "dashboard_attention": "Uploads needing attention",
+  "dashboard_resume_versions": "Resume versions",
+  "dashboard_interview_details": "View interview details",
+  "dashboard_page_count": "Page {page} of {total}",
+  "interviews_all_types": "All types",
+  "interviews_scheduled_time": "Scheduled time",
+  "interviews_search": "Search candidates, jobs, or interview labels"
 }

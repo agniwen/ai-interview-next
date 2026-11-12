@@ -28,7 +28,13 @@ import { requireWorkspace } from "../../middleware/workspace";
 import { resumeMediaType } from "../../lib/resume-file";
 import { interviewSetup, interviewMembers, interviewEditSetup } from "./options";
 import { listQuery, paginationQuery } from "../ats/input";
-import { createInterviewInput, updateInterviewInput } from "./input";
+import {
+  createInterviewInput,
+  personalInterviewQuery,
+  updateInterviewInput,
+  workspaceInterviewQuery,
+} from "./input";
+import { listPersonalInterviews } from "./personal";
 import { createInterviewInvitation } from "./invitation";
 import {
   updateInterview,
@@ -37,6 +43,7 @@ import {
   getInterview,
   interviewApplication,
   listInterviews,
+  listWorkspaceInterviews,
 } from "./service";
 
 function validationResult(result: { success: boolean }, c: Context<AuthenticatedEnv>) {
@@ -60,6 +67,33 @@ const interviewParams = sValidator(
  * Public endpoints use interview domain names; establish identity, workspace access and external formats at the boundary. */
 export const interviewRoutes = new Hono<AuthenticatedEnv>()
   .use("/:workspaceId/*", requireWorkspace)
+  .get(
+    "/:workspaceId/rounds",
+    sValidator("query", workspaceInterviewQuery, validationResult),
+    async (c) =>
+      c.json(
+        await listWorkspaceInterviews(
+          c.get("database"),
+          c.get("workspaceId"),
+          c.req.valid("query"),
+        ),
+        200,
+      ),
+  )
+  .get(
+    "/:workspaceId/personal",
+    sValidator("query", personalInterviewQuery, validationResult),
+    async (c) =>
+      c.json(
+        await listPersonalInterviews(
+          c.get("database"),
+          c.get("workspaceId"),
+          c.get("userId"),
+          c.req.valid("query"),
+        ),
+        200,
+      ),
+  )
   .get(
     "/:workspaceId/:id/meeting/resumes/:resumeId",
     sValidator(

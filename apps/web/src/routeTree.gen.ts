@@ -33,6 +33,7 @@ import { Route as AWWorkspaceIdHubCandidatesRouteImport } from './routes/_a.w.$w
 import { Route as AWWorkspaceIdHubDashboardRouteImport } from './routes/_a.w.$workspaceId.hub.dashboard'
 import { Route as AWWorkspaceIdHubDepartmentsRouteImport } from './routes/_a.w.$workspaceId.hub.departments'
 import { Route as AWWorkspaceIdHubInterviewerAgentsRouteImport } from './routes/_a.w.$workspaceId.hub.interviewer-agents'
+import { Route as AWWorkspaceIdHubInterviewsRouteImport } from './routes/_a.w.$workspaceId.hub.interviews'
 import { Route as AWWorkspaceIdHubJobsRouteImport } from './routes/_a.w.$workspaceId.hub.jobs'
 import { Route as AWWorkspaceIdHubProjectsRouteImport } from './routes/_a.w.$workspaceId.hub.projects'
 import { Route as AWWorkspaceIdHubQuestionsRouteImport } from './routes/_a.w.$workspaceId.hub.questions'
@@ -174,6 +175,12 @@ const AWWorkspaceIdHubInterviewerAgentsRoute =
     path: '/interviewer-agents',
     getParentRoute: () => AWWorkspaceIdHubRoute,
   } as any)
+const AWWorkspaceIdHubInterviewsRoute =
+  AWWorkspaceIdHubInterviewsRouteImport.update({
+    id: '/interviews',
+    path: '/interviews',
+    getParentRoute: () => AWWorkspaceIdHubRoute,
+  } as any)
 const AWWorkspaceIdHubJobsRoute = AWWorkspaceIdHubJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
@@ -280,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
   '/w/$workspaceId/hub/departments': typeof AWWorkspaceIdHubDepartmentsRoute
   '/w/$workspaceId/hub/interviewer-agents': typeof AWWorkspaceIdHubInterviewerAgentsRoute
+  '/w/$workspaceId/hub/interviews': typeof AWWorkspaceIdHubInterviewsRoute
   '/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRouteWithChildren
   '/w/$workspaceId/hub/projects': typeof AWWorkspaceIdHubProjectsRoute
   '/w/$workspaceId/hub/questions': typeof AWWorkspaceIdHubQuestionsRouteWithChildren
@@ -318,6 +326,7 @@ export interface FileRoutesByTo {
   '/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
   '/w/$workspaceId/hub/departments': typeof AWWorkspaceIdHubDepartmentsRoute
   '/w/$workspaceId/hub/interviewer-agents': typeof AWWorkspaceIdHubInterviewerAgentsRoute
+  '/w/$workspaceId/hub/interviews': typeof AWWorkspaceIdHubInterviewsRoute
   '/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRouteWithChildren
   '/w/$workspaceId/hub/projects': typeof AWWorkspaceIdHubProjectsRoute
   '/w/$workspaceId/hub/questions': typeof AWWorkspaceIdHubQuestionsRouteWithChildren
@@ -359,6 +368,7 @@ export interface FileRoutesById {
   '/_a/w/$workspaceId/hub/dashboard': typeof AWWorkspaceIdHubDashboardRoute
   '/_a/w/$workspaceId/hub/departments': typeof AWWorkspaceIdHubDepartmentsRoute
   '/_a/w/$workspaceId/hub/interviewer-agents': typeof AWWorkspaceIdHubInterviewerAgentsRoute
+  '/_a/w/$workspaceId/hub/interviews': typeof AWWorkspaceIdHubInterviewsRoute
   '/_a/w/$workspaceId/hub/jobs': typeof AWWorkspaceIdHubJobsRouteWithChildren
   '/_a/w/$workspaceId/hub/projects': typeof AWWorkspaceIdHubProjectsRoute
   '/_a/w/$workspaceId/hub/questions': typeof AWWorkspaceIdHubQuestionsRouteWithChildren
@@ -400,6 +410,7 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/hub/dashboard'
     | '/w/$workspaceId/hub/departments'
     | '/w/$workspaceId/hub/interviewer-agents'
+    | '/w/$workspaceId/hub/interviews'
     | '/w/$workspaceId/hub/jobs'
     | '/w/$workspaceId/hub/projects'
     | '/w/$workspaceId/hub/questions'
@@ -438,6 +449,7 @@ export interface FileRouteTypes {
     | '/w/$workspaceId/hub/dashboard'
     | '/w/$workspaceId/hub/departments'
     | '/w/$workspaceId/hub/interviewer-agents'
+    | '/w/$workspaceId/hub/interviews'
     | '/w/$workspaceId/hub/jobs'
     | '/w/$workspaceId/hub/projects'
     | '/w/$workspaceId/hub/questions'
@@ -478,6 +490,7 @@ export interface FileRouteTypes {
     | '/_a/w/$workspaceId/hub/dashboard'
     | '/_a/w/$workspaceId/hub/departments'
     | '/_a/w/$workspaceId/hub/interviewer-agents'
+    | '/_a/w/$workspaceId/hub/interviews'
     | '/_a/w/$workspaceId/hub/jobs'
     | '/_a/w/$workspaceId/hub/projects'
     | '/_a/w/$workspaceId/hub/questions'
@@ -674,6 +687,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AWWorkspaceIdHubInterviewerAgentsRouteImport
       parentRoute: typeof AWWorkspaceIdHubRoute
     }
+    '/_a/w/$workspaceId/hub/interviews': {
+      id: '/_a/w/$workspaceId/hub/interviews'
+      path: '/interviews'
+      fullPath: '/w/$workspaceId/hub/interviews'
+      preLoaderRoute: typeof AWWorkspaceIdHubInterviewsRouteImport
+      parentRoute: typeof AWWorkspaceIdHubRoute
+    }
     '/_a/w/$workspaceId/hub/jobs': {
       id: '/_a/w/$workspaceId/hub/jobs'
       path: '/jobs'
@@ -852,6 +872,7 @@ interface AWWorkspaceIdHubRouteChildren {
   AWWorkspaceIdHubDashboardRoute: typeof AWWorkspaceIdHubDashboardRoute
   AWWorkspaceIdHubDepartmentsRoute: typeof AWWorkspaceIdHubDepartmentsRoute
   AWWorkspaceIdHubInterviewerAgentsRoute: typeof AWWorkspaceIdHubInterviewerAgentsRoute
+  AWWorkspaceIdHubInterviewsRoute: typeof AWWorkspaceIdHubInterviewsRoute
   AWWorkspaceIdHubJobsRoute: typeof AWWorkspaceIdHubJobsRouteWithChildren
   AWWorkspaceIdHubProjectsRoute: typeof AWWorkspaceIdHubProjectsRoute
   AWWorkspaceIdHubQuestionsRoute: typeof AWWorkspaceIdHubQuestionsRouteWithChildren
@@ -871,6 +892,7 @@ const AWWorkspaceIdHubRouteChildren: AWWorkspaceIdHubRouteChildren = {
   AWWorkspaceIdHubDepartmentsRoute: AWWorkspaceIdHubDepartmentsRoute,
   AWWorkspaceIdHubInterviewerAgentsRoute:
     AWWorkspaceIdHubInterviewerAgentsRoute,
+  AWWorkspaceIdHubInterviewsRoute: AWWorkspaceIdHubInterviewsRoute,
   AWWorkspaceIdHubJobsRoute: AWWorkspaceIdHubJobsRouteWithChildren,
   AWWorkspaceIdHubProjectsRoute: AWWorkspaceIdHubProjectsRoute,
   AWWorkspaceIdHubQuestionsRoute: AWWorkspaceIdHubQuestionsRouteWithChildren,
@@ -940,12 +962,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

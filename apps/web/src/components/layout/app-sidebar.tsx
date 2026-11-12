@@ -3,6 +3,7 @@ import {
   IconBriefcase,
   IconBuilding,
   IconChartBar,
+  IconCalendarEvent,
   IconFileCv,
   IconFolders,
   IconListDetails,
@@ -40,6 +41,7 @@ const hubMenuGroups = [
     items: [
       { icon: IconChartBar, label: m.workspace_dashboard, to: "/w/$workspaceId/hub/dashboard" },
       { icon: IconListDetails, label: m.ats_applications, to: "/w/$workspaceId/hub/applications" },
+      { icon: IconCalendarEvent, label: m.interviews_title, to: "/w/$workspaceId/hub/interviews" },
       { icon: IconFileCv, label: m.ats_resumes, to: "/w/$workspaceId/hub/resumes" },
       { icon: IconUsers, label: m.ats_candidates, to: "/w/$workspaceId/hub/candidates" },
     ],

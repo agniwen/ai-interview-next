@@ -33,6 +33,7 @@ import {
   sql,
 } from "drizzle-orm";
 
+import { personalResumeRows, uploadCandidateJoin } from "./personal-resumes";
 import type { SQLWrapper } from "drizzle-orm";
 import type {
   ApplicationListQuery,
@@ -328,14 +329,18 @@ export async function listResumes(
   db: Database,
   workspaceId: string,
   { page, pageSize, search, status }: ResumeListQuery,
+  userId?: string,
 ) {
   const workspace = and(
     eq(item.workspaceId, workspaceId),
     or(eq(batch.source, "manual_upload"), eq(item.status, "accepted")),
   );
   const effectiveStatus = sql`coalesce(${displayedRunStatus(db)}, ${item.status})`;
-  const where = and(
+  const needsAttention = sql`(${resume.id} is null or ${submission.identityStatus} = 'pending_review'
+    or ${effectiveStatus} in ('waiting', 'queued', 'running', 'failed', 'upload_failed'))`;
+  const filters = and(
     workspace,
+    userId ? eq(batch.createdBy, userId) : undefined,
     search
       ? or(
           includesText(item.filename, search),
@@ -348,6 +353,7 @@ export async function listResumes(
       ? inArray(effectiveStatus, ["failed", "upload_failed"])
       : status && eq(effectiveStatus, status),
   );
+  const where = userId ? personalResumeRows(db, needsAttention, filters) : filters;
   const [rows, [result]] = await Promise.all([
     db
       .select({
@@ -375,6 +381,7 @@ export async function listResumes(
         jobId: submission.jobId,
         jobTitle: job.title,
         linkedCandidateName: candidate.name,
+        needsAttention: sql<boolean>`${needsAttention}`.mapWith(Boolean),
         parseStage: run.stage,
         parseStatus: displayedRunStatus(db),
         resumeId: resume.id,
@@ -389,16 +396,10 @@ export async function listResumes(
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
       .leftJoin(resume, eq(resume.id, submission.resumeId))
-      .leftJoin(
-        candidate,
-        eq(
-          candidate.id,
-          sql`case when ${batch.source} = 'external_import' then coalesce(${submission.resolvedCandidateId}, ${resume.candidateId}) else ${resume.candidateId} end`,
-        ),
-      )
+      .leftJoin(candidate, uploadCandidateJoin)
       .leftJoin(job, eq(job.id, submission.jobId))
       .where(where)
-      .orderBy(desc(batch.createdAt), desc(item.id))
+      .orderBy(...(userId ? [desc(needsAttention)] : []), desc(batch.createdAt), desc(item.id))
       .limit(pageSize)
       .offset((page - 1) * pageSize),
     db
@@ -409,13 +410,7 @@ export async function listResumes(
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
       .leftJoin(resume, eq(resume.id, submission.resumeId))
-      .leftJoin(
-        candidate,
-        eq(
-          candidate.id,
-          sql`case when ${batch.source} = 'external_import' then coalesce(${submission.resolvedCandidateId}, ${resume.candidateId}) else ${resume.candidateId} end`,
-        ),
-      )
+      .leftJoin(candidate, uploadCandidateJoin)
       .where(where),
   ]);
   const batches = rows.length

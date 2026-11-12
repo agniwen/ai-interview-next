@@ -1,5 +1,6 @@
 import { IconArrowUp, IconPlayerStopFilled } from "@tabler/icons-react";
 import type { ReactNode } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Composer,
@@ -23,6 +24,7 @@ export function PromptInput({
   stopLabel,
   running = false,
   disabled = false,
+  focusRequest,
   onStop,
   actions,
   children,
@@ -36,10 +38,20 @@ export function PromptInput({
   stopLabel: string;
   running?: boolean;
   disabled?: boolean;
+  focusRequest: number;
   onStop: () => void;
   actions?: ReactNode;
   children?: ReactNode;
 }) {
+  const inputRef = useRef<HTMLDivElement>(null);
+  const handledFocusRequest = useRef<number>(undefined);
+  useEffect(() => {
+    if (!disabled && handledFocusRequest.current !== focusRequest) {
+      inputRef.current?.focus({ preventScroll: true });
+      handledFocusRequest.current = focusRequest;
+    }
+  }, [disabled, focusRequest]);
+
   return (
     <div className="relative">
       {children}
@@ -53,6 +65,7 @@ export function PromptInput({
         value={value}
       >
         <ComposerInput
+          ref={inputRef}
           aria-label={label}
           className="px-2 py-1.5 [--composer-min-rows:1]"
           placeholder={placeholder}

@@ -764,5 +764,22 @@
   "mcp_connected": "이 작업 공간에 대해 승인됨",
   "mcp_revoke": "액세스 철회",
   "ats_agent_delegated": "Sainoa Agent를 통해 처리",
-  "ats_source_external_import": "외부 가져오기"
+  "ats_source_external_import": "외부 가져오기",
+  "dashboard_my_interviews": "내 면접",
+  "dashboard_followed_resumes": "팔로우 중인 이력서",
+  "dashboard_view_all": "모두 보기",
+  "dashboard_show_overview": "개요로 돌아가기",
+  "dashboard_all_roles": "모든 역할",
+  "dashboard_uploader": "업로더",
+  "dashboard_all_uploaders": "모든 업로더",
+  "dashboard_my_uploads": "내 업로드",
+  "dashboard_no_interviews": "관련된 면접이 아직 없습니다",
+  "dashboard_no_resumes": "아직 업로드한 이력서가 없습니다",
+  "dashboard_attention": "처리가 필요한 업로드",
+  "dashboard_resume_versions": "이력서 버전",
+  "dashboard_interview_details": "면접 상세 보기",
+  "dashboard_page_count": "{total}페이지 중 {page}페이지",
+  "interviews_all_types": "모든 유형",
+  "interviews_scheduled_time": "예정 시간",
+  "interviews_search": "후보자, 채용 직무 또는 면접 라벨 검색"
 }

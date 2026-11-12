@@ -119,6 +119,7 @@ export function AgentSidebar({
   loading,
   error,
   retry,
+  onNew,
   rename,
   remove,
 }: {
@@ -128,6 +129,7 @@ export function AgentSidebar({
   loading: boolean;
   error: boolean;
   retry: () => void;
+  onNew: () => void;
   rename: (session: ChatSummary, title: string) => Promise<boolean>;
   remove: (session: ChatSummary) => void;
 }) {
@@ -144,7 +146,10 @@ export function AgentSidebar({
               <SidebarMenuButton
                 tooltip={m.agent_new()}
                 render={<Link to="/w/$workspaceId/agent" params={{ workspaceId }} search={{}} />}
-                onClick={() => setOpenMobile(false)}
+                onClick={() => {
+                  setOpenMobile(false);
+                  onNew();
+                }}
               >
                 <IconPlus />
                 <span>{m.agent_new()}</span>

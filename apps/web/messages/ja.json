@@ -764,5 +764,22 @@
   "mcp_connected": "このワークスペースで承認済み",
   "mcp_revoke": "アクセスを取り消す",
   "ats_agent_delegated": "Sainoa Agent 経由",
-  "ats_source_external_import": "外部取り込み"
+  "ats_source_external_import": "外部取り込み",
+  "dashboard_my_interviews": "自分の面接",
+  "dashboard_followed_resumes": "フォロー中の履歴書",
+  "dashboard_view_all": "すべて表示",
+  "dashboard_show_overview": "概要に戻る",
+  "dashboard_all_roles": "すべての役割",
+  "dashboard_uploader": "アップロード者",
+  "dashboard_all_uploaders": "すべてのアップロード者",
+  "dashboard_my_uploads": "自分のアップロード",
+  "dashboard_no_interviews": "関連する面接はまだありません",
+  "dashboard_no_resumes": "履歴書はまだアップロードされていません",
+  "dashboard_attention": "対応が必要なアップロード",
+  "dashboard_resume_versions": "履歴書のバージョン",
+  "dashboard_interview_details": "面接の詳細を表示",
+  "dashboard_page_count": "{total} ページ中 {page} ページ目",
+  "interviews_all_types": "すべての種類",
+  "interviews_scheduled_time": "予定時刻",
+  "interviews_search": "候補者、求人、面接ラベルを検索"
 }

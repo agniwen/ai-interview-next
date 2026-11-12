@@ -99,9 +99,18 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       return c.json(result, 200);
     },
   )
-  .get("/:workspaceId/resumes", sValidator("query", resumeListQuery), async (c) =>
-    c.json(await listResumes(c.get("database"), c.get("workspaceId"), c.req.valid("query")), 200),
-  )
+  .get("/:workspaceId/resumes", sValidator("query", resumeListQuery), async (c) => {
+    const query = c.req.valid("query");
+    return c.json(
+      await listResumes(
+        c.get("database"),
+        c.get("workspaceId"),
+        query,
+        query.owner === "me" ? c.get("userId") : undefined,
+      ),
+      200,
+    );
+  })
   .get("/:workspaceId/applications", sValidator("query", applicationListQuery), async (c) =>
     c.json(
       await listApplications(c.get("database"), c.get("workspaceId"), c.req.valid("query")),
