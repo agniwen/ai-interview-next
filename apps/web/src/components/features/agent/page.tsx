@@ -1,10 +1,11 @@
+import { RecruitingDetailsPanel } from "./recruiting-cards";
 import { useSkeletonPhase } from "@/hooks/use-skeleton-phase";
 import { ChatTranscriptSkeleton } from "@/components/skeletons/components/chat-transcript-skeleton";
 import { useCallback, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { IconSparkles, IconPlayerPlay } from "@tabler/icons-react";
-import type { AgentCommand, ChatSnapshot, ChatSummary } from "@ai-interview/agent";
+import type { AgentCommand, ChatSnapshot, ChatSummary, RecruitingCard } from "@ai-interview/agent";
 import { agentClient } from "@/lib/agent/client";
 import { agentSessionsQueryOptions } from "@/lib/agent/queries";
 import { useChat } from "@/lib/agent/use-chat";
@@ -29,10 +30,12 @@ function ChatBody({
   sessionId,
   snapshot,
   failed,
+  onOpenCard,
 }: {
   sessionId?: string;
   snapshot?: ChatSnapshot;
   failed: boolean;
+  onOpenCard: (card: RecruitingCard) => void;
 }) {
   const phase = useSkeletonPhase(Boolean(sessionId && !snapshot));
   if (phase === "skeleton") {
@@ -42,7 +45,7 @@ function ChatBody({
     return null;
   }
   if (snapshot) {
-    return <Transcript snapshot={snapshot} />;
+    return <Transcript snapshot={snapshot} onOpenCard={onOpenCard} />;
   }
   return (
     <div className="flex shrink-0 flex-col items-center justify-center gap-4 px-6 pb-7">
@@ -99,6 +102,12 @@ function ChatContent({
     sessionId,
     onSummary,
   );
+  const [selectedCard, setSelectedCard] = useState<RecruitingCard>();
+  const [cardSelection, setCardSelection] = useState(0);
+  const openCard = useCallback((card: RecruitingCard) => {
+    setSelectedCard(card);
+    setCardSelection((previous) => previous + 1);
+  }, []);
   const [commandBusy, setCommandBusy] = useState(false);
   const [value, setValue] = useState<ComposerValue>([]);
   const [busy, setBusy] = useState(false);
@@ -156,78 +165,85 @@ function ChatContent({
   const running = snapshot?.status === "running";
   const stopping = snapshot?.status === "stopping";
   return (
-    <div
-      className={
-        sessionId
-          ? "flex min-h-0 flex-1 flex-col"
-          : "flex min-h-0 flex-1 flex-col justify-center pb-[14dvh]"
-      }
-    >
-      <ChatBody sessionId={sessionId} snapshot={snapshot} failed={failed} />
+    <div className="flex min-h-0 min-w-0 flex-1">
       <div
         className={
           sessionId
-            ? "mx-auto w-full max-w-3xl shrink-0 px-4 pb-[38px] md:px-6 md:pb-[42px]"
-            : "mx-auto w-full max-w-xl shrink-0 px-4"
+            ? "flex min-h-0 min-w-0 flex-1 flex-col"
+            : "flex min-h-0 min-w-0 flex-1 flex-col justify-center pb-[14dvh]"
         }
       >
-        <ChatFeedback failed={failed} error={error} generationError={snapshot?.error} />
-        {snapshot?.summary.trashed ? (
-          <div className="flex items-center justify-between rounded-xl border p-3 text-sm">
-            <span>{m.agent_trashed()}</span>
-            <Button size="sm" onClick={onRestore}>
-              {m.agent_restore()}
-            </Button>
-          </div>
-        ) : (
-          <div className="relative">
-            <PromptInput
-              focusRequest={focusRequest}
-              value={value}
-              onValueChange={setValue}
-              onSubmit={(next) => {
-                void submit(next);
-              }}
-              label={m.agent_message()}
-              placeholder={running ? m.agent_queue_placeholder() : m.agent_placeholder()}
-              sendLabel={m.agent_send()}
-              stopLabel={m.agent_stop()}
-              running={running || stopping}
-              onStop={() => act({ type: "stop" })}
-              disabled={busy || stopping || (!!sessionId && !connected)}
-              actions={
-                snapshot?.status === "paused" ? (
-                  <Button
-                    type="button"
-                    size="xs"
-                    variant="ghost"
-                    disabled={commandBusy || !connected}
-                    onClick={() => act({ type: "resume" })}
-                  >
-                    <IconPlayerPlay />
-                    {m.agent_resume()}
-                  </Button>
-                ) : null
-              }
-            >
-              {!!snapshot?.queue.length && (
-                <ChatQueue
-                  items={snapshot.queue}
-                  busy={commandBusy || stopping || !connected}
-                  canSteer={running}
-                  onReorder={(ids) => command({ ids, type: "reorder" })}
-                  onEdit={(id, text) => command({ id, text, type: "edit" })}
-                  onRemove={(id) => act({ id, type: "remove" })}
-                  onSteer={(id) => act({ id, type: "steer" })}
-                />
-              )}
-            </PromptInput>
-            <p className="absolute inset-x-0 top-full mt-2 text-center text-xs leading-4 text-muted-foreground">
-              {m.agent_disclaimer()}
-            </p>
-          </div>
-        )}
+        <ChatBody sessionId={sessionId} snapshot={snapshot} failed={failed} onOpenCard={openCard} />
+        <div
+          className={
+            sessionId
+              ? "mx-auto w-full max-w-3xl shrink-0 px-4 pb-[38px] md:px-6 md:pb-[42px]"
+              : "mx-auto w-full max-w-xl shrink-0 px-4"
+          }
+        >
+          <ChatFeedback failed={failed} error={error} generationError={snapshot?.error} />
+          {snapshot?.summary.trashed ? (
+            <div className="flex items-center justify-between rounded-xl border p-3 text-sm">
+              <span>{m.agent_trashed()}</span>
+              <Button size="sm" onClick={onRestore}>
+                {m.agent_restore()}
+              </Button>
+            </div>
+          ) : (
+            <div className="relative">
+              <PromptInput
+                focusRequest={focusRequest}
+                value={value}
+                onValueChange={setValue}
+                onSubmit={(next) => {
+                  void submit(next);
+                }}
+                label={m.agent_message()}
+                placeholder={running ? m.agent_queue_placeholder() : m.agent_placeholder()}
+                sendLabel={m.agent_send()}
+                stopLabel={m.agent_stop()}
+                running={running || stopping}
+                onStop={() => act({ type: "stop" })}
+                disabled={busy || stopping || (!!sessionId && !connected)}
+                actions={
+                  snapshot?.status === "paused" ? (
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="ghost"
+                      disabled={commandBusy || !connected}
+                      onClick={() => act({ type: "resume" })}
+                    >
+                      <IconPlayerPlay />
+                      {m.agent_resume()}
+                    </Button>
+                  ) : null
+                }
+              >
+                {!!snapshot?.queue.length && (
+                  <ChatQueue
+                    items={snapshot.queue}
+                    busy={commandBusy || stopping || !connected}
+                    canSteer={running}
+                    onReorder={(ids) => command({ ids, type: "reorder" })}
+                    onEdit={(id, text) => command({ id, text, type: "edit" })}
+                    onRemove={(id) => act({ id, type: "remove" })}
+                    onSteer={(id) => act({ id, type: "steer" })}
+                  />
+                )}
+              </PromptInput>
+              <p className="absolute inset-x-0 top-full mt-2 text-center text-xs leading-4 text-muted-foreground">
+                {m.agent_disclaimer()}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
+      <RecruitingDetailsPanel
+        card={selectedCard}
+        onClose={() => setSelectedCard(undefined)}
+        selection={cardSelection}
+      />
     </div>
   );
 }

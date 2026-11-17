@@ -36,6 +36,7 @@ todos.json
 .turbo
 coverage
 apps/web/src/paraglide/
+/apps/web/src/routeTree.gen.ts
 apps/web/project.inlang/.cache/
 
 # Amp orb portal links generated per orb and thread

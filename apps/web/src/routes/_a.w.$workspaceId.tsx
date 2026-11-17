@@ -1,7 +1,17 @@
+import { cn } from "@/lib/utils";
+import {
+  contentPanelClassName,
+  ContentSidePanelProvider,
+  ContentSidePanelTarget,
+} from "@/components/layout/content-side-panel";
 import { SidebarPageProvider } from "@/components/layout/sidebar-page";
 import type { CSSProperties } from "react";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { PageHeaderProvider, PageHeaderTarget } from "@/components/layout/page-header";
+import {
+  pageHeaderFadeClassName,
+  PageHeaderProvider,
+  PageHeaderTarget,
+} from "@/components/layout/page-header";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -68,60 +78,70 @@ function WorkspaceShell() {
 
   return (
     <SidebarPageProvider>
-      <PageHeaderProvider>
-        <TooltipProvider>
-          <SidebarProvider
-            className="h-dvh min-h-0 overflow-hidden"
-            style={{ "--sidebar-width": "18rem" } as CSSProperties}
-          >
-            <AppSidebar section={section} workspaceId={workspaceId} />
-            <SidebarInset className="min-h-0 min-w-0 overflow-hidden md:rounded-2xl md:ring-1 md:ring-border/50">
-              <ScrollArea
-                className="min-h-0 flex-1 [&>[data-slot=scroll-area-scrollbar]]:z-20"
-                fill
-                viewportClassName={
-                  section === "agent" || canvasPage ? "overflow-hidden!" : undefined
-                }
-                overscrollContain
-              >
-                <div
-                  className={
-                    section === "agent" || canvasPage
-                      ? "flex h-full min-h-0 flex-col"
-                      : "flex min-h-full flex-col"
+      <ContentSidePanelProvider>
+        <PageHeaderProvider>
+          <TooltipProvider>
+            <SidebarProvider
+              className="h-dvh min-h-0 overflow-hidden"
+              style={{ "--sidebar-width": "18rem" } as CSSProperties}
+            >
+              <AppSidebar section={section} workspaceId={workspaceId} />
+              <SidebarInset className={contentPanelClassName}>
+                <ScrollArea
+                  className="min-h-0 flex-1 [&>[data-slot=scroll-area-scrollbar]]:z-20"
+                  fill
+                  viewportClassName={
+                    section === "agent" || canvasPage ? "overflow-hidden!" : undefined
                   }
+                  overscrollContain
                 >
-                  <header className="isolate sticky top-0 z-10 flex h-12 shrink-0 items-center justify-between gap-2 px-3 after:pointer-events-none after:absolute after:inset-0 after:-bottom-6 after:-z-1 after:bg-linear-to-b after:from-background after:from-20% after:via-background/85 after:via-50% after:to-transparent md:px-4">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <SidebarTrigger
-                        className="md:hidden"
-                        aria-label={m.workspace_toggle_sidebar()}
-                      />
-                      <PageHeaderTarget className="flex min-w-0 items-center gap-2" />
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <ThemeSwitcher />
-                      <LanguageSwitcher iconOnly />
-                      <WorkspaceSwitcher
-                        workspaceId={workspaceId}
-                        workspaces={workspaceSession.workspaces}
-                      />
-                    </div>
-                  </header>
                   <div
                     className={
-                      section === "agent" ? "-mt-12 flex min-h-0 flex-1 flex-col" : contentClassName
+                      section === "agent" || canvasPage
+                        ? "flex h-full min-h-0 flex-col"
+                        : "flex min-h-full flex-col"
                     }
                   >
-                    <WorkspaceFeedback error={error} />
-                    <Outlet />
+                    <header
+                      className={cn(
+                        pageHeaderFadeClassName,
+                        "sticky top-0 flex h-12 shrink-0 items-center justify-between gap-2 px-3 md:px-4",
+                      )}
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <SidebarTrigger
+                          className="md:hidden"
+                          aria-label={m.workspace_toggle_sidebar()}
+                        />
+                        <PageHeaderTarget className="flex min-w-0 items-center gap-2" />
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <ThemeSwitcher />
+                        <LanguageSwitcher iconOnly />
+                        <WorkspaceSwitcher
+                          workspaceId={workspaceId}
+                          workspaces={workspaceSession.workspaces}
+                        />
+                      </div>
+                    </header>
+                    <div
+                      className={
+                        section === "agent"
+                          ? "-mt-12 flex min-h-0 flex-1 flex-col"
+                          : contentClassName
+                      }
+                    >
+                      <WorkspaceFeedback error={error} />
+                      <Outlet />
+                    </div>
                   </div>
-                </div>
-              </ScrollArea>
-            </SidebarInset>
-          </SidebarProvider>
-        </TooltipProvider>
-      </PageHeaderProvider>
+                </ScrollArea>
+              </SidebarInset>
+              <ContentSidePanelTarget className="contents" />
+            </SidebarProvider>
+          </TooltipProvider>
+        </PageHeaderProvider>
+      </ContentSidePanelProvider>
     </SidebarPageProvider>
   );
 }

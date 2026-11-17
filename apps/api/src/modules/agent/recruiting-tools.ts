@@ -1,3 +1,4 @@
+import { captureRecruitingCards } from "./recruiting-cards";
 import { defineExtension, defineTool, section } from "@earendil-works/pi-durable";
 import {
   businessTools,
@@ -22,7 +23,14 @@ export function recruitingTools(context: ToolContext) {
         description: tool.description,
         execute: async (args) => {
           const result = await tool.call(context, args);
-          return { isError: "error" in result, output: toolContent(result) };
+          if ("error" in result) {
+            return { isError: true, output: toolContent(result) };
+          }
+          const cards = await captureRecruitingCards(context, tool.name, args, result);
+          return {
+            details: cards.length ? { cards, version: 1 } : undefined,
+            output: toolContent(result),
+          };
         },
         name: tool.name,
         parameters: tool.inputSchema,

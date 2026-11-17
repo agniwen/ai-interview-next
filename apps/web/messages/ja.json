@@ -797,5 +797,19 @@
   "dashboard_page_count": "{total} ページ中 {page} ページ目",
   "interviews_all_types": "すべての種類",
   "interviews_scheduled_time": "予定時刻",
-  "interviews_search": "候補者、求人、面接ラベルを検索"
+  "interviews_search": "候補者、求人、面接ラベルを検索",
+  "agent_card_view": "詳細を見る",
+  "agent_card_previous": "前のカード",
+  "agent_card_next": "次のカード",
+  "agent_card_close": "詳細を閉じる",
+  "agent_card_snapshot": "この検索時点の情報",
+  "agent_card_email": "メール",
+  "agent_card_phone": "電話番号",
+  "agent_card_stage": "採用ステージ",
+  "agent_card_file": "ファイル",
+  "agent_card_experience": "職務経歴",
+  "agent_card_education": "学歴",
+  "agent_card_interviews": "面接ラウンド",
+  "agent_card_screening": "書類選考",
+  "agent_card_more": "もっと見る"
 }

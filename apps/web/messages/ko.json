@@ -797,5 +797,19 @@
   "dashboard_page_count": "{total}페이지 중 {page}페이지",
   "interviews_all_types": "모든 유형",
   "interviews_scheduled_time": "예정 시간",
-  "interviews_search": "후보자, 채용 직무 또는 면접 라벨 검색"
+  "interviews_search": "후보자, 채용 직무 또는 면접 라벨 검색",
+  "agent_card_view": "상세 보기",
+  "agent_card_previous": "이전 카드",
+  "agent_card_next": "다음 카드",
+  "agent_card_close": "상세 닫기",
+  "agent_card_snapshot": "이 조회 시점의 스냅샷",
+  "agent_card_email": "이메일",
+  "agent_card_phone": "전화번호",
+  "agent_card_stage": "채용 단계",
+  "agent_card_file": "파일",
+  "agent_card_experience": "경력",
+  "agent_card_education": "학력",
+  "agent_card_interviews": "면접 라운드",
+  "agent_card_screening": "서류 심사",
+  "agent_card_more": "더 보기"
 }

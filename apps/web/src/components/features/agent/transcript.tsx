@@ -1,10 +1,11 @@
+import { RecruitingCards } from "./recruiting-cards";
 import { memo, useLayoutEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { IconArrowDown } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { CodeBlockCopyButton } from "@/components/ui/code-block";
 import { toastManager } from "@/components/ui/toast";
-import type { ChatSnapshot } from "@ai-interview/agent";
+import type { ChatSnapshot, RecruitingCard } from "@ai-interview/agent";
 import { Message, MessageContent } from "@/components/ui/message";
 import {
   MessageScrollerProvider,
@@ -24,9 +25,11 @@ import * as m from "@/paraglide/messages";
 function TranscriptMessageContent({
   message,
   streaming,
+  onOpenCard,
 }: {
   message: ChatSnapshot["messages"][number];
   streaming: boolean;
+  onOpenCard: (card: RecruitingCard) => void;
 }) {
   return (
     <MessageScrollerItem
@@ -34,7 +37,11 @@ function TranscriptMessageContent({
       key={message.id}
       data-reasoning={message.role === "assistant" && message.reasoning ? "" : undefined}
       data-reasoning-only={
-        message.role === "assistant" && message.reasoning && !message.text && !message.interrupted
+        message.role === "assistant" &&
+        message.reasoning &&
+        !message.text &&
+        !message.cards &&
+        !message.interrupted
           ? ""
           : undefined
       }
@@ -62,6 +69,7 @@ function TranscriptMessageContent({
               {message.text && (
                 <MessageResponse streaming={streaming}>{message.text}</MessageResponse>
               )}
+              {message.cards && <RecruitingCards cards={message.cards} onOpen={onOpenCard} />}
               {message.interrupted && (
                 <p className="text-xs text-muted-foreground">{m.agent_interrupted()}</p>
               )}
@@ -162,7 +170,13 @@ function TranscriptControls({
   );
 }
 
-function TranscriptContent({ snapshot }: { snapshot: ChatSnapshot }) {
+function TranscriptContent({
+  snapshot,
+  onOpenCard,
+}: {
+  snapshot: ChatSnapshot;
+  onOpenCard: (card: RecruitingCard) => void;
+}) {
   const responding = snapshot.status === "running" || snapshot.status === "stopping";
   let latestUserMessageId: string | undefined;
   for (const message of snapshot.messages) {
@@ -180,6 +194,7 @@ function TranscriptContent({ snapshot }: { snapshot: ChatSnapshot }) {
             {snapshot.messages.map((message) => (
               <TranscriptMessage
                 message={message}
+                onOpenCard={onOpenCard}
                 key={message.id}
                 streaming={
                   message.id.startsWith("live-") &&

@@ -994,5 +994,19 @@
   "dashboard_page_count": "第 {page} 页，共 {total} 页",
   "interviews_all_types": "全部类型",
   "interviews_scheduled_time": "计划时间",
-  "interviews_search": "搜索候选人、岗位或面试标签"
+  "interviews_search": "搜索候选人、岗位或面试标签",
+  "agent_card_view": "查看详情",
+  "agent_card_previous": "上一张卡片",
+  "agent_card_next": "下一张卡片",
+  "agent_card_close": "关闭详情",
+  "agent_card_snapshot": "本次查询的快照",
+  "agent_card_email": "邮箱",
+  "agent_card_phone": "手机号",
+  "agent_card_stage": "招聘阶段",
+  "agent_card_file": "文件",
+  "agent_card_experience": "工作经历",
+  "agent_card_education": "教育经历",
+  "agent_card_interviews": "面试轮次",
+  "agent_card_screening": "初筛",
+  "agent_card_more": "展示更多"
 }

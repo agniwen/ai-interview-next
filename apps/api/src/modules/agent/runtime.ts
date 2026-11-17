@@ -1,3 +1,4 @@
+import { recruitingCards } from "@ai-interview/agent";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { createRegistry, defineDoc, Harness, LiveDoc } from "@earendil-works/pi-durable";
 import type {
@@ -252,11 +253,10 @@ export class AgentRuntime {
     return this.conversation.commit(async (tx) => {
       const state = await tx.doc(ChatDoc, this.conversation.id);
       const live = await tx.doc(LiveDoc, this.conversation.id);
-      const history = await this.history(tx);
-      const messages = history;
-      if (live?.generation?.message) {
-        messages.push(...messageView(`live-${live.run?.taskId}`, live.generation.message));
-      }
+      const partial = live?.generation?.message
+        ? messageView(`live-${live.run?.taskId}`, live.generation.message)
+        : [];
+      const messages = await this.history(tx, partial);
       let status: ChatSnapshot["status"] = state.paused ? "paused" : "idle";
       if (state.active !== null || live.run) {
         status = "running";
@@ -275,8 +275,16 @@ export class AgentRuntime {
       };
     }, context);
   }
-  private async history(tx: Tx) {
+  private async history(tx: Tx, partial: ChatMessage[]) {
     const messages: ChatMessage[] = [];
+    const cards = new Map<string, NonNullable<ChatMessage["cards"]>[number]>();
+    const finishTurn = () => {
+      const last = messages.at(-1);
+      if (last?.role === "assistant" && cards.size) {
+        last.cards = [...cards.values()];
+      }
+      cards.clear();
+    };
     let cursor: Cursor | undefined;
     do {
       // 按存储游标顺序读取完整历史。Read history sequentially using storage cursors.
@@ -287,15 +295,33 @@ export class AgentRuntime {
         cursor,
       );
       for (const entry of page.items) {
-        if (entry.kind !== "pi.user" && entry.kind !== "pi.assistant") {
-          continue;
+        if (entry.kind === "pi.tool-result") {
+          for (const message of entry.model ?? []) {
+            if (message.role !== "toolResult") {
+              continue;
+            }
+            const result = recruitingCards.safeParse(message.details);
+            if (!result.success) {
+              continue;
+            }
+            for (const card of result.data.cards) {
+              cards.set(`${card.kind}:${card.id}`, card);
+            }
+          }
         }
-        for (const [index, message] of (entry.model ?? []).entries()) {
-          messages.push(...messageView(`${entry.id}-${index}`, message));
+        if (entry.kind === "pi.user") {
+          finishTurn();
+        }
+        if (entry.kind === "pi.user" || entry.kind === "pi.assistant") {
+          for (const [index, message] of (entry.model ?? []).entries()) {
+            messages.push(...messageView(`${entry.id}-${index}`, message));
+          }
         }
       }
       cursor = page.next;
     } while (cursor);
+    messages.push(...partial);
+    finishTurn();
     return messages;
   }
   async command(command: AgentCommand) {

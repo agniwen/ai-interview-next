@@ -1,3 +1,9 @@
+import { job } from "@ai-interview/db/schema";
+import { createRegistry } from "@earendil-works/pi-durable";
+import type { Registry } from "@earendil-works/pi-durable";
+import { eq } from "drizzle-orm";
+import { recruitingTools } from "../src/modules/agent/recruiting-tools";
+import { account, atsTest } from "./ats-fixture";
 import { once } from "node:events";
 import { promisify } from "node:util";
 import { createServer } from "node:http";
@@ -15,7 +21,7 @@ afterEach(async () => {
   await Promise.all(cleanup.splice(0).map((close) => close()));
 });
 
-async function fixture() {
+async function fixture(registry?: Registry) {
   const requests: { response: ServerResponse; body: string; closed: boolean }[] = [];
   const server = createServer((request, response) => {
     let body = "";
@@ -55,6 +61,7 @@ async function fixture() {
     changed: async () => {},
     modelId: "test-chat",
     models,
+    registry,
   };
   let runtime = await AgentRuntime.open(await openNodeSqliteStorage(storagePath), options);
   await runtime.initialize(crypto.randomUUID());
@@ -78,10 +85,86 @@ async function fixture() {
     await runtime.recover();
     return runtime;
   }
-  return { finish, requests, restart, runtime };
+  function finishWithTool(index: number, name: string, args: object) {
+    const chunk = {
+      choices: [
+        {
+          delta: {
+            tool_calls: [
+              {
+                function: { arguments: JSON.stringify(args), name },
+                id: `call_${index}`,
+                index: 0,
+                type: "function",
+              },
+            ],
+          },
+          finish_reason: "tool_calls",
+          index: 0,
+        },
+      ],
+      id: "answer",
+      object: "chat.completion.chunk",
+    };
+    requests[index].response.end(`data: ${JSON.stringify(chunk)}\n\ndata: [DONE]\n\n`);
+  }
+  return { finish, finishWithTool, requests, restart, runtime };
 }
 
 describe("Agent runtime with the real pi-durable harness", () => {
+  it("holds recruiting cards at query time after a database change and runtime restart", async () => {
+    const owner = await account("agent-card-snapshot@example.com");
+    const db = atsTest.platform.database;
+    const id = crypto.randomUUID();
+    await db.insert(job).values({
+      createdAt: new Date(),
+      id,
+      requirements: "Original requirements",
+      title: "Original title",
+      workspaceId: owner.workspaceId,
+    });
+    const registry = createRegistry();
+    registry.install(
+      recruitingTools({
+        actor: { source: "internal_agent", userId: owner.userId, workspaceId: owner.workspaceId },
+        db,
+        env: atsTest.env,
+      }),
+    );
+    const test = await fixture(registry);
+    async function ask(index: number) {
+      await test.runtime.command({ id: crypto.randomUUID(), text: "Find my jobs", type: "send" });
+      await expect.poll(() => test.requests.length).toBe(index + 1);
+      test.finishWithTool(index, "search_jobs", { version: 1 });
+      await expect.poll(() => test.requests.length).toBe(index + 2);
+      test.finish(index + 1);
+      await expect
+        .poll(async () => {
+          const snapshot = await test.runtime.snapshot();
+          return snapshot.status;
+        })
+        .toBe("idle");
+    }
+    await ask(0);
+    await db
+      .update(job)
+      .set({ requirements: "New requirements", title: "New title" })
+      .where(eq(job.id, id));
+    await ask(2);
+    const reopened = await test.restart();
+    const snapshot = await reopened.snapshot();
+    const cards = snapshot.messages.flatMap((message) => message.cards ?? []);
+    expect(cards).toMatchObject([
+      {
+        fields: { requirements: "Original requirements" },
+        id,
+        kind: "job",
+        title: "Original title",
+      },
+      { fields: { requirements: "New requirements" }, id, kind: "job", title: "New title" },
+    ]);
+  });
+
   it("reopens persisted history and queue without resuming a stopped chat", async () => {
     const fixtureData = await fixture();
     await fixtureData.runtime.command({ id: crypto.randomUUID(), text: "First", type: "send" });

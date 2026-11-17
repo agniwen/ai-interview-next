@@ -1,5 +1,8 @@
 import { createMagicPortal } from "foxact/magic-portal";
 
+export const pageHeaderFadeClassName =
+  "isolate z-10 after:pointer-events-none after:absolute after:inset-0 after:-bottom-6 after:-z-1 after:bg-linear-to-b after:from-background after:from-20% after:via-background/85 after:via-50% after:to-transparent";
+
 /**
  * 页面标题及顶栏插槽：页面通过 Content 提供操作内容，由外层 Target 放入共用顶栏。
  * Page title and header slot: pages supply actions through Content for the shell's Target to render.

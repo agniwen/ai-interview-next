@@ -48,9 +48,44 @@ export const chatSummary = z.object({
   trashed: z.boolean(),
 });
 
+export const recruitingCard = z.object({
+  fields: z.object({
+    department: z.string().nullish(),
+    education: z.string().nullish(),
+    email: z.string().nullish(),
+    employer: z.string().nullish(),
+    experience: z.string().nullish(),
+    filename: z.string().nullish(),
+    internalCriteria: z.string().nullish(),
+    phone: z.string().nullish(),
+    project: z.string().nullish(),
+    requirements: z.string().nullish(),
+    stage: z.string().nullish(),
+    status: z.string().nullish(),
+  }),
+  id: z.string(),
+  interviews: z
+    .array(
+      z.object({
+        label: z.string(),
+        scheduledAt: z.string().nullable(),
+        sequence: z.number(),
+        status: z.string(),
+      }),
+    )
+    .optional(),
+  kind: z.enum(["job", "application", "candidate", "resume"]),
+  subtitle: z.string().nullable(),
+  title: z.string().nullable(),
+  version: z.literal(1),
+});
+export const recruitingCards = z.object({ cards: z.array(recruitingCard), version: z.literal(1) });
+export type RecruitingCard = z.infer<typeof recruitingCard>;
+
 /** UI 消息投影，不向浏览器泄漏 pi 内部任务结构或供应商凭据。
  * UI message projection, without internal pi task structures or provider credentials. */
 export const chatMessage = z.object({
+  cards: z.array(recruitingCard).optional(),
   id: z.string(),
   interrupted: z.boolean(),
   reasoning: z.string(),

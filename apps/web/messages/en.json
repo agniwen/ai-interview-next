@@ -994,5 +994,19 @@
   "dashboard_page_count": "Page {page} of {total}",
   "interviews_all_types": "All types",
   "interviews_scheduled_time": "Scheduled time",
-  "interviews_search": "Search candidates, jobs, or interview labels"
+  "interviews_search": "Search candidates, jobs, or interview labels",
+  "agent_card_view": "View details",
+  "agent_card_previous": "Previous card",
+  "agent_card_next": "Next card",
+  "agent_card_close": "Close details",
+  "agent_card_snapshot": "Snapshot from this query",
+  "agent_card_email": "Email",
+  "agent_card_phone": "Phone",
+  "agent_card_stage": "Recruiting stage",
+  "agent_card_file": "File",
+  "agent_card_experience": "Work experience",
+  "agent_card_education": "Education",
+  "agent_card_interviews": "Interview rounds",
+  "agent_card_screening": "Screening",
+  "agent_card_more": "Show more"
 }
