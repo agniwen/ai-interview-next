@@ -358,6 +358,7 @@
   "ats_filename": "File",
   "ats_all_people": "All people",
   "ats_myself": "Myself",
+  "ats_creator_search": "Search by name or email",
   "ats_creator": "Created by",
   "ats_status": "Status",
   "ats_action": "Actions",

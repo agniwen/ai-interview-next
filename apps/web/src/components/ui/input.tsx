@@ -49,6 +49,7 @@ export function Input({
     >
       {nativeInput ? (
         <input
+          autoComplete="off"
           className={inputClassName}
           data-slot="input"
           size={typeof size === "number" ? size : undefined}
@@ -57,6 +58,7 @@ export function Input({
         />
       ) : (
         <InputPrimitive
+          autoComplete="off"
           className={inputClassName}
           data-slot="input"
           size={typeof size === "number" ? size : undefined}

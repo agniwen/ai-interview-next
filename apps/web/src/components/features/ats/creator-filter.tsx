@@ -1,3 +1,7 @@
+import { IconSelector } from "@tabler/icons-react";
+import { ComboboxTrigger } from "@/components/ui/combobox";
+import { selectTriggerVariants } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useId } from "react";
 import { choicesQuery } from "@/components/features/interviews/client";
@@ -34,18 +38,26 @@ export function CreatorFilter({
 
   return (
     <TableFilterGroup label={m.ats_creator()}>
-      <div className="w-48">
-        <ChoicePicker
-          ariaLabel={m.ats_creator()}
-          id={id}
-          kind="member"
-          workspaceId={workspaceId}
-          pinnedOptions={[all, me]}
-          excludeId={session?.user.id}
-          value={selected}
-          onChange={(choice) => onChange(choice?.id || undefined)}
-        />
-      </div>
+      <ChoicePicker
+        ariaLabel={m.ats_creator()}
+        id={id}
+        kind="member"
+        workspaceId={workspaceId}
+        pinnedOptions={[all, me]}
+        excludeId={session?.user.id}
+        value={selected}
+        onChange={(choice) => onChange(choice?.id || undefined)}
+        trigger={
+          <ComboboxTrigger
+            aria-label={m.ats_creator()}
+            className={cn(selectTriggerVariants(), "w-36")}
+            data-slot="select-trigger"
+          >
+            <span className="truncate">{selected.name}</span>
+            <IconSelector aria-hidden="true" />
+          </ComboboxTrigger>
+        }
+      />
     </TableFilterGroup>
   );
 }

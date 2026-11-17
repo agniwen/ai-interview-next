@@ -69,7 +69,7 @@ export function PromptInput({
           aria-label={label}
           className="px-2 py-1.5 [--composer-min-rows:1]"
           placeholder={placeholder}
-          render={<textarea />}
+          render={<textarea autoComplete="off" />}
         />
         <ComposerActions className="mx-0 px-0.5 pt-1">
           {actions && <ComposerActionGroup>{actions}</ComposerActionGroup>}

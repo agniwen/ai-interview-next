@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Combobox,
@@ -104,7 +105,9 @@ export function ChoicePicker<Multiple extends boolean = false>({
   multiple,
   pinnedOptions = emptyChoices,
   excludeId,
+  trigger,
 }: {
+  trigger?: ReactNode;
   ariaLabel?: string;
   pinnedOptions?: readonly Choice[];
   excludeId?: string;
@@ -167,15 +170,29 @@ export function ChoicePicker<Multiple extends boolean = false>({
         }
       }}
     >
-      <ChoiceInput
-        ariaLabel={ariaLabel}
-        id={id}
-        kind={kind}
-        showAvatar={kind === "member" && !pinnedOptions.some((option) => option === value)}
-        multiple={multiple}
-        value={value}
-      />
-      <ComboboxPopup className="w-(--anchor-width)">
+      {trigger ?? (
+        <ChoiceInput
+          ariaLabel={ariaLabel}
+          id={id}
+          kind={kind}
+          showAvatar={kind === "member" && !pinnedOptions.some((option) => option === value)}
+          multiple={multiple}
+          value={value}
+        />
+      )}
+      <ComboboxPopup className="w-(--anchor-width) has-[input[type=search]]:w-72">
+        {trigger && (
+          <div className="border-b p-2">
+            <ComboboxInput
+              aria-label={ariaLabel}
+              id={id}
+              maxLength={200}
+              placeholder={m.ats_creator_search()}
+              type="search"
+              showTrigger={false}
+            />
+          </div>
+        )}
         {!pending && !query.isError && <ComboboxEmpty>{m.interviews_no_options()}</ComboboxEmpty>}
         <ComboboxList>
           <ComboboxCollection>

@@ -358,6 +358,7 @@
   "ats_filename": "파일",
   "ats_all_people": "모든 사람",
   "ats_myself": "나",
+  "ats_creator_search": "이름 또는 이메일로 검색",
   "ats_creator": "생성자",
   "ats_status": "상태",
   "ats_action": "작업",

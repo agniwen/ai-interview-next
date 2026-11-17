@@ -63,7 +63,7 @@ export function ApplicationEvaluationComposer({
         <ComposerInput
           aria-label={m.ats_evaluation_write()}
           placeholder={m.ats_evaluation_placeholder()}
-          render={<textarea maxLength={30_000} />}
+          render={<textarea autoComplete="off" maxLength={30_000} />}
         />
         <ComposerActions>
           <ComposerActionGroup align="end">

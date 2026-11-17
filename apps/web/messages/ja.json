@@ -358,6 +358,7 @@
   "ats_filename": "ファイル",
   "ats_all_people": "すべてのユーザー",
   "ats_myself": "自分",
+  "ats_creator_search": "名前またはメールで検索",
   "ats_creator": "作成者",
   "ats_status": "ステータス",
   "ats_action": "操作",
