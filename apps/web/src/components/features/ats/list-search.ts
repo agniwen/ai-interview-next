@@ -44,6 +44,10 @@ export const resumeListSearch = listSearch.extend({
   status: z.enum(resumeStatuses).optional().catch(undefined),
 });
 
+export const resumeDetailSearch = resumeListSearch.extend({
+  from: z.literal("dashboard").optional().catch(undefined),
+});
+
 export type ListSearch = z.output<typeof listSearch>;
 export type JobListSearch = z.output<typeof jobListSearch>;
 export type ApplicationListSearch = z.output<typeof applicationListSearch>;

@@ -97,7 +97,10 @@ function ApplicationForm({
       return readAts(response);
     },
     async onSuccess() {
-      await client.invalidateQueries({ queryKey: atsKeys.applications(workspaceId).queryKey });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: atsKeys.applications(workspaceId).queryKey }),
+        client.invalidateQueries({ queryKey: atsKeys.resumes(workspaceId)._ctx.list._def }),
+      ]);
       onClose();
       if (fixedResumeId) {
         toastManager.add({ title: m.ats_joined_recruitment(), type: "success" });

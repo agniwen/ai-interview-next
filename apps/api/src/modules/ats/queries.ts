@@ -33,7 +33,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import { actionableResume, personalResumeRows, uploadCandidateJoin } from "./personal-resumes";
+import * as personalResumes from "./personal-resumes";
 import type { SQLWrapper } from "drizzle-orm";
 import type {
   ApplicationListQuery,
@@ -324,7 +324,6 @@ export async function listCandidateResumes(db: Database, workspaceId: string, ca
   );
   return { rows, total: rows.length, version: 1 as const };
 }
-
 export async function listResumes(
   db: Database,
   workspaceId: string,
@@ -342,7 +341,7 @@ export async function listResumes(
     workspace,
     userId ? eq(batch.createdBy, userId) : undefined,
     creatorId ? eq(batch.createdBy, creatorId) : undefined,
-    attention && actionableResume(effectiveStatus),
+    attention && personalResumes.actionableResume(effectiveStatus),
     search
       ? or(
           includesText(item.filename, search),
@@ -355,7 +354,7 @@ export async function listResumes(
       ? inArray(effectiveStatus, ["failed", "upload_failed"])
       : status && eq(effectiveStatus, status),
   );
-  const where = userId ? personalResumeRows(db, needsAttention, filters) : filters;
+  const where = userId ? personalResumes.personalResumeRows(db, needsAttention, filters) : filters;
   const [rows, [result]] = await Promise.all([
     db
       .select({
@@ -380,6 +379,7 @@ export async function listResumes(
         filename: item.filename,
         id: item.id,
         identityStatus: submission.identityStatus,
+        inRecruitment: personalResumes.activeResumeRecruitment(db, workspaceId),
         jobId: submission.jobId,
         jobTitle: job.title,
         linkedCandidateName: candidate.name,
@@ -398,7 +398,7 @@ export async function listResumes(
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
       .leftJoin(resume, eq(resume.id, submission.resumeId))
-      .leftJoin(candidate, uploadCandidateJoin)
+      .leftJoin(candidate, personalResumes.uploadCandidateJoin)
       .leftJoin(job, eq(job.id, submission.jobId))
       .where(where)
       .orderBy(...(userId ? [desc(needsAttention)] : []), desc(batch.createdAt), desc(item.id))
@@ -412,7 +412,7 @@ export async function listResumes(
       .leftJoin(run, eq(run.id, item.runId))
       .leftJoin(submission, eq(submission.id, item.submissionId))
       .leftJoin(resume, eq(resume.id, submission.resumeId))
-      .leftJoin(candidate, uploadCandidateJoin)
+      .leftJoin(candidate, personalResumes.uploadCandidateJoin)
       .where(where),
   ]);
   const batches = rows.length

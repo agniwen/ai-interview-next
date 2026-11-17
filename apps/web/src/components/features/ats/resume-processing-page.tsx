@@ -182,10 +182,12 @@ function ProcessingContent({
  * Resume processing page connecting loaded results, selected flow steps, outputs and attempt history.
  */
 export function ResumeProcessingPage({
+  fromOverview = false,
   id,
   search,
   workspaceId,
 }: {
+  fromOverview?: boolean;
   id: string;
   search: ResumeListSearch;
   workspaceId: string;
@@ -194,6 +196,12 @@ export function ResumeProcessingPage({
   const masked = useLocation({ select: (location) => Boolean(location.maskedLocation) });
   const canGoBack = useCanGoBack();
   const backToList = masked && canGoBack;
+  const backLink = fromOverview ? (
+    <Link to="/w/$workspaceId/hub/dashboard" params={{ workspaceId }} />
+  ) : (
+    <Link to="/w/$workspaceId/hub/resumes" params={{ workspaceId }} search={search} />
+  );
+  const backLabel = fromOverview ? m.dashboard_show_overview() : m.resume_processing_back();
   const { data, isPending, isError, isFetching, refetch } = useQuery({
     queryFn: ({ signal }) => readResumeProcessing({ id, workspaceId }, signal),
     queryKey: atsKeys.resumes(workspaceId)._ctx.processing(id).queryKey,
@@ -211,16 +219,12 @@ export function ResumeProcessingPage({
         <Button
           variant="ghost"
           size="sm"
-          aria-label={m.resume_processing_back()}
+          aria-label={backLabel}
           onClick={backToList ? () => router.history.back() : undefined}
-          render={
-            backToList ? undefined : (
-              <Link to="/w/$workspaceId/hub/resumes" params={{ workspaceId }} search={search} />
-            )
-          }
+          render={backToList ? undefined : backLink}
         >
           <IconArrowLeft aria-hidden="true" />
-          {m.ats_resumes()}
+          {fromOverview ? m.workspace_dashboard() : m.ats_resumes()}
         </Button>
         <span aria-hidden="true" className="text-muted-foreground">
           /

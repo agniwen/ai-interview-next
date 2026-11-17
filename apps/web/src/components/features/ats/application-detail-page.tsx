@@ -84,7 +84,10 @@ function CloseApplicationDialog({ id, workspaceId }: { id: string; workspaceId: 
     mutationFn: async () =>
       readAts(await atsApi.applications[":id"].close.$post({ param: { id, workspaceId } })),
     async onSuccess() {
-      await client.invalidateQueries({ queryKey: atsKeys.applications(workspaceId).queryKey });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: atsKeys.applications(workspaceId).queryKey }),
+        client.invalidateQueries({ queryKey: atsKeys.resumes(workspaceId)._ctx.list._def }),
+      ]);
       setOpen(false);
     },
   });

@@ -7,6 +7,7 @@ import {
   interviewEvaluation,
   interviewRound,
   job,
+  resume,
   resumeSubmission,
   resumeUploadBatch,
   resumeUploadItem,
@@ -136,6 +137,18 @@ export async function listPersonalInterviews(
   );
   const priority = sql`case when ${interviewRound.status} = 'in_progress' then 0
     when ${needsEvaluation} then 1 when ${interviewRound.status} = 'scheduled' then 2 else 3 end`;
+  const avatarResume = db
+    .select({ id: resume.id })
+    .from(resume)
+    .where(
+      and(
+        eq(resume.workspaceId, workspaceId),
+        eq(resume.candidateId, application.candidateId),
+        isNotNull(resume.avatarObjectKey),
+      ),
+    )
+    .orderBy(desc(resume.createdAt), desc(resume.id))
+    .limit(1);
   const [rows, [count]] = await Promise.all([
     db
       .select({
@@ -144,6 +157,7 @@ export async function listPersonalInterviews(
           sql<boolean>`(${interviewer} and ${interviewRound.kind} = 'human' and ${interviewRound.status} in ('scheduled', 'in_progress') and ${application.closedAt} is null)`.mapWith(
             Boolean,
           ),
+        candidateAvatarResumeId: sql<string | null>`(${avatarResume})`,
         candidateName: candidate.name,
         endedAt: interviewRound.endedAt,
         id: interviewRound.id,

@@ -3,30 +3,93 @@ import {
   IconCalendarEvent,
   IconClipboardCheck,
   IconFileCv,
+  IconInbox,
+  IconListDetails,
 } from "@tabler/icons-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { createColumnHelper } from "@tanstack/react-table";
 import { useMemo } from "react";
 import type { ReactNode } from "react";
+import { ResumePreviewDialog } from "@/components/features/document-preview/resume-preview-dialog";
 import { LocalTime } from "@/components/local-time";
+import {
+  getResumeDocumentFileIconKind,
+  ResumeDocumentFileIcon,
+} from "@/components/resume-document-file-icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogCreateHandle as createDialogHandle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "@/components/ui/empty";
 import { Frame, FrameHeader, FramePanel, FrameTitle } from "@/components/ui/frame";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
-import { atsApi, atsStatus, readAts } from "../ats/client";
+import { atsApi, atsStatus, getResumeCandidateDisplay, readAts } from "../ats/client";
+import { CreateApplicationDialog } from "../ats/create-application-dialog";
 import { listParams } from "../ats/list-search";
-import type { ResumeListSearch } from "../ats/list-search";
+import type { ApplicationListSearch, ResumeListSearch } from "../ats/list-search";
 import { atsKeys } from "../ats/query-keys";
 import { ResumeCandidateDialog } from "../ats/resume-candidate-dialog";
 import { interviewKeys, interviewsApi } from "../interviews/client";
+import { VirtualListTable } from "@/components/layout/virtual-list-table";
+import type { virtualListFeatures } from "@/components/layout/virtual-list-table";
 
-const resumeSearch: ResumeListSearch = { owner: "me", page: 1, pageSize: 6, search: "" };
+const followedColumnWidths = [undefined, "45%"];
+
+const applicationSearch: ApplicationListSearch = {
+  creatorId: "me",
+  page: 1,
+  pageSize: 20,
+  search: "",
+  status: "open",
+};
+
+const resumeSearch: ResumeListSearch = { owner: "me", page: 1, pageSize: 20, search: "" };
+
+async function readFollowedResumes(workspaceId: string, page: number, signal: AbortSignal) {
+  return readAts(
+    await atsApi.resumes.$get(
+      { param: { workspaceId }, query: listParams({ ...resumeSearch, page }) },
+      { init: { signal } },
+    ),
+  );
+}
+
+async function readFollowedApplications(workspaceId: string, page: number, signal: AbortSignal) {
+  return readAts(
+    await atsApi.applications.$get(
+      { param: { workspaceId }, query: listParams({ ...applicationSearch, page }) },
+      { init: { signal } },
+    ),
+  );
+}
+
+interface ResumePreviewPayload {
+  filename: string;
+  id: string;
+  submissionId?: string;
+}
+type FollowedResume = Awaited<ReturnType<typeof readFollowedResumes>>["rows"][number];
+type FollowedApplication = Awaited<ReturnType<typeof readFollowedApplications>>["rows"][number];
+const resumeColumn = createColumnHelper<typeof virtualListFeatures, FollowedResume>();
+const applicationColumn = createColumnHelper<typeof virtualListFeatures, FollowedApplication>();
+
+function nextListPage({
+  page,
+  pageSize,
+  total,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+}) {
+  return page * pageSize < total ? page + 1 : undefined;
+}
 
 function Panel({
   action,
@@ -44,14 +107,14 @@ function Panel({
       <Frame className="flex-1">
         <FrameHeader className="min-h-12 flex-row flex-wrap items-center justify-between gap-2 px-4 py-2.5">
           <FrameTitle className="min-w-0">
-            <h3 className="flex items-center gap-2">
+            <h2 className="flex items-center gap-2">
               {icon}
               {title}
-            </h3>
+            </h2>
           </FrameTitle>
           {action}
         </FrameHeader>
-        <FramePanel className="min-w-0 flex-1 p-0">{children}</FramePanel>
+        <FramePanel className="flex min-h-36 min-w-0 flex-1 flex-col p-0">{children}</FramePanel>
       </Frame>
     </section>
   );
@@ -88,7 +151,42 @@ function ListState({
       </output>
     );
   }
-  return <p className="px-4 py-3 text-sm text-muted-foreground sm:px-5">{empty}</p>;
+  return (
+    <Empty className="py-4 md:py-4">
+      <EmptyHeader>
+        <EmptyMedia className="mb-2" variant="icon">
+          <IconInbox aria-hidden="true" />
+        </EmptyMedia>
+        <EmptyDescription>{empty}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
+function CandidateSummary({
+  children,
+  row,
+  workspaceId,
+}: {
+  children: ReactNode;
+  row: { candidateAvatarResumeId: string | null; candidateName: string | null; jobTitle: string };
+  workspaceId: string;
+}) {
+  const candidate = getResumeCandidateDisplay(workspaceId, row);
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <Avatar aria-hidden="true" className="ring-1 ring-foreground/10 [--avatar-size:28px]">
+        <AvatarImage alt="" referrerPolicy="no-referrer" src={candidate?.image} />
+        <AvatarFallback>{candidate?.name.slice(0, 1).toUpperCase() ?? "—"}</AvatarFallback>
+      </Avatar>
+      <div className="min-w-0">
+        <p className="wrap-anywhere text-sm font-medium">
+          {candidate?.name ?? "—"} · {row.jobTitle}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{children}</p>
+      </div>
+    </div>
+  );
 }
 
 function InterviewTasks({
@@ -137,25 +235,22 @@ function InterviewTasks({
       }
     >
       {rows.length ? (
-        <ul className="divide-y divide-border">
+        <ul>
           {rows.map((row) => {
             const join = row.canJoinNow;
             return (
               <li
                 key={row.id}
-                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-4 py-2.5 sm:px-5"
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-border px-4 py-2.5 sm:px-5"
               >
                 <div className="min-w-32 flex-1">
-                  <p className="wrap-anywhere text-sm font-medium">
-                    {row.candidateName} · {row.jobTitle}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <CandidateSummary row={row} workspaceId={workspaceId}>
                     {row.label || m.interviews_round({ number: row.sequence })}
                     {" · "}
                     <LocalTime value={evaluation ? row.endedAt : row.scheduledAt} />
                     {" · "}
                     {evaluation ? m.dashboard_todo_reviewer() : m.dashboard_todo_interviewer()}
-                  </p>
+                  </CandidateSummary>
                 </div>
                 <Button
                   size="sm"
@@ -193,34 +288,172 @@ function InterviewTasks({
   );
 }
 
-function FollowedResumes({
+function ResumeOverviewAction({
+  filename,
+  id,
+  preview,
+  previewDialog,
+  submissionId,
   workspaceId,
-  taskOnly = false,
 }: {
+  filename: string;
+  id: string;
+  preview: boolean;
+  previewDialog: ReturnType<typeof createDialogHandle<ResumePreviewPayload>>;
+  submissionId: string | null;
   workspaceId: string;
-  taskOnly?: boolean;
 }) {
-  const query = taskOnly ? { ...resumeSearch, attention: "actionable" as const } : resumeSearch;
+  if (preview) {
+    return (
+      <DialogTrigger
+        handle={previewDialog}
+        payload={{ filename, id, submissionId: submissionId ?? undefined }}
+        render={<Button size="sm" variant="outline" />}
+      >
+        {m.ats_resume_details()}
+      </DialogTrigger>
+    );
+  }
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      render={
+        <Link
+          to="/w/$workspaceId/hub/resumes/$id"
+          params={{ id, workspaceId }}
+          search={{ from: "dashboard" }}
+        />
+      }
+    >
+      {m.dashboard_todo_view_issue()}
+    </Button>
+  );
+}
+
+function ResumeRecruitmentAction({
+  handle,
+  inRecruitment,
+  resumeId,
+  workspaceId,
+}: {
+  handle?: ReturnType<typeof createDialogHandle<string>>;
+  inRecruitment: boolean;
+  resumeId: string | null;
+  workspaceId: string;
+}) {
+  if (inRecruitment) {
+    return (
+      <Button disabled size="sm" variant="outline">
+        {m.dashboard_already_recruiting()}
+      </Button>
+    );
+  }
+  if (!resumeId) {
+    return null;
+  }
+  return handle ? (
+    <DialogTrigger
+      handle={handle}
+      payload={resumeId}
+      render={<Button size="sm" variant="outline" />}
+    >
+      {m.ats_join_recruitment()}
+    </DialogTrigger>
+  ) : (
+    <CreateApplicationDialog resumeId={resumeId} workspaceId={workspaceId} />
+  );
+}
+
+function ResumeSummary({ row }: { row: FollowedResume }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <ResumeDocumentFileIcon
+        className="size-6 shrink-0"
+        kind={getResumeDocumentFileIconKind({ fileName: row.filename })}
+      />
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium" title={row.filename}>
+          {row.filename}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {row.linkedCandidateName && <>{row.linkedCandidateName} · </>}
+          <LocalTime value={row.createdAt} format="date" />
+          {" · "}
+          {row.identityStatus === "pending_review"
+            ? m.ats_candidate_pending_review()
+            : atsStatus(row.parseStatus ?? row.status)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function buildFollowedResumesColumns(
+  previewDialog: ReturnType<typeof createDialogHandle<ResumePreviewPayload>>,
+  recruitmentDialog: ReturnType<typeof createDialogHandle<string>>,
+  workspaceId: string,
+) {
+  return resumeColumn.columns([
+    resumeColumn.display({
+      cell: ({ row }) => <ResumeSummary row={row.original} />,
+      header: m.ats_resumes(),
+      id: "resume",
+    }),
+    resumeColumn.display({
+      cell: ({ row: { original: row } }) => (
+        <div className="flex flex-wrap justify-end gap-2">
+          <ResumeRecruitmentAction
+            handle={recruitmentDialog}
+            inRecruitment={row.inRecruitment}
+            resumeId={row.parseStatus === "succeeded" ? row.resumeId : null}
+            workspaceId={workspaceId}
+          />
+          <ResumeOverviewAction
+            filename={row.filename}
+            id={row.id}
+            preview={row.status === "accepted"}
+            previewDialog={previewDialog}
+            submissionId={row.identityStatus === "pending_review" ? row.submissionId : null}
+            workspaceId={workspaceId}
+          />
+        </div>
+      ),
+      header: m.ats_action(),
+      id: "actions",
+    }),
+  ]);
+}
+
+function FollowedResumes({ workspaceId }: { workspaceId: string }) {
   const client = useQueryClient();
   const candidateDialog = useMemo(() => createDialogHandle<string>(), []);
-  const resumes = useQuery({
-    queryFn: async ({ signal }) =>
-      readAts(
-        await atsApi.resumes.$get(
-          { param: { workspaceId }, query: listParams(query) },
-          { init: { signal } },
-        ),
-      ),
-    queryKey: atsKeys.resumes(workspaceId)._ctx.list(query).queryKey,
+  const recruitmentDialog = useMemo(() => createDialogHandle<string>(), []);
+  const previewDialog = useMemo(() => createDialogHandle<ResumePreviewPayload>(), []);
+  const resumes = useInfiniteQuery({
+    getNextPageParam: nextListPage,
+    initialPageParam: 1,
+    queryFn: ({ pageParam, signal }) => readFollowedResumes(workspaceId, pageParam, signal),
+    queryKey: atsKeys.resumes(workspaceId)._ctx.list(resumeSearch)._ctx.infinite.queryKey,
     refetchInterval: ({ state }) =>
-      state.data?.rows.some((row) => row.parseStatus === "queued" || row.parseStatus === "running")
+      state.data?.pages.some((page) =>
+        page.rows.some((row) => row.parseStatus === "queued" || row.parseStatus === "running"),
+      )
         ? 5000
         : false,
   });
-  const rows = resumes.data?.rows ?? [];
+  const rows = useMemo(
+    () => resumes.data?.pages.flatMap((page) => page.rows) ?? [],
+    [resumes.data],
+  );
+  const columns = useMemo(
+    () => buildFollowedResumesColumns(previewDialog, recruitmentDialog, workspaceId),
+    [previewDialog, recruitmentDialog, workspaceId],
+  );
+  const title = m.dashboard_followed_resumes();
   return (
     <Panel
-      title={taskOnly ? m.dashboard_todo_resumes() : m.dashboard_followed_resumes()}
+      title={title}
       icon={<IconFileCv aria-hidden="true" className="size-4 text-muted-foreground" />}
       action={
         <Button
@@ -240,76 +473,66 @@ function FollowedResumes({
       }
     >
       {rows.length ? (
-        (taskOnly ? [true] : [true, false]).map((needsAttention) => {
-          const group = rows.filter((row) => row.needsAttention === needsAttention);
-          return (
-            group.length > 0 && (
-              <div key={String(needsAttention)} className="border-b border-border last:border-b-0">
-                {!taskOnly && (
-                  <h4 className="px-4 pt-3 text-xs font-medium text-muted-foreground sm:px-5">
-                    {needsAttention ? m.dashboard_attention() : m.dashboard_resume_versions()}
-                  </h4>
-                )}
-                <ul className="divide-y divide-border">
-                  {group.map((row) => (
-                    <li
-                      key={row.id}
-                      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-4 py-2.5 sm:px-5"
-                    >
-                      <div className="min-w-32 flex-1">
-                        <p className="truncate text-sm font-medium" title={row.filename}>
-                          {row.filename}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {row.linkedCandidateName && <>{row.linkedCandidateName} · </>}
-                          {taskOnly && <>{m.dashboard_todo_uploaded()} · </>}
-                          <LocalTime value={row.createdAt} format="date" />
-                          {" · "}
-                          {row.identityStatus === "pending_review"
-                            ? m.ats_candidate_pending_review()
-                            : atsStatus(row.parseStatus ?? row.status)}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center">
-                        {row.identityStatus === "pending_review" && row.submissionId ? (
-                          <DialogTrigger
-                            handle={candidateDialog}
-                            payload={row.submissionId}
-                            render={<Button size="sm" variant="outline" />}
-                          >
-                            {m.ats_review()}
-                          </DialogTrigger>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            render={
-                              <Link
-                                to="/w/$workspaceId/hub/resumes/$id"
-                                params={{ id: row.id, workspaceId }}
-                                search={{ creatorId: "me" }}
-                              />
-                            }
-                          >
-                            {taskOnly ? m.dashboard_todo_view_issue() : m.ats_view_resume()}
-                          </Button>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )
-          );
-        })
+        <VirtualListTable
+          className="[&_th:last-child]:text-end"
+          columns={columns}
+          columnWidths={followedColumnWidths}
+          data={rows}
+          hasNextPage={resumes.hasNextPage}
+          isFetching={resumes.isFetching}
+          isFetchingNextPage={resumes.isFetchingNextPage}
+          isFetchNextPageError={resumes.isFetchNextPageError}
+          label={title}
+          loadingLabel={m.ats_loading()}
+          retryLabel={m.ats_retry()}
+          loadMore={resumes.fetchNextPage}
+          total={resumes.data?.pages.at(-1)?.total ?? rows.length}
+        />
       ) : (
         <ListState
           loading={resumes.isPending}
           failed={resumes.isError}
-          empty={taskOnly ? m.dashboard_todo_empty() : m.dashboard_no_resumes()}
+          empty={m.dashboard_no_resumes()}
           retry={() => resumes.refetch()}
         />
       )}
+      <CreateApplicationDialog handle={recruitmentDialog} workspaceId={workspaceId} />
+      <Dialog handle={previewDialog}>
+        {({ payload }) => {
+          if (!payload) {
+            return null;
+          }
+          const row = rows.find(({ id }) => id === payload.id);
+          return (
+            <ResumePreviewDialog
+              key={payload.id}
+              filename={payload.filename}
+              id={payload.id}
+              workspaceId={workspaceId}
+              actions={
+                <>
+                  {payload.submissionId && (
+                    <DialogTrigger
+                      handle={candidateDialog}
+                      payload={payload.submissionId}
+                      render={<Button size="sm" variant="outline" />}
+                    >
+                      {m.ats_review()}
+                    </DialogTrigger>
+                  )}
+                  {row && (
+                    <ResumeRecruitmentAction
+                      inRecruitment={row.inRecruitment}
+                      resumeId={row.parseStatus === "succeeded" ? row.resumeId : null}
+                      workspaceId={workspaceId}
+                    />
+                  )}
+                </>
+              }
+            />
+          );
+        }}
+      </Dialog>
       <Dialog handle={candidateDialog}>
         {({ payload }) =>
           payload && (
@@ -332,21 +555,117 @@ function FollowedResumes({
   );
 }
 
+function buildFollowedApplicationsColumns(workspaceId: string) {
+  return applicationColumn.columns([
+    applicationColumn.display({
+      cell: ({ row: { original: row } }) => (
+        <CandidateSummary row={row} workspaceId={workspaceId}>
+          {m.ats_open()} · <LocalTime value={row.createdAt} format="date" />
+        </CandidateSummary>
+      ),
+      header: m.ats_applications(),
+      id: "application",
+    }),
+    applicationColumn.display({
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            variant="outline"
+            render={
+              <Link
+                to="/w/$workspaceId/hub/applications/$id"
+                params={{ id: row.id, workspaceId }}
+                search={{ creatorId: "me", status: "open" }}
+              />
+            }
+          >
+            {m.ats_view_application()}
+          </Button>
+        </div>
+      ),
+      header: m.ats_action(),
+      id: "actions",
+    }),
+  ]);
+}
+
+function FollowedApplications({ workspaceId }: { workspaceId: string }) {
+  const applications = useInfiniteQuery({
+    getNextPageParam: nextListPage,
+    initialPageParam: 1,
+    queryFn: ({ pageParam, signal }) => readFollowedApplications(workspaceId, pageParam, signal),
+    queryKey: atsKeys.applications(workspaceId)._ctx.list(applicationSearch)._ctx.infinite.queryKey,
+  });
+  const rows = useMemo(
+    () => applications.data?.pages.flatMap((page) => page.rows) ?? [],
+    [applications.data],
+  );
+  const columns = useMemo(() => buildFollowedApplicationsColumns(workspaceId), [workspaceId]);
+  return (
+    <Panel
+      title={m.dashboard_followed_applications()}
+      icon={<IconListDetails aria-hidden="true" className="size-4 text-muted-foreground" />}
+      action={
+        <Button
+          size="sm"
+          variant="ghost"
+          render={
+            <Link
+              to="/w/$workspaceId/hub/applications"
+              params={{ workspaceId }}
+              search={{ creatorId: "me", status: "open" }}
+            />
+          }
+        >
+          {m.dashboard_view_all()}
+          <IconArrowRight aria-hidden="true" />
+        </Button>
+      }
+    >
+      {rows.length ? (
+        <VirtualListTable
+          className="[&_th:last-child]:text-end"
+          columns={columns}
+          columnWidths={followedColumnWidths}
+          data={rows}
+          hasNextPage={applications.hasNextPage}
+          isFetching={applications.isFetching}
+          isFetchingNextPage={applications.isFetchingNextPage}
+          isFetchNextPageError={applications.isFetchNextPageError}
+          label={m.dashboard_followed_applications()}
+          loadingLabel={m.ats_loading()}
+          retryLabel={m.ats_retry()}
+          loadMore={applications.fetchNextPage}
+          total={applications.data?.pages.at(-1)?.total ?? rows.length}
+        />
+      ) : (
+        <ListState
+          loading={applications.isPending}
+          failed={applications.isError}
+          empty={m.dashboard_no_open_applications()}
+          retry={() => applications.refetch()}
+        />
+      )}
+    </Panel>
+  );
+}
+
 export function Overview({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <section
-        aria-label={m.dashboard_todo_title()}
-        className="@container/todo flex min-w-0 flex-col gap-3"
-      >
-        <h2 className="text-lg font-semibold">{m.dashboard_todo_title()}</h2>
-        <div className="grid gap-4 @min-[48rem]/todo:grid-cols-2 @min-[48rem]/todo:@max-[72rem]/todo:[&>*:last-child]:col-span-full @min-[72rem]/todo:grid-cols-3">
+      <section aria-label={m.dashboard_todo_title()} className="@container/todo min-w-0">
+        <div className="grid gap-4 @min-[48rem]/todo:grid-cols-2">
           <InterviewTasks workspaceId={workspaceId} todo="upcoming" />
           <InterviewTasks workspaceId={workspaceId} todo="evaluation" />
-          <FollowedResumes workspaceId={workspaceId} taskOnly />
         </div>
       </section>
-      <FollowedResumes workspaceId={workspaceId} />
+      <div className="@container/followed min-w-0">
+        <div className="grid gap-4 @min-[48rem]/followed:grid-cols-2">
+          <FollowedApplications workspaceId={workspaceId} />
+          <FollowedResumes workspaceId={workspaceId} />
+        </div>
+      </div>
     </div>
   );
 }

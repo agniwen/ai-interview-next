@@ -1,5 +1,7 @@
 import type { Database } from "@ai-interview/db";
 import {
+  application,
+  applicationResume,
   candidate,
   resume,
   resumeProcessingRun as run,
@@ -8,13 +10,37 @@ import {
   resumeUploadItem as item,
   user,
 } from "@ai-interview/db/schema";
-import { eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, exists, inArray, isNull, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
 export const uploadCandidateJoin = eq(
   candidate.id,
   sql`case when ${batch.source} = 'external_import' then coalesce(${submission.resolvedCandidateId}, ${resume.candidateId}) else ${resume.candidateId} end`,
 );
+
+export function activeResumeRecruitment(db: Database, workspaceId: string) {
+  return exists(
+    db
+      .select({ id: applicationResume.id })
+      .from(applicationResume)
+      .innerJoin(
+        application,
+        and(
+          eq(application.id, applicationResume.applicationId),
+          eq(application.workspaceId, workspaceId),
+        ),
+      )
+      .where(
+        and(
+          eq(applicationResume.workspaceId, workspaceId),
+          eq(applicationResume.resumeId, resume.id),
+          eq(applicationResume.status, "available"),
+          isNull(application.closedAt),
+          isNull(application.deletedAt),
+        ),
+      ),
+  ).mapWith(Boolean);
+}
 
 export function actionableResume(status: SQL) {
   return or(

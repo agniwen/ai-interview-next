@@ -18,6 +18,10 @@ it("filters the overview to the current user's uploads and interview roles befor
   const { workspaceId, userId } = f.owner;
   const colleague = await addInterviewMember(workspaceId, "overview-colleague@example.com");
   const db = atsTest.platform.database;
+  const [record] = await db
+    .select({ candidateId: application.candidateId })
+    .from(application)
+    .where(eq(application.id, f.applicationId));
   const createdAt = new Date();
   const versionA = crypto.randomUUID();
   const versionB = crypto.randomUUID();
@@ -33,6 +37,8 @@ it("filters the overview to the current user's uploads and interview roles befor
       .where(eq(application.id, f.applicationId)),
     db.insert(resume).values(
       [versionA, versionB].map((id) => ({
+        avatarObjectKey: id === versionA ? "candidate-avatar.png" : null,
+        candidateId: record.candidateId,
         createdAt,
         id,
         pdfObjectKey: id,
@@ -229,7 +235,7 @@ it("filters the overview to the current user's uploads and interview roles befor
     total: 2,
   });
   expect(await read(f.owner.ats("resumes?owner=me&page=2&pageSize=1"))).toMatchObject({
-    rows: [{ id: newerId, needsAttention: false, resumeId: versionA }],
+    rows: [{ id: newerId, inRecruitment: true, needsAttention: false, resumeId: versionA }],
     total: 2,
   });
   expect(await read(f.owner.ats("resumes"))).toMatchObject({ total: 4 });
@@ -238,7 +244,7 @@ it("filters the overview to the current user's uploads and interview roles befor
     total: 1,
   });
   expect(await read(f.owner.call(`${path}?todo=upcoming&pageSize=1`))).toMatchObject({
-    rows: [{ canJoinNow: true, id: rounds[0] }],
+    rows: [{ canJoinNow: true, candidateAvatarResumeId: versionA, id: rounds[0] }],
     total: 2,
   });
   expect(await read(f.owner.call(`${path}?todo=upcoming&page=2&pageSize=1`))).toMatchObject({
@@ -256,11 +262,37 @@ it("filters the overview to the current user's uploads and interview roles befor
     .set({ endedAt, status: "completed" })
     .where(eq(interviewRound.id, rounds[0]));
   expect(await read(f.owner.call(`${path}?todo=evaluation`))).toMatchObject({
-    rows: [{ endedAt: endedAt.toISOString(), id: rounds[0], needsEvaluation: true }],
+    rows: [
+      {
+        candidateAvatarResumeId: versionA,
+        endedAt: endedAt.toISOString(),
+        id: rounds[0],
+        needsEvaluation: true,
+      },
+    ],
     total: 1,
   });
   expect(await read(colleague.call(`${path}?todo=evaluation`))).toMatchObject({
     rows: [],
     total: 0,
   });
+  expect(await read(f.owner.ats("applications?creatorId=me&status=open"))).toMatchObject({
+    rows: [{ id: f.applicationId }],
+    total: 1,
+  });
+  await db
+    .update(application)
+    .set({ closedAt: endedAt })
+    .where(eq(application.id, f.applicationId));
+  expect(await read(f.owner.ats("applications?creatorId=me&status=open"))).toMatchObject({
+    rows: [],
+    total: 0,
+  });
+  const resumes = await read(f.owner.ats("resumes?owner=me"));
+  expect(resumes.rows).toContainEqual(
+    expect.objectContaining({
+      id: newerId,
+      inRecruitment: false,
+    }),
+  );
 });
