@@ -1,21 +1,14 @@
 "use client";
 
 import { SkeletonSuspense } from "@/components/skeletons/skeleton-suspense";
-import { lazy } from "react";
+import { useInView } from "motion/react";
+import { lazy, useRef } from "react";
 import { useHydrated } from "@tanstack/react-router";
 import { DemoWindowSkeleton } from "@/components/skeletons/components/demo-window-skeleton";
 import { ScreenFrame } from "./screens/screen-frame";
 
-// 演示窗口依赖整套 Studio 组件，单独分包。客户端在模块加载时就开始拉取，和水合并行，水合后立即挂载。
-// The demo pulls in Studio components, so it ships as its own chunk. The client starts fetching it as
-// soon as this module loads, in parallel with hydration, and mounts it right after hydration.
-const loadResumesScreen = () => import("./screens/resumes-screen");
-if (!import.meta.env.SSR) {
-  void loadResumesScreen();
-}
-
 const ResumesScreen = lazy(async () => {
-  const { ResumesScreen: Screen } = await loadResumesScreen();
+  const { ResumesScreen: Screen } = await import("./screens/resumes-screen");
   return { default: Screen };
 });
 
@@ -34,14 +27,17 @@ function DemoWindowPlaceholder() {
  */
 export function ProductShot() {
   const hydrated = useHydrated();
+  const stageRef = useRef<HTMLElement>(null);
+  const nearViewport = useInView(stageRef, { margin: "120px 0px", once: true });
 
   return (
     <section
       className="relative isolate mx-auto w-full max-w-[105rem]"
       data-slot="home-product-stage"
+      ref={stageRef}
     >
       <div className="mx-auto w-full max-w-[calc(1280px+8rem)] px-4 pt-2 pb-12 sm:pb-14 lg:px-16 lg:pb-16">
-        {hydrated ? (
+        {hydrated && nearViewport ? (
           <SkeletonSuspense fallback={<DemoWindowPlaceholder />}>
             <ResumesScreen />
           </SkeletonSuspense>

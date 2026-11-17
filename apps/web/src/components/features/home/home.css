@@ -5,7 +5,6 @@
   --home-card: #f0f6fc;
   color: var(--foreground);
   background: var(--home-surface);
-  font-family: Arial, "MiSans", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 .dark .home-page {

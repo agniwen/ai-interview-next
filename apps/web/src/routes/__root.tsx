@@ -2,6 +2,7 @@ import { HeadContent, Scripts, createRootRouteWithContext } from "@tanstack/reac
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { ThemeProvider } from "next-themes";
+import { useEffect } from "react";
 import { NotFoundPage } from "@/components/features/home/not-found";
 import { ToastProvider } from "@/components/ui/toast";
 import { getLocale } from "@/paraglide/runtime";
@@ -9,6 +10,7 @@ import { getLocale } from "@/paraglide/runtime";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 
 import appCss from "../styles.css?url";
+import miSansCss from "../misans.css?url";
 import homeCss from "../components/features/home/home.css?url";
 
 import type { QueryClient } from "@tanstack/react-query";
@@ -18,6 +20,14 @@ interface MyRouterContext {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    const stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = miSansCss;
+    document.head.append(stylesheet);
+    return () => stylesheet.remove();
+  }, []);
+
   return (
     <html lang={getLocale()} suppressHydrationWarning>
       <head>

@@ -5,5 +5,5 @@ import { BrandBackground } from "@/components/shaders/brand-background";
  * Connects the shared brand background to the homepage hero, keeping hero configuration in the presentation layer.
  */
 export function HeroBackground() {
-  return <BrandBackground animated className="home-hero-background" />;
+  return <BrandBackground animated deferUntilFirstPaint className="home-hero-background" />;
 }

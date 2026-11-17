@@ -9,6 +9,7 @@ import {
   Swirl,
 } from "shaders/react";
 import { useTheme } from "next-themes";
+import { useState } from "react";
 import { useReducedMotion } from "@/components/features/home/support/reduced-motion";
 
 const BEAM_GROUP_ID = "sainoa_brand_beams";
@@ -18,12 +19,18 @@ const BEAM_GROUP_ID = "sainoa_brand_beams";
  * WebGPU brand-background composition with theme-aware colors and animation controlled by animated.
  */
 export default function BrandShader({ animated = false }: { animated?: boolean }) {
+  const [ready, setReady] = useState(false);
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
   const reducedMotion = useReducedMotion();
   const autoFlow = animated && !reducedMotion;
   return (
-    <Shader className="absolute inset-0 size-full" disableTelemetry>
+    <Shader
+      className="absolute inset-0 size-full opacity-0 transition-opacity duration-500 ease-out data-[ready=true]:opacity-100 motion-reduce:transition-none"
+      data-ready={ready}
+      disableTelemetry
+      onReady={() => setReady(true)}
+    >
       <SolidColor color={dark ? "#07142b" : "#f7fbff"} />
       <Group id={BEAM_GROUP_ID}>
         <Beam
