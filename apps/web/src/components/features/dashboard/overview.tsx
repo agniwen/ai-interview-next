@@ -1,36 +1,32 @@
-import { IconArrowRight, IconCalendarEvent, IconFileCv } from "@tabler/icons-react";
+import {
+  IconArrowRight,
+  IconCalendarEvent,
+  IconClipboardCheck,
+  IconFileCv,
+} from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import type { ReactNode } from "react";
-import { z } from "zod";
-import { TableFilterSelect } from "@/components/layout/table-filters";
 import { LocalTime } from "@/components/local-time";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogCreateHandle as createDialogHandle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Frame, FrameHeader, FramePanel, FrameTitle } from "@/components/ui/frame";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 import { atsApi, atsStatus, readAts } from "../ats/client";
-import { listParams, listSearch } from "../ats/list-search";
+import { listParams } from "../ats/list-search";
 import type { ResumeListSearch } from "../ats/list-search";
 import { atsKeys } from "../ats/query-keys";
 import { ResumeCandidateDialog } from "../ats/resume-candidate-dialog";
 import { interviewKeys, interviewsApi } from "../interviews/client";
-import { interviewKindLabel, interviewRoundStatusLabel } from "../interviews/round-labels";
 
-export const overviewSearch = listSearch.pick({ page: true, pageSize: true }).extend({
-  role: z.enum(["interviewer", "uploader"]).optional().catch(undefined),
-  view: z.literal("interviews").optional().catch(undefined),
-});
-type OverviewSearch = z.output<typeof overviewSearch>;
 const resumeSearch: ResumeListSearch = { owner: "me", page: 1, pageSize: 6, search: "" };
-const dashboardRoute = "/w/$workspaceId/hub/dashboard";
 
 function Panel({
   action,
@@ -38,24 +34,25 @@ function Panel({
   icon,
   title,
 }: {
-  action: ReactNode;
+  action?: ReactNode;
   children: ReactNode;
   icon: ReactNode;
   title: string;
 }) {
   return (
-    <section
-      className="flex min-h-72 min-w-0 flex-col rounded-xl border border-border bg-card"
-      aria-label={title}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 sm:px-5">
-        <h2 className="flex items-center gap-2 text-sm font-semibold">
-          {icon}
-          {title}
-        </h2>
-        {action}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+    <section className="flex min-w-0 flex-col" aria-label={title}>
+      <Frame className="flex-1">
+        <FrameHeader className="min-h-12 flex-row flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+          <FrameTitle className="min-w-0">
+            <h3 className="flex items-center gap-2">
+              {icon}
+              {title}
+            </h3>
+          </FrameTitle>
+          {action}
+        </FrameHeader>
+        <FramePanel className="min-w-0 flex-1 p-0">{children}</FramePanel>
+      </Frame>
     </section>
   );
 }
@@ -85,59 +82,43 @@ function ListState({
   }
   if (loading) {
     return (
-      <output className="block space-y-4 px-5 py-5" aria-label={m.ats_loading()}>
+      <output className="block space-y-2 px-4 py-3 sm:px-5" aria-label={m.ats_loading()}>
         <Skeleton className="h-5 w-2/3" />
         <Skeleton className="h-5 w-1/2" />
-        <Skeleton className="h-5 w-3/5" />
       </output>
     );
   }
-  return (
-    <p className="grid flex-1 place-items-center px-5 py-8 text-center text-sm text-muted-foreground">
-      {empty}
-    </p>
-  );
+  return <p className="px-4 py-3 text-sm text-muted-foreground sm:px-5">{empty}</p>;
 }
 
-function Interviews({
+function InterviewTasks({
   workspaceId,
-  search,
-  onSearchChange,
+  todo,
 }: {
   workspaceId: string;
-  search: OverviewSearch;
-  onSearchChange: (changes: Partial<OverviewSearch>) => void;
+  todo: "upcoming" | "evaluation";
 }) {
-  const expanded = search.view === "interviews";
-  const query = {
-    creatorId: expanded ? undefined : ("me" as const),
-    page: String(expanded ? search.page : 1),
-    pageSize: String(expanded ? search.pageSize : 6),
-    role: expanded ? search.role : undefined,
-  };
+  const evaluation = todo === "evaluation";
+  const query = { page: "1", pageSize: "6", todo };
   const interviews = useQuery({
     queryFn: async ({ signal }) =>
       readAts(
         await interviewsApi.personal.$get({ param: { workspaceId }, query }, { init: { signal } }),
       ),
     queryKey: interviewKeys.workspace(workspaceId)._ctx.personal(query).queryKey,
+    refetchInterval: evaluation ? false : 60_000,
   });
   const rows = interviews.data?.rows ?? [];
-  const pages = Math.max(1, Math.ceil((interviews.data?.total ?? 0) / search.pageSize));
+  const Icon = evaluation ? IconClipboardCheck : IconCalendarEvent;
+  const detailLabel = evaluation
+    ? m.interview_evaluation_review()
+    : m.dashboard_interview_details();
   return (
     <Panel
-      title={m.dashboard_my_interviews()}
-      icon={<IconCalendarEvent aria-hidden="true" className="size-4 text-muted-foreground" />}
+      title={evaluation ? m.dashboard_todo_evaluations() : m.dashboard_todo_upcoming()}
+      icon={<Icon aria-hidden="true" className="size-4 text-muted-foreground" />}
       action={
-        expanded ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            render={<Link to={dashboardRoute} params={{ workspaceId }} search={{}} />}
-          >
-            {m.dashboard_show_overview()}
-          </Button>
-        ) : (
+        !evaluation && (
           <Button
             size="sm"
             variant="ghost"
@@ -155,129 +136,82 @@ function Interviews({
         )
       }
     >
-      {expanded && (
-        <div className="border-b border-border px-4 py-3 sm:px-5">
-          <TableFilterSelect
-            label={m.dashboard_all_roles()}
-            value={search.role ?? ""}
-            options={[
-              { label: m.dashboard_all_roles(), value: "" },
-              { label: m.meeting_interviewer(), value: "interviewer" },
-              { label: m.dashboard_uploader(), value: "uploader" },
-            ]}
-            onChange={(role) => onSearchChange({ page: 1, role: role || undefined })}
-          />
-        </div>
-      )}
       {rows.length ? (
         <ul className="divide-y divide-border">
-          {rows.map((row) => (
-            <li
-              key={row.id}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">
-                  {row.candidateName} · {row.jobTitle}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {interviewKindLabel(row.kind)} ·{" "}
-                  {row.label || m.interviews_round({ number: row.sequence })}
-                  {row.scheduledAt && (
-                    <>
-                      {" "}
-                      · <LocalTime value={row.scheduledAt} format="dateTime" />
-                    </>
-                  )}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  <Badge variant={row.status === "in_progress" ? "info" : "secondary"}>
-                    {interviewRoundStatusLabel(row)}
-                  </Badge>
-                  {row.interviewer && <Badge variant="outline">{m.meeting_interviewer()}</Badge>}
-                  {row.uploader && <Badge variant="outline">{m.dashboard_uploader()}</Badge>}
+          {rows.map((row) => {
+            const join = row.canJoinNow;
+            return (
+              <li
+                key={row.id}
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-4 py-2.5 sm:px-5"
+              >
+                <div className="min-w-32 flex-1">
+                  <p className="wrap-anywhere text-sm font-medium">
+                    {row.candidateName} · {row.jobTitle}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {row.label || m.interviews_round({ number: row.sequence })}
+                    {" · "}
+                    <LocalTime value={evaluation ? row.endedAt : row.scheduledAt} />
+                    {" · "}
+                    {evaluation ? m.dashboard_todo_reviewer() : m.dashboard_todo_interviewer()}
+                  </p>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {row.canJoin && (
-                  <Button
-                    size="sm"
-                    render={
+                <Button
+                  size="sm"
+                  variant={join ? "default" : "outline"}
+                  render={
+                    join ? (
                       <Link
                         to="/meet/$workspaceId/$roundId"
                         params={{ roundId: row.id, workspaceId }}
                       />
-                    }
-                  >
-                    {m.meeting_join()}
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  render={
-                    <Link
-                      to="/w/$workspaceId/hub/applications/$id/result/$roundId"
-                      params={{ id: row.applicationId, roundId: row.id, workspaceId }}
-                      search={{ tab: "interviews" }}
-                    />
+                    ) : (
+                      <Link
+                        to="/w/$workspaceId/hub/applications/$id/result/$roundId"
+                        params={{ id: row.applicationId, roundId: row.id, workspaceId }}
+                        search={{ tab: "interviews" }}
+                      />
+                    )
                   }
                 >
-                  {row.needsEvaluation
-                    ? m.interview_evaluation_review()
-                    : m.dashboard_interview_details()}
+                  {join ? m.meeting_join() : detailLabel}
                 </Button>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <ListState
           loading={interviews.isPending}
           failed={interviews.isError}
-          empty={m.dashboard_no_interviews()}
+          empty={m.dashboard_todo_empty()}
           retry={() => interviews.refetch()}
         />
-      )}
-      {expanded && (pages > 1 || search.page > 1) && (
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-4 py-3 sm:px-5">
-          <span className="mr-1 text-xs text-muted-foreground">
-            {m.dashboard_page_count({ page: search.page, total: pages })}
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={search.page === 1}
-            onClick={() => onSearchChange({ page: search.page - 1 })}
-          >
-            {m.ats_previous()}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={search.page >= pages}
-            onClick={() => onSearchChange({ page: search.page + 1 })}
-          >
-            {m.ats_next()}
-          </Button>
-        </div>
       )}
     </Panel>
   );
 }
 
-function FollowedResumes({ workspaceId }: { workspaceId: string }) {
+function FollowedResumes({
+  workspaceId,
+  taskOnly = false,
+}: {
+  workspaceId: string;
+  taskOnly?: boolean;
+}) {
+  const query = taskOnly ? { ...resumeSearch, attention: "actionable" as const } : resumeSearch;
   const client = useQueryClient();
   const candidateDialog = useMemo(() => createDialogHandle<string>(), []);
   const resumes = useQuery({
     queryFn: async ({ signal }) =>
       readAts(
         await atsApi.resumes.$get(
-          { param: { workspaceId }, query: listParams(resumeSearch) },
+          { param: { workspaceId }, query: listParams(query) },
           { init: { signal } },
         ),
       ),
-    queryKey: atsKeys.resumes(workspaceId)._ctx.list(resumeSearch).queryKey,
+    queryKey: atsKeys.resumes(workspaceId)._ctx.list(query).queryKey,
     refetchInterval: ({ state }) =>
       state.data?.rows.some((row) => row.parseStatus === "queued" || row.parseStatus === "running")
         ? 5000
@@ -286,7 +220,7 @@ function FollowedResumes({ workspaceId }: { workspaceId: string }) {
   const rows = resumes.data?.rows ?? [];
   return (
     <Panel
-      title={m.dashboard_followed_resumes()}
+      title={taskOnly ? m.dashboard_todo_resumes() : m.dashboard_followed_resumes()}
       icon={<IconFileCv aria-hidden="true" className="size-4 text-muted-foreground" />}
       action={
         <Button
@@ -306,35 +240,37 @@ function FollowedResumes({ workspaceId }: { workspaceId: string }) {
       }
     >
       {rows.length ? (
-        [true, false].map((needsAttention) => {
+        (taskOnly ? [true] : [true, false]).map((needsAttention) => {
           const group = rows.filter((row) => row.needsAttention === needsAttention);
           return (
             group.length > 0 && (
               <div key={String(needsAttention)} className="border-b border-border last:border-b-0">
-                <h3 className="px-4 pt-3 text-xs font-medium text-muted-foreground sm:px-5">
-                  {needsAttention ? m.dashboard_attention() : m.dashboard_resume_versions()}
-                </h3>
+                {!taskOnly && (
+                  <h4 className="px-4 pt-3 text-xs font-medium text-muted-foreground sm:px-5">
+                    {needsAttention ? m.dashboard_attention() : m.dashboard_resume_versions()}
+                  </h4>
+                )}
                 <ul className="divide-y divide-border">
                   {group.map((row) => (
                     <li
                       key={row.id}
-                      className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5"
+                      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-4 py-2.5 sm:px-5"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-32 flex-1">
                         <p className="truncate text-sm font-medium" title={row.filename}>
                           {row.filename}
                         </p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {row.linkedCandidateName && <>{row.linkedCandidateName} · </>}
+                          {taskOnly && <>{m.dashboard_todo_uploaded()} · </>}
                           <LocalTime value={row.createdAt} format="date" />
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">
+                          {" · "}
                           {row.identityStatus === "pending_review"
                             ? m.ats_candidate_pending_review()
                             : atsStatus(row.parseStatus ?? row.status)}
-                        </Badge>
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center">
                         {row.identityStatus === "pending_review" && row.submissionId ? (
                           <DialogTrigger
                             handle={candidateDialog}
@@ -355,7 +291,7 @@ function FollowedResumes({ workspaceId }: { workspaceId: string }) {
                               />
                             }
                           >
-                            {m.ats_view_resume()}
+                            {taskOnly ? m.dashboard_todo_view_issue() : m.ats_view_resume()}
                           </Button>
                         )}
                       </div>
@@ -370,7 +306,7 @@ function FollowedResumes({ workspaceId }: { workspaceId: string }) {
         <ListState
           loading={resumes.isPending}
           failed={resumes.isError}
-          empty={m.dashboard_no_resumes()}
+          empty={taskOnly ? m.dashboard_todo_empty() : m.dashboard_no_resumes()}
           retry={() => resumes.refetch()}
         />
       )}
@@ -396,23 +332,21 @@ function FollowedResumes({ workspaceId }: { workspaceId: string }) {
   );
 }
 
-export function Overview({
-  workspaceId,
-  search,
-  onSearchChange,
-}: {
-  workspaceId: string;
-  search: OverviewSearch;
-  onSearchChange: (changes: Partial<OverviewSearch>) => void;
-}) {
+export function Overview({ workspaceId }: { workspaceId: string }) {
   return (
-    <div
-      className={
-        search.view === "interviews" ? undefined : "grid auto-rows-fr gap-5 lg:grid-cols-2"
-      }
-    >
-      <Interviews workspaceId={workspaceId} search={search} onSearchChange={onSearchChange} />
-      {search.view !== "interviews" && <FollowedResumes workspaceId={workspaceId} />}
+    <div className="flex min-w-0 flex-col gap-6">
+      <section
+        aria-label={m.dashboard_todo_title()}
+        className="@container/todo flex min-w-0 flex-col gap-3"
+      >
+        <h2 className="text-lg font-semibold">{m.dashboard_todo_title()}</h2>
+        <div className="grid gap-4 @min-[48rem]/todo:grid-cols-2 @min-[48rem]/todo:@max-[72rem]/todo:[&>*:last-child]:col-span-full @min-[72rem]/todo:grid-cols-3">
+          <InterviewTasks workspaceId={workspaceId} todo="upcoming" />
+          <InterviewTasks workspaceId={workspaceId} todo="evaluation" />
+          <FollowedResumes workspaceId={workspaceId} taskOnly />
+        </div>
+      </section>
+      <FollowedResumes workspaceId={workspaceId} />
     </div>
   );
 }

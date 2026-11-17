@@ -8,13 +8,20 @@ import {
   resumeUploadItem as item,
   user,
 } from "@ai-interview/db/schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
 export const uploadCandidateJoin = eq(
   candidate.id,
   sql`case when ${batch.source} = 'external_import' then coalesce(${submission.resolvedCandidateId}, ${resume.candidateId}) else ${resume.candidateId} end`,
 );
+
+export function actionableResume(status: SQL) {
+  return or(
+    eq(submission.identityStatus, "pending_review"),
+    inArray(status, ["failed", "upload_failed"]),
+  );
+}
 
 /** 按简历版本去重，未完成的上传保留自己的处理记录。
  * Deduplicate by resume version while keeping each unfinished upload actionable. */

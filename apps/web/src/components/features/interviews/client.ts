@@ -19,6 +19,7 @@ export const interviewKeys = createQueryKeys("interviews", {
       members: (search: string) => [search],
       personal: (query: {
         creatorId?: "me";
+        todo?: "upcoming" | "evaluation";
         page: string;
         pageSize: string;
         role?: "interviewer" | "uploader";

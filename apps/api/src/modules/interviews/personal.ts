@@ -11,7 +11,19 @@ import {
   resumeUploadBatch,
   resumeUploadItem,
 } from "@ai-interview/db/schema";
-import { and, asc, desc, eq, exists, isNotNull, isNull, notExists, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  exists,
+  gte,
+  isNotNull,
+  isNull,
+  notExists,
+  or,
+  sql,
+} from "drizzle-orm";
 import type { z } from "zod";
 import type { personalInterviewQuery } from "./input";
 
@@ -69,11 +81,25 @@ export async function listPersonalInterviews(
   db: Database,
   workspaceId: string,
   userId: string,
-  { creatorId, page, pageSize, role }: z.output<typeof personalInterviewQuery>,
+  { creatorId, page, pageSize, role, todo }: z.output<typeof personalInterviewQuery>,
 ) {
   const { interviewer, uploader } = personalInterviewPredicates(db, workspaceId, userId);
+  const now = new Date();
+  const reviewer = exists(
+    db
+      .select({ id: interviewAssignment.interviewRoundId })
+      .from(interviewAssignment)
+      .where(
+        and(
+          eq(interviewAssignment.workspaceId, workspaceId),
+          eq(interviewAssignment.interviewRoundId, interviewRound.id),
+          eq(interviewAssignment.role, "reviewer"),
+          eq(interviewAssignment.userId, userId),
+        ),
+      ),
+  );
   const needsEvaluation = and(
-    interviewer,
+    or(interviewer, and(eq(interviewRound.kind, "ai"), reviewer)),
     eq(interviewRound.status, "completed"),
     notExists(
       db
@@ -83,19 +109,30 @@ export async function listPersonalInterviews(
           and(
             eq(interviewEvaluation.workspaceId, workspaceId),
             eq(interviewEvaluation.interviewRoundId, interviewRound.id),
-            eq(interviewEvaluation.authorUserId, userId),
+            or(eq(interviewRound.kind, "ai"), eq(interviewEvaluation.authorUserId, userId)),
             isNotNull(interviewEvaluation.submittedAt),
           ),
         ),
     ),
   );
+  const upcoming = and(
+    interviewer,
+    isNull(application.closedAt),
+    or(
+      eq(interviewRound.status, "in_progress"),
+      and(eq(interviewRound.status, "scheduled"), gte(interviewRound.scheduledAt, now)),
+    ),
+  );
+  const related =
+    creatorId === "me"
+      ? eq(interviewRound.createdBy, userId)
+      : { all: or(interviewer, uploader), interviewer, uploader }[role ?? "all"];
+  const selection = { evaluation: needsEvaluation, upcoming };
   const where = and(
     eq(interviewRound.workspaceId, workspaceId),
     eq(application.workspaceId, workspaceId),
     isNull(application.deletedAt),
-    creatorId === "me"
-      ? eq(interviewRound.createdBy, userId)
-      : { all: or(interviewer, uploader), interviewer, uploader }[role ?? "all"],
+    todo ? selection[todo] : related,
   );
   const priority = sql`case when ${interviewRound.status} = 'in_progress' then 0
     when ${needsEvaluation} then 1 when ${interviewRound.status} = 'scheduled' then 2 else 3 end`;
@@ -108,6 +145,7 @@ export async function listPersonalInterviews(
             Boolean,
           ),
         candidateName: candidate.name,
+        endedAt: interviewRound.endedAt,
         id: interviewRound.id,
         interviewer: sql<boolean>`${interviewer}`.mapWith(Boolean),
         jobTitle: job.title,
@@ -125,7 +163,7 @@ export async function listPersonalInterviews(
       .innerJoin(job, eq(job.id, application.jobId))
       .where(where)
       .orderBy(
-        asc(priority),
+        ...(todo === "evaluation" ? [desc(interviewRound.endedAt)] : [asc(priority)]),
         asc(
           sql`case when ${interviewRound.status} = 'scheduled' then coalesce(${interviewRound.scheduledAt}, 9223372036854775807) end`,
         ),
@@ -140,5 +178,18 @@ export async function listPersonalInterviews(
       .innerJoin(application, eq(application.id, interviewRound.applicationId))
       .where(where),
   ]);
-  return { page, pageSize, rows, total: count.total, version: 1 as const };
+  const joinWindow = now.getTime() + 15 * 60_000;
+  return {
+    page,
+    pageSize,
+    rows: rows.map((row) => ({
+      ...row,
+      canJoinNow:
+        row.canJoin &&
+        (row.status === "in_progress" ||
+          (row.scheduledAt !== null && row.scheduledAt.getTime() <= joinWindow)),
+    })),
+    total: count.total,
+    version: 1 as const,
+  };
 }

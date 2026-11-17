@@ -11,6 +11,7 @@ export const workspaceInterviewQuery = listQuery.extend({
 export const personalInterviewQuery = paginationQuery.extend({
   creatorId: z.literal("me").optional(),
   role: z.enum(["interviewer", "uploader"]).optional(),
+  todo: z.enum(["upcoming", "evaluation"]).optional(),
 });
 
 const orderedIds = z.array(z.uuid()).refine((ids) => new Set(ids).size === ids.length);

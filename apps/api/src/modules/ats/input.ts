@@ -52,6 +52,7 @@ export const applicationListQuery = jobListQuery.extend({
 });
 
 export const resumeListQuery = listQuery.extend({
+  attention: z.literal("actionable").optional(),
   creatorId: creatorIdFilter,
   owner: z.literal("me").optional(),
   status: z.enum(["waiting", "queued", "running", "succeeded", "failed", "skipped"]).optional(),

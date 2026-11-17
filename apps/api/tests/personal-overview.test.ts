@@ -126,6 +126,7 @@ it("filters the overview to the current user's uploads and interview roles befor
           version: 1 as const,
         },
         resumeId: [versionB, versionA, null][index],
+        scheduledAt: index === 1 ? new Date(Date.now() + 60 * 60_000) : null,
         sequence: index + 1,
         status: index === 0 ? "in_progress" : "scheduled",
         workspaceId,
@@ -232,4 +233,34 @@ it("filters the overview to the current user's uploads and interview roles befor
     total: 2,
   });
   expect(await read(f.owner.ats("resumes"))).toMatchObject({ total: 4 });
+  expect(await read(f.owner.ats("resumes?owner=me&attention=actionable"))).toMatchObject({
+    rows: [{ id: failedId }],
+    total: 1,
+  });
+  expect(await read(f.owner.call(`${path}?todo=upcoming&pageSize=1`))).toMatchObject({
+    rows: [{ canJoinNow: true, id: rounds[0] }],
+    total: 2,
+  });
+  expect(await read(f.owner.call(`${path}?todo=upcoming&page=2&pageSize=1`))).toMatchObject({
+    rows: [{ canJoinNow: false, id: rounds[1] }],
+    total: 2,
+  });
+  expect(await read(colleague.call(`${path}?todo=upcoming`))).toMatchObject({
+    rows: [],
+    total: 0,
+  });
+
+  const endedAt = new Date();
+  await db
+    .update(interviewRound)
+    .set({ endedAt, status: "completed" })
+    .where(eq(interviewRound.id, rounds[0]));
+  expect(await read(f.owner.call(`${path}?todo=evaluation`))).toMatchObject({
+    rows: [{ endedAt: endedAt.toISOString(), id: rounds[0], needsEvaluation: true }],
+    total: 1,
+  });
+  expect(await read(colleague.call(`${path}?todo=evaluation`))).toMatchObject({
+    rows: [],
+    total: 0,
+  });
 });

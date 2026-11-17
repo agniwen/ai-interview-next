@@ -33,7 +33,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import { personalResumeRows, uploadCandidateJoin } from "./personal-resumes";
+import { actionableResume, personalResumeRows, uploadCandidateJoin } from "./personal-resumes";
 import type { SQLWrapper } from "drizzle-orm";
 import type {
   ApplicationListQuery,
@@ -328,7 +328,7 @@ export async function listCandidateResumes(db: Database, workspaceId: string, ca
 export async function listResumes(
   db: Database,
   workspaceId: string,
-  { creatorId, page, pageSize, search, status }: ResumeListQuery,
+  { attention, creatorId, page, pageSize, search, status }: ResumeListQuery,
   userId?: string,
 ) {
   const workspace = and(
@@ -342,6 +342,7 @@ export async function listResumes(
     workspace,
     userId ? eq(batch.createdBy, userId) : undefined,
     creatorId ? eq(batch.createdBy, creatorId) : undefined,
+    attention && actionableResume(effectiveStatus),
     search
       ? or(
           includesText(item.filename, search),
