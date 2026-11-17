@@ -1,3 +1,4 @@
+import { CreatorFilter } from "./creator-filter";
 import { LocalTime } from "@/components/local-time";
 import { resumeDetailLinkOptions } from "./detail-navigation";
 import { Link } from "@tanstack/react-router";
@@ -83,14 +84,10 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
       }
       filters={
         <>
-          <TableFilterSelect
-            label={m.ats_creator()}
-            onChange={(owner) => onQueryChange({ owner: owner || undefined, page: 1 })}
-            options={[
-              { label: m.dashboard_all_uploaders(), value: "" },
-              { label: m.dashboard_my_uploads(), value: "me" },
-            ]}
-            value={query.owner ?? ""}
+          <CreatorFilter
+            workspaceId={workspaceId}
+            value={query.creatorId ?? query.owner}
+            onChange={(creatorId) => onQueryChange({ creatorId, owner: undefined, page: 1 })}
           />
           <TableFilterSelect
             label={m.ats_status()}

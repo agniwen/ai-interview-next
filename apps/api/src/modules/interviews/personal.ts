@@ -15,12 +15,7 @@ import { and, asc, desc, eq, exists, isNotNull, isNull, notExists, or, sql } fro
 import type { z } from "zod";
 import type { personalInterviewQuery } from "./input";
 
-export async function listPersonalInterviews(
-  db: Database,
-  workspaceId: string,
-  userId: string,
-  { page, pageSize, role }: z.output<typeof personalInterviewQuery>,
-) {
+export function personalInterviewPredicates(db: Database, workspaceId: string, userId: string) {
   const interviewer = exists(
     db
       .select({ id: interviewAssignment.interviewRoundId })
@@ -67,7 +62,16 @@ export async function listPersonalInterviews(
         ),
       ),
     );
-  const uploader = exists(uploaded);
+  return { interviewer, uploader: exists(uploaded) };
+}
+
+export async function listPersonalInterviews(
+  db: Database,
+  workspaceId: string,
+  userId: string,
+  { creatorId, page, pageSize, role }: z.output<typeof personalInterviewQuery>,
+) {
+  const { interviewer, uploader } = personalInterviewPredicates(db, workspaceId, userId);
   const needsEvaluation = and(
     interviewer,
     eq(interviewRound.status, "completed"),
@@ -89,7 +93,9 @@ export async function listPersonalInterviews(
     eq(interviewRound.workspaceId, workspaceId),
     eq(application.workspaceId, workspaceId),
     isNull(application.deletedAt),
-    { all: or(interviewer, uploader), interviewer, uploader }[role ?? "all"],
+    creatorId === "me"
+      ? eq(interviewRound.createdBy, userId)
+      : { all: or(interviewer, uploader), interviewer, uploader }[role ?? "all"],
   );
   const priority = sql`case when ${interviewRound.status} = 'in_progress' then 0
     when ${needsEvaluation} then 1 when ${interviewRound.status} = 'scheduled' then 2 else 3 end`;

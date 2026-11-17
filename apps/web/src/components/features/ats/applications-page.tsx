@@ -1,3 +1,4 @@
+import { CreatorFilter } from "./creator-filter";
 import { LocalTime } from "@/components/local-time";
 import { applicationDetailLinkOptions } from "./detail-navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -57,6 +58,11 @@ export function ApplicationsPage({
       }
       filters={
         <>
+          <CreatorFilter
+            workspaceId={workspaceId}
+            value={query.creatorId}
+            onChange={(creatorId) => onQueryChange({ creatorId, page: 1 })}
+          />
           <ProjectFilter
             onChange={(projectId) => onQueryChange({ page: 1, projectId: projectId ?? undefined })}
             value={query.projectId ?? null}

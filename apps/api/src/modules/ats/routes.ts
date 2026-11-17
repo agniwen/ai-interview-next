@@ -23,6 +23,7 @@ import {
   listQuery,
   projectDetailsInput,
   resumeListQuery,
+  resolveCreatorId,
   resumeOptionsQuery,
   updateJobInput,
 } from "./input";
@@ -105,18 +106,22 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       await listResumes(
         c.get("database"),
         c.get("workspaceId"),
-        query,
+        { ...query, creatorId: resolveCreatorId(query.creatorId, c.get("userId")) },
         query.owner === "me" ? c.get("userId") : undefined,
       ),
       200,
     );
   })
-  .get("/:workspaceId/applications", sValidator("query", applicationListQuery), async (c) =>
-    c.json(
-      await listApplications(c.get("database"), c.get("workspaceId"), c.req.valid("query")),
+  .get("/:workspaceId/applications", sValidator("query", applicationListQuery), async (c) => {
+    const query = c.req.valid("query");
+    return c.json(
+      await listApplications(c.get("database"), c.get("workspaceId"), {
+        ...query,
+        creatorId: resolveCreatorId(query.creatorId, c.get("userId")),
+      }),
       200,
-    ),
-  )
+    );
+  })
   .get("/:workspaceId/applications/options", async (c) =>
     c.json(await applicationOptions(c.get("database"), c.get("workspaceId")), 200),
   )

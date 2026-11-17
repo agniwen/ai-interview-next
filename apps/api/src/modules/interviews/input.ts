@@ -1,12 +1,15 @@
 import { z } from "zod";
-import { listQuery, paginationQuery } from "../ats/input";
+import { creatorIdFilter, listQuery, paginationQuery } from "../ats/input";
 
 export const workspaceInterviewQuery = listQuery.extend({
+  creatorId: creatorIdFilter,
   kind: z.enum(["human", "ai"]).optional(),
+  scope: z.literal("mine").optional(),
   status: z.enum(["scheduled", "in_progress", "completed"]).optional(),
 });
 
 export const personalInterviewQuery = paginationQuery.extend({
+  creatorId: z.literal("me").optional(),
   role: z.enum(["interviewer", "uploader"]).optional(),
 });
 

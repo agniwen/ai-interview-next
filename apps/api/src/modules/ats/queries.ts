@@ -328,7 +328,7 @@ export async function listCandidateResumes(db: Database, workspaceId: string, ca
 export async function listResumes(
   db: Database,
   workspaceId: string,
-  { page, pageSize, search, status }: ResumeListQuery,
+  { creatorId, page, pageSize, search, status }: ResumeListQuery,
   userId?: string,
 ) {
   const workspace = and(
@@ -341,6 +341,7 @@ export async function listResumes(
   const filters = and(
     workspace,
     userId ? eq(batch.createdBy, userId) : undefined,
+    creatorId ? eq(batch.createdBy, creatorId) : undefined,
     search
       ? or(
           includesText(item.filename, search),
@@ -548,11 +549,14 @@ function applicationResumeForDisplay(db: Database) {
 export async function listApplications(
   db: Database,
   workspaceId: string,
-  { page, pageSize, projectId, search, status }: ApplicationListQuery,
+  { creatorId, page, pageSize, projectId, search, status }: ApplicationListQuery,
 ) {
   const where = and(
     eq(application.workspaceId, workspaceId),
     isNull(application.deletedAt),
+    creatorId
+      ? and(eq(application.createdBy, creatorId), eq(application.createdByType, "user"))
+      : undefined,
     projectId ? eq(job.projectId, projectId) : undefined,
     search
       ? or(includesText(parsedResumeName, search), includesText(job.title, search))

@@ -39,7 +39,9 @@ export function WorkspaceSwitcher({
           {workspaces.map((workspace) => (
             <MenuItem
               key={workspace.id}
-              render={<Link to="/w/$workspaceId/agent" params={{ workspaceId: workspace.id }} />}
+              render={
+                <Link to="/w/$workspaceId/hub/dashboard" params={{ workspaceId: workspace.id }} />
+              }
             >
               <span className="truncate">{workspace.name}</span>
               {workspace.id === workspaceId && <IconCheck className="ml-auto" aria-hidden="true" />}

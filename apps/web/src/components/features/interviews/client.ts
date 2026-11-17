@@ -17,9 +17,12 @@ export const interviewKeys = createQueryKeys("interviews", {
       list: (query: z.output<typeof workspaceInterviewsSearch>) => [query],
       meeting: (id: string) => [id],
       members: (search: string) => [search],
-      personal: (query: { page: string; pageSize: string; role?: "interviewer" | "uploader" }) => [
-        query,
-      ],
+      personal: (query: {
+        creatorId?: "me";
+        page: string;
+        pageSize: string;
+        role?: "interviewer" | "uploader";
+      }) => [query],
       result: (id: string) => [id],
       rounds: (applicationId: string) => [applicationId],
       setup: (applicationId: string) => [applicationId],

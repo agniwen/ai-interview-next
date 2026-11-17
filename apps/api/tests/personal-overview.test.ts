@@ -1,4 +1,5 @@
 import {
+  application,
   applicationResume,
   interviewAssignment,
   interviewRound,
@@ -7,6 +8,7 @@ import {
   resumeUploadBatch,
   resumeUploadItem,
 } from "@ai-interview/db/schema";
+import { eq } from "drizzle-orm";
 import { expect, it } from "vitest";
 import { atsTest, read } from "./ats-fixture";
 import { addInterviewMember, fixture } from "./interview-fixture";
@@ -25,6 +27,10 @@ it("filters the overview to the current user's uploads and interview roles befor
   const otherId = crypto.randomUUID();
 
   await db.batch([
+    db
+      .update(application)
+      .set({ createdBy: userId, createdByType: "user" })
+      .where(eq(application.id, f.applicationId)),
     db.insert(resume).values(
       [versionA, versionB].map((id) => ({
         createdAt,
@@ -111,6 +117,7 @@ it("filters the overview to the current user's uploads and interview roles befor
       rounds.map((id, index) => ({
         applicationId: f.applicationId,
         createdAt,
+        createdBy: index === 0 ? colleague.userId : userId,
         id,
         kind: "human" as const,
         questionSelection: {
@@ -153,6 +160,49 @@ it("filters the overview to the current user's uploads and interview roles befor
   expect(await read(colleague.call(`${workspacePath}?page=4&pageSize=1`))).toMatchObject({
     rows: [],
     total: 3,
+  });
+  expect(await read(f.owner.call(`${workspacePath}?scope=mine`))).toMatchObject({ total: 3 });
+  expect(
+    await read(colleague.call(`${workspacePath}?scope=mine&status=in_progress&search=Engineer`)),
+  ).toMatchObject({
+    rows: [{ id: rounds[0] }],
+    total: 1,
+  });
+  expect(await read(colleague.call(`${workspacePath}?scope=mine&status=scheduled`))).toMatchObject({
+    rows: [],
+    total: 0,
+  });
+  expect(await read(colleague.call(`${workspacePath}?scope=mine&page=2&pageSize=1`))).toMatchObject(
+    { rows: [], total: 1 },
+  );
+  expect(await read(f.owner.call(`${workspacePath}?creatorId=me&pageSize=1`))).toMatchObject({
+    rows: [expect.objectContaining({ status: "scheduled" })],
+    total: 2,
+  });
+  expect(await read(f.owner.call(`${workspacePath}?creatorId=${colleague.userId}`))).toMatchObject({
+    rows: [{ id: rounds[0] }],
+    total: 1,
+  });
+  expect(await read(colleague.call(`${path}?creatorId=me`))).toMatchObject({
+    rows: [{ id: rounds[0] }],
+    total: 1,
+  });
+  expect(await read(f.owner.ats("applications?creatorId=me"))).toMatchObject({ total: 1 });
+  expect(await read(colleague.call(`ats/${workspaceId}/applications?creatorId=me`))).toMatchObject({
+    total: 0,
+  });
+  expect(
+    await read(colleague.call(`ats/${workspaceId}/applications?creatorId=${userId}`)),
+  ).toMatchObject({ total: 1 });
+  expect(await read(f.owner.ats("resumes?creatorId=me"))).toMatchObject({ total: 3 });
+  expect(await read(f.owner.ats(`resumes?creatorId=${colleague.userId}`))).toMatchObject({
+    total: 1,
+  });
+  expect(
+    await read(f.owner.call(`interviews/${workspaceId}/members?search=${colleague.userId}`)),
+  ).toMatchObject({
+    rows: [{ id: colleague.userId }],
+    total: 1,
   });
   const outsider = await fixture("overview-outsider@example.com");
   const denied = await outsider.owner.call(workspacePath);

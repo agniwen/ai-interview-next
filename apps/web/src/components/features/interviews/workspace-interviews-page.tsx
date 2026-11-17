@@ -1,3 +1,4 @@
+import { CreatorFilter } from "../ats/creator-filter";
 import { IconCalendarEvent } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -10,7 +11,7 @@ import * as m from "@/paraglide/messages";
 import { readAts } from "../ats/client";
 import { AtsListPage } from "../ats/list-page";
 import type { AtsPageProps } from "../ats/list-page";
-import { listParams, listSearch } from "../ats/list-search";
+import { creatorIdSearch, listParams, listSearch } from "../ats/list-search";
 import { interviewKeys, interviewsApi } from "./client";
 import { interviewFlowStatus, interviewKindLabel, interviewRoundStatusLabel } from "./round-labels";
 
@@ -18,7 +19,9 @@ const kinds = ["ai", "human"] as const;
 const statuses = ["scheduled", "in_progress", "completed"] as const;
 
 export const workspaceInterviewsSearch = listSearch.extend({
+  creatorId: creatorIdSearch,
   kind: z.enum(kinds).optional().catch(undefined),
+  scope: z.literal("mine").optional().catch(undefined),
   status: z.enum(statuses).optional().catch(undefined),
 });
 
@@ -44,6 +47,20 @@ export function WorkspaceInterviewsPage({
       hasRowActions
       filters={
         <>
+          <CreatorFilter
+            workspaceId={workspaceId}
+            value={query.creatorId}
+            onChange={(creatorId) => onQueryChange({ creatorId, page: 1 })}
+          />
+          <TableFilterSelect
+            label={m.interviews_scope()}
+            onChange={(scope) => onQueryChange({ page: 1, scope: scope || undefined })}
+            options={[
+              { label: m.interviews_all(), value: "" },
+              { label: m.dashboard_my_interviews(), value: "mine" },
+            ]}
+            value={query.scope ?? ""}
+          />
           <TableFilterSelect
             label={m.interviews_type()}
             onChange={(kind) => onQueryChange({ kind: kind || undefined, page: 1 })}

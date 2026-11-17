@@ -16,6 +16,7 @@ import {
 import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 import type { CreateInterviewInput, workspaceInterviewQuery } from "./input";
+import { personalInterviewPredicates } from "./personal";
 import { interviewActivityValues } from "./activity";
 import type { ListQuery } from "../ats/input";
 import { canConfirmEvaluation, evaluationSummary, readEvaluationSummary } from "./evaluation-state";
@@ -270,11 +271,23 @@ async function roundAssignments(db: Database, workspaceId: string, ids: string[]
 export async function listWorkspaceInterviews(
   db: Database,
   workspaceId: string,
-  { kind, page, pageSize, search, status }: z.output<typeof workspaceInterviewQuery>,
+  userId: string,
+  {
+    creatorId,
+    kind,
+    page,
+    pageSize,
+    scope,
+    search,
+    status,
+  }: z.output<typeof workspaceInterviewQuery>,
 ) {
+  const mine = scope === "mine" ? personalInterviewPredicates(db, workspaceId, userId) : undefined;
   const where = and(
     eq(interviewRound.workspaceId, workspaceId),
     isNull(application.deletedAt),
+    mine ? or(mine.interviewer, mine.uploader) : undefined,
+    creatorId ? eq(interviewRound.createdBy, creatorId) : undefined,
     kind ? eq(interviewRound.kind, kind) : undefined,
     status ? eq(interviewRound.status, status) : undefined,
     search

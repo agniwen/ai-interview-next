@@ -21,11 +21,14 @@ export const listSearch = z.object({
     .default(""),
 });
 
+export const creatorIdSearch = z.string().trim().min(1).max(200).optional().catch(undefined);
+
 export const jobListSearch = listSearch.extend({
   projectId: z.uuid().optional().catch(undefined),
 });
 
 export const applicationListSearch = jobListSearch.extend({
+  creatorId: creatorIdSearch,
   status: z.enum(applicationStatuses).optional().catch(undefined),
 });
 
@@ -36,6 +39,7 @@ export type ApplicationDetailSearch = z.output<typeof applicationDetailSearch>;
 export type ApplicationTab = ApplicationDetailSearch["tab"];
 
 export const resumeListSearch = listSearch.extend({
+  creatorId: creatorIdSearch,
   owner: z.literal("me").optional().catch(undefined),
   status: z.enum(resumeStatuses).optional().catch(undefined),
 });

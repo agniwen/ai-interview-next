@@ -51,7 +51,7 @@ export async function interviewMembers(
   const where = and(
     eq(member.organizationId, workspaceId),
     search
-      ? sql`(instr(lower(${user.name}), lower(${search})) > 0 or instr(lower(${user.email}), lower(${search})) > 0)`
+      ? sql`(${user.id} = ${search} or instr(lower(${user.name}), lower(${search})) > 0 or instr(lower(${user.email}), lower(${search})) > 0)`
       : undefined,
   );
   const [rows, counts] = await Promise.all([

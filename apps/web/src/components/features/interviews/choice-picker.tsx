@@ -21,14 +21,20 @@ import * as m from "@/paraglide/messages";
 import { choicesQuery } from "./client";
 import type { Choice, ChoiceKind } from "./client";
 
+const emptyChoices: readonly Choice[] = [];
+
 function ChoiceInput({
+  ariaLabel,
   id,
   kind,
+  showAvatar,
   multiple,
   value,
 }: {
+  ariaLabel?: string;
   id: string;
   kind: ChoiceKind;
+  showAvatar: boolean;
   multiple?: boolean;
   value: Choice | readonly Choice[] | null | undefined;
 }) {
@@ -63,13 +69,14 @@ function ChoiceInput({
     </ComboboxChips>
   ) : (
     <ComboboxInput
+      aria-label={ariaLabel}
       id={id}
       className="w-full"
       maxLength={200}
       placeholder={m.interviews_select()}
       showClear
       startAddon={
-        kind === "member" && person ? (
+        showAvatar && person ? (
           <Avatar className="[--avatar-size:18px]">
             <AvatarImage alt="" referrerPolicy="no-referrer" src={person.image ?? undefined} />
             <AvatarFallback className="text-[10px]">
@@ -87,6 +94,7 @@ function ChoiceInput({
  * Shared interview configuration picker loading member, Agent or question-set options for single or multiple selection.
  */
 export function ChoicePicker<Multiple extends boolean = false>({
+  ariaLabel,
   id,
   workspaceId,
   kind,
@@ -94,7 +102,12 @@ export function ChoicePicker<Multiple extends boolean = false>({
   onChange,
   disabled,
   multiple,
+  pinnedOptions = emptyChoices,
+  excludeId,
 }: {
+  ariaLabel?: string;
+  pinnedOptions?: readonly Choice[];
+  excludeId?: string;
   id: string;
   workspaceId: string;
   kind: ChoiceKind;
@@ -115,7 +128,12 @@ export function ChoicePicker<Multiple extends boolean = false>({
     enabled: open,
   });
   const pending = search !== debouncedSearch || query.isPending;
-  const rows = pending ? [] : (query.data?.pages.flatMap((page) => page.rows) ?? []);
+  const rows = [
+    ...pinnedOptions,
+    ...(pending ? [] : (query.data?.pages.flatMap((page) => page.rows) ?? [])).filter(
+      (row) => row.id !== excludeId,
+    ),
+  ];
   const selected: readonly Choice[] = value && "id" in value ? [value] : (value ?? []);
   const items = [
     ...rows,
@@ -149,14 +167,21 @@ export function ChoicePicker<Multiple extends boolean = false>({
         }
       }}
     >
-      <ChoiceInput id={id} kind={kind} multiple={multiple} value={value} />
+      <ChoiceInput
+        ariaLabel={ariaLabel}
+        id={id}
+        kind={kind}
+        showAvatar={kind === "member" && !pinnedOptions.some((option) => option === value)}
+        multiple={multiple}
+        value={value}
+      />
       <ComboboxPopup className="w-(--anchor-width)">
         {!pending && !query.isError && <ComboboxEmpty>{m.interviews_no_options()}</ComboboxEmpty>}
         <ComboboxList>
           <ComboboxCollection>
             {(row: Choice) => (
               <ComboboxItem key={row.id} value={row}>
-                {kind === "member" ? (
+                {kind === "member" && !pinnedOptions.some((option) => option.id === row.id) ? (
                   <div className="flex min-w-0 items-center gap-2 py-0.5">
                     <UserColumn user={row} className="max-w-[45%] shrink-0" />
                     <span

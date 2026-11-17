@@ -9,6 +9,12 @@ export const listQuery = paginationQuery.extend({
   search: z.string().trim().max(200).default(""),
 });
 
+export const creatorIdFilter = z.string().trim().min(1).max(200).optional();
+
+export function resolveCreatorId(creatorId: string | undefined, userId: string) {
+  return creatorId === "me" ? userId : creatorId;
+}
+
 export const jobListQuery = listQuery.extend({ projectId: z.uuid().optional() });
 
 export const departmentInput = z.strictObject({
@@ -41,10 +47,12 @@ export const applicationFeedbackInput = z.strictObject({
 });
 
 export const applicationListQuery = jobListQuery.extend({
+  creatorId: creatorIdFilter,
   status: z.enum(["open", "closed"]).optional(),
 });
 
 export const resumeListQuery = listQuery.extend({
+  creatorId: creatorIdFilter,
   owner: z.literal("me").optional(),
   status: z.enum(["waiting", "queued", "running", "succeeded", "failed", "skipped"]).optional(),
 });

@@ -27,7 +27,7 @@ import type { AuthenticatedEnv } from "../../middleware/authenticated";
 import { requireWorkspace } from "../../middleware/workspace";
 import { resumeMediaType } from "../../lib/resume-file";
 import { interviewSetup, interviewMembers, interviewEditSetup } from "./options";
-import { listQuery, paginationQuery } from "../ats/input";
+import { listQuery, paginationQuery, resolveCreatorId } from "../ats/input";
 import {
   createInterviewInput,
   personalInterviewQuery,
@@ -70,15 +70,17 @@ export const interviewRoutes = new Hono<AuthenticatedEnv>()
   .get(
     "/:workspaceId/rounds",
     sValidator("query", workspaceInterviewQuery, validationResult),
-    async (c) =>
-      c.json(
-        await listWorkspaceInterviews(
-          c.get("database"),
-          c.get("workspaceId"),
-          c.req.valid("query"),
-        ),
+    async (c) => {
+      const query = c.req.valid("query");
+      const userId = c.get("userId");
+      return c.json(
+        await listWorkspaceInterviews(c.get("database"), c.get("workspaceId"), userId, {
+          ...query,
+          creatorId: resolveCreatorId(query.creatorId, userId),
+        }),
         200,
-      ),
+      );
+    },
   )
   .get(
     "/:workspaceId/personal",

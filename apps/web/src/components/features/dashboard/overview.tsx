@@ -110,6 +110,7 @@ function Interviews({
 }) {
   const expanded = search.view === "interviews";
   const query = {
+    creatorId: expanded ? undefined : ("me" as const),
     page: String(expanded ? search.page : 1),
     pageSize: String(expanded ? search.pageSize : 6),
     role: expanded ? search.role : undefined,
@@ -141,7 +142,11 @@ function Interviews({
             size="sm"
             variant="ghost"
             render={
-              <Link to={dashboardRoute} params={{ workspaceId }} search={{ view: "interviews" }} />
+              <Link
+                to="/w/$workspaceId/hub/interviews"
+                params={{ workspaceId }}
+                search={{ creatorId: "me" }}
+              />
             }
           >
             {m.dashboard_view_all()}
@@ -291,7 +296,7 @@ function FollowedResumes({ workspaceId }: { workspaceId: string }) {
             <Link
               to="/w/$workspaceId/hub/resumes"
               params={{ workspaceId }}
-              search={{ owner: "me" }}
+              search={{ creatorId: "me" }}
             />
           }
         >
@@ -346,7 +351,7 @@ function FollowedResumes({ workspaceId }: { workspaceId: string }) {
                               <Link
                                 to="/w/$workspaceId/hub/resumes/$id"
                                 params={{ id: row.id, workspaceId }}
-                                search={{ owner: "me" }}
+                                search={{ creatorId: "me" }}
                               />
                             }
                           >
@@ -401,11 +406,13 @@ export function Overview({
   onSearchChange: (changes: Partial<OverviewSearch>) => void;
 }) {
   return (
-    <div className="mx-auto w-full max-w-7xl">
-      <div className={search.view === "interviews" ? "" : "grid auto-rows-fr gap-5 lg:grid-cols-2"}>
-        <Interviews workspaceId={workspaceId} search={search} onSearchChange={onSearchChange} />
-        {search.view !== "interviews" && <FollowedResumes workspaceId={workspaceId} />}
-      </div>
+    <div
+      className={
+        search.view === "interviews" ? undefined : "grid auto-rows-fr gap-5 lg:grid-cols-2"
+      }
+    >
+      <Interviews workspaceId={workspaceId} search={search} onSearchChange={onSearchChange} />
+      {search.view !== "interviews" && <FollowedResumes workspaceId={workspaceId} />}
     </div>
   );
 }
