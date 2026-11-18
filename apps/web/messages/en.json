@@ -971,6 +971,7 @@
   "mcp_intro_menu": "MCP setup",
   "mcp_intro_title": "Connect your agent to Sainoa",
   "mcp_intro_description": "Copy the prompt into Codex or another compatible agent to set up and authorize the connection.",
+  "mcp_intro_endpoint": "MCP server URL",
   "mcp_intro_copy": "Copy prompt",
   "mcp_intro_copied": "Prompt copied",
   "mcp_intro_copy_error": "Couldn't copy the prompt. Allow clipboard access in your browser and try again.",

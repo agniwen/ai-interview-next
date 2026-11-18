@@ -774,6 +774,7 @@
   "mcp_intro_menu": "MCP 接続設定",
   "mcp_intro_title": "エージェントを Sainoa に接続",
   "mcp_intro_description": "プロンプトをコピーして Codex などの対応エージェントに貼り付け、接続の設定と認可を開始します。",
+  "mcp_intro_endpoint": "MCP サーバー URL",
   "mcp_intro_copy": "プロンプトをコピー",
   "mcp_intro_copied": "プロンプトをコピーしました",
   "mcp_intro_copy_error": "プロンプトをコピーできませんでした。ブラウザでクリップボードへのアクセスを許可してから再試行してください。",

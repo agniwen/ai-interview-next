@@ -971,6 +971,7 @@
   "mcp_intro_menu": "MCP 接入",
   "mcp_intro_title": "让 Agent 连接 Sainoa",
   "mcp_intro_description": "复制提示词并发给 Codex 或其他兼容的 Agent，开始配置与授权。",
+  "mcp_intro_endpoint": "MCP 服务地址",
   "mcp_intro_copy": "复制提示词",
   "mcp_intro_copied": "已复制提示词",
   "mcp_intro_copy_error": "无法复制提示词，请允许浏览器访问剪贴板后重试。",

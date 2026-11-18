@@ -35,6 +35,8 @@ bun run dev
 
 Web 应用运行在 `http://localhost:3000`，API 运行在 `http://localhost:8787`。`make dev` 同时启动二者；语音服务仍单独启动。
 
+`/mcp` 默认使用当前站点的 `/api/mcp` 生成接入提示词。如果招聘 MCP 服务独立部署，可在启动或构建 Web 前通过 `apps/web/.env` 设置 `VITE_RECRUITING_MCP_URL` 为完整的 Streamable HTTP 服务地址。引导页会显示并使用该地址。此配置会进入浏览器构建产物，请只填服务 URL。
+
 需要使用生产数据开发时，先在 `apps/api` 执行 `bunx --no-install wrangler login` 登录 Cloudflare，再从仓库根目录运行 `bun run dev:remote` 或 `make dev-remote`。Web 和 API 仍在上述本地端口运行，登录沿用 `apps/api/.env` 中的 localhost 配置。此模式连接生产 D1 和 R2，写入会直接修改生产数据。详见 [Cloudflare Remote Bindings](https://developers.cloudflare.com/workers/local-development/#remote-bindings)。
 
 队列、Workflow 和 Durable Objects 在本地运行，并使用独立于普通开发的本地状态。简历处理和重试会通过共享的生产 D1 写入任务状态，验证这些流程时使用 `make dev`。直接运行 Wrangler 做纯本地开发时，使用 `wrangler dev --local`。

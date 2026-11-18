@@ -8,12 +8,13 @@ import { mcpScopeLabels } from "@/lib/mcp/scope-labels";
 import * as m from "@/paraglide/messages";
 
 const scopes = Object.keys(mcpScopeLabels).join(",");
+const configuredEndpoint = import.meta.env.VITE_RECRUITING_MCP_URL as string | undefined;
 
 function McpIntro() {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
 
   async function copyPrompt() {
-    const endpoint = new URL("/api/mcp", window.location.origin).href;
+    const endpoint = configuredEndpoint || new URL("/api/mcp", window.location.origin).href;
     try {
       await navigator.clipboard.writeText(m.mcp_intro_prompt({ endpoint, scopes }));
       setCopyState("copied");
@@ -28,6 +29,14 @@ function McpIntro() {
         <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">{m.mcp_intro_title()}</h1>
         <p className="text-sm leading-6 text-muted-foreground">{m.mcp_intro_description()}</p>
       </div>
+      {configuredEndpoint ? (
+        <dl className="flex flex-col gap-1 rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+          <dt className="text-muted-foreground">{m.mcp_intro_endpoint()}</dt>
+          <dd className="wrap-anywhere">
+            <code>{configuredEndpoint}</code>
+          </dd>
+        </dl>
+      ) : null}
       <div className="flex flex-col items-start gap-3">
         <Button onClick={copyPrompt}>
           {copyState === "copied" ? (

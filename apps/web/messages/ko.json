@@ -774,6 +774,7 @@
   "mcp_intro_menu": "MCP 연결 설정",
   "mcp_intro_title": "에이전트를 Sainoa에 연결",
   "mcp_intro_description": "프롬프트를 복사해 Codex 또는 호환되는 에이전트에 붙여넣고 연결 설정과 인증을 시작하세요.",
+  "mcp_intro_endpoint": "MCP 서버 URL",
   "mcp_intro_copy": "프롬프트 복사",
   "mcp_intro_copied": "프롬프트가 복사되었습니다",
   "mcp_intro_copy_error": "프롬프트를 복사하지 못했습니다. 브라우저에서 클립보드 접근을 허용한 후 다시 시도하세요.",
