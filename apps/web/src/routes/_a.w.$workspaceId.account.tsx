@@ -1,6 +1,7 @@
 import { IconUser } from "@tabler/icons-react";
 import { AccountPageSkeleton } from "@/components/skeletons/pages/account-page-skeleton";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { AccountUsage, usageSearch } from "@/components/features/settings/account-usage";
 import { AccountPageContent } from "@/components/features/settings/account-page";
 import { PageHeaderContent } from "@/components/layout/page-header";
 import * as m from "@/paraglide/messages";
@@ -9,18 +10,30 @@ const routeApi = getRouteApi("/_a/w/$workspaceId/account");
 
 function AccountPage() {
   const { workspaceId } = routeApi.useParams();
+  const filters = routeApi.useSearch();
+  const navigate = routeApi.useNavigate();
   return (
     <>
       <PageHeaderContent>
         <IconUser className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <span className="truncate text-sm font-medium">{m.account_title()}</span>
       </PageHeaderContent>
-      <AccountPageContent workspaceId={workspaceId} />
+      <AccountPageContent
+        workspaceId={workspaceId}
+        usage={
+          <AccountUsage
+            filters={filters}
+            onFiltersChange={(search) => navigate({ resetScroll: false, search })}
+            workspaceId={workspaceId}
+          />
+        }
+      />
     </>
   );
 }
 
 export const Route = createFileRoute("/_a/w/$workspaceId/account")({
+  validateSearch: usageSearch,
   pendingComponent: AccountPageSkeleton,
   head: () => ({ meta: [{ title: `${m.account_title()} — Sainoa` }] }),
   component: AccountPage,

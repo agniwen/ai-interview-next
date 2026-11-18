@@ -20,6 +20,8 @@ import type { ResumeMediaType } from "../../lib/resume-file";
 import type { ResumeStructurer } from "../../lib/resume-structuring";
 import { normalizedPhone, resolveParsedResume } from "./identity";
 import { outboxEntry } from "./outbox";
+import { resumeStageUsage } from "./stage-usage";
+import { duplicateResumeFile } from "./uploads";
 
 type Parameters = NonNullable<typeof attempt.$inferSelect.parameters>;
 type Evaluation = typeof applicationEvaluation.$inferInsert.result;
@@ -27,7 +29,11 @@ type ModelParameters = Omit<Parameters, "avatar" | "input" | "version">;
 
 export interface ResumeStageDependencies {
   storage: ResumeObjectStore;
-  extractAvatar: (bytes: Uint8Array, mediaType: ResumeMediaType) => Promise<ArrayBuffer | null>;
+  extractAvatar: (
+    bytes: Uint8Array,
+    mediaType: ResumeMediaType,
+    transport: typeof fetch,
+  ) => Promise<ArrayBuffer | null>;
   avatarParameters: NonNullable<Parameters["avatar"]>;
   extract: (transport: typeof fetch) => PdfTextExtractor;
   structure: (transport: typeof fetch) => ResumeStructurer;
@@ -76,53 +82,34 @@ async function registerResume(
   bytes: Uint8Array,
 ) {
   const sha256 = await resumeFileDigest(bytes);
-  await db
-    .insert(resume)
-    .values({
-      createdAt: new Date(),
-      id: entry.id,
-      pdfObjectKey: file.objectKey,
-      sha256,
-      workspaceId: entry.workspaceId,
-    })
-    .onConflictDoNothing();
-  const [pdf] = await db
-    .select()
-    .from(resume)
-    .where(and(eq(resume.workspaceId, entry.workspaceId), eq(resume.sha256, sha256)));
-  const resumeId = pdf!.id;
-  await db
-    .update(run)
-    .set({ resumeId })
-    .where(
-      and(
-        eq(run.id, entry.id),
-        sql`not exists (select 1 from ${run} where "kind" = 'parse' and "resumeId" = ${resumeId} and "id" <> ${entry.id})`,
-      ),
-    );
-  const [canonical] = await db
-    .select({ id: run.id })
-    .from(run)
-    .where(and(eq(run.resumeId, resumeId), eq(run.kind, "parse")));
-  const runId = canonical!.id;
+  const resumeId = entry.resumeId ?? entry.id;
   await db.batch([
+    db
+      .insert(resume)
+      .values({
+        createdAt: new Date(),
+        id: resumeId,
+        pdfObjectKey: file.objectKey,
+        sha256,
+        workspaceId: entry.workspaceId,
+      })
+      .onConflictDoNothing(),
+    db.update(run).set({ resumeId }).where(eq(run.id, entry.id)),
     db
       .insert(submission)
       .values({
         createdAt: new Date(),
         id: file.id,
+        isDuplicate: duplicateResumeFile(db, entry.workspaceId, sha256, resumeId),
         originalFilename: file.filename,
         resumeId,
         workspaceId: entry.workspaceId,
       })
       .onConflictDoNothing(),
-    db.update(item).set({ runId, submissionId: file.id }).where(eq(item.id, file.id)),
+    db.update(item).set({ submissionId: file.id }).where(eq(item.id, file.id)),
   ]);
-  return {
-    pdf: pdf!,
-    reused: runId !== entry.id || pdf!.parseStatus === "succeeded",
-    submissionId: file.id,
-  };
+  const [pdf] = await db.select().from(resume).where(eq(resume.id, resumeId));
+  return pdf!;
 }
 
 async function saveResumeAvatar(
@@ -131,18 +118,20 @@ async function saveResumeAvatar(
   attemptId: string,
   bytes: Uint8Array,
   mediaType: ResumeMediaType,
+  usage: ReturnType<typeof resumeStageUsage>,
 ) {
   if (record.avatarObjectKey) {
     return;
   }
   try {
-    const avatar = await deps.extractAvatar(bytes, mediaType);
+    const avatar = await deps.extractAvatar(bytes, mediaType, usage.avatarTransport);
     if (avatar) {
       const key = `${record.workspaceId}/avatars/${record.id}/${attemptId}.png`;
       await deps.storage.write(key, avatar, "image/png");
       return key;
     }
   } catch (error) {
+    usage.avatarFailed();
     console.warn("Resume avatar extraction failed", {
       error: error instanceof Error ? error.name : "UnknownError",
       resumeId: record.id,
@@ -194,6 +183,14 @@ export async function consumeResumeStage(
     return;
   }
 
+  const usage = resumeStageUsage(
+    db,
+    entry!,
+    message.attemptId,
+    stage,
+    parameters.model,
+    avatar?.model,
+  );
   let requestId: string | null = null;
   let status: number | undefined;
   let retryAfterAt: Date | null = null;
@@ -207,6 +204,7 @@ export async function consumeResumeStage(
       const at = Number.isFinite(seconds) ? Date.now() + seconds * 1000 : Date.parse(retryAfter);
       retryAfterAt = Number.isFinite(at) ? new Date(at) : null;
     }
+    await usage.observe(response);
     return response;
   };
   const finished = (state: "succeeded" | "failed" | "skipped", error?: string, retryable = false) =>
@@ -252,24 +250,29 @@ export async function consumeResumeStage(
           mediaType === "application/pdf" ? "INVALID_PDF" : "INVALID_RESUME_IMAGE",
         );
       }
-      const { pdf, reused, submissionId } = await registerResume(db, entry!, file!, bytes);
+      const pdf = await registerResume(db, entry!, file!, bytes);
       const linkAvatar = (key: string) =>
         db
           .update(resume)
           .set({ avatarObjectKey: key })
           .where(and(eq(resume.id, pdf.id), isNull(resume.avatarObjectKey), activeExists));
-      if (reused) {
-        let avatarKey: string | undefined;
-        if (pdf.parseStatus === "succeeded") {
-          await resolveParsedResume(db, pdf.id, submissionId);
-          avatarKey = await saveResumeAvatar(deps, pdf, message.attemptId, bytes, mediaType);
-        }
+      if (pdf.parseStatus === "succeeded") {
+        await resolveParsedResume(db, pdf.id, file!.id);
+        const avatarKey = await saveResumeAvatar(
+          deps,
+          pdf,
+          message.attemptId,
+          bytes,
+          mediaType,
+          usage,
+        );
         await db.batch([
           db
             .update(run)
             .set({ status: "succeeded" })
             .where(and(eq(run.id, entry!.id), activeExists)),
           ...(avatarKey ? [linkAvatar(avatarKey)] : []),
+          ...(await usage.writes(false)),
           wake(),
           finished("succeeded"),
         ]);
@@ -277,13 +280,21 @@ export async function consumeResumeStage(
       }
       await db.update(resume).set({ parseStatus: "processing" }).where(eq(resume.id, pdf.id));
       const { text } = await deps.extract(transport)(bytes, mediaType);
-      const avatarKey = await saveResumeAvatar(deps, pdf, message.attemptId, bytes, mediaType);
+      const avatarKey = await saveResumeAvatar(
+        deps,
+        pdf,
+        message.attemptId,
+        bytes,
+        mediaType,
+        usage,
+      );
       await db.batch([
         db
           .update(resume)
           .set({ markdown: text })
           .where(and(eq(resume.id, pdf.id), activeExists)),
         ...(avatarKey ? [linkAvatar(avatarKey)] : []),
+        ...(await usage.writes(false)),
         wake(),
         finished("succeeded"),
       ]);
@@ -302,6 +313,7 @@ export async function consumeResumeStage(
             parsedProfile: profile,
           })
           .where(and(eq(resume.id, pdf!.id), activeExists)),
+        ...(await usage.writes(false)),
         wake(),
         finished("succeeded"),
       ]);
@@ -377,11 +389,12 @@ export async function consumeResumeStage(
         .update(run)
         .set({ evaluationId: message.attemptId })
         .where(and(eq(run.id, entry!.id), activeExists)),
+      ...(await usage.writes(false)),
       wake(),
       finished("succeeded"),
     ]);
   } catch (error) {
     const { reason, retryable } = stageFailure(error, status);
-    await db.batch([wake(), finished("failed", reason, retryable)]);
+    await db.batch([wake(), finished("failed", reason, retryable), ...(await usage.writes(true))]);
   }
 }

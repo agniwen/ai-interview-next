@@ -20,6 +20,7 @@ from livekit.agents.metrics import RealtimeModelMetrics
 from test_interview import interview_context
 from agent import InterviewAgent, realtime_model
 from interview_context import InterviewSessionClient
+from interview_usage import InterviewUsageReporter
 
 QUESTIONS = [
     ("请介绍订单系统中你负责的 API 及其设计取舍。", "实际职责、设计与取舍"),
@@ -40,12 +41,20 @@ def insert(db, table, values):
 def seed(db, name):
     now = round(time.time() * 1000)
     workspace, owner = db.execute("SELECT organizationId,userId FROM member WHERE role='owner' LIMIT 1").fetchone()
-    ids = {key: str(uuid.uuid4()) for key in ("candidate", "job", "application", "agent", "round")}
+    ids = {key: str(uuid.uuid4()) for key in ("candidate", "job", "application", "agent", "round", "resume", "submission", "batch", "upload")}
     insert(db, "candidate", dict(id=ids["candidate"], workspaceId=workspace, name="E2E 合成候选人", creationSource="manual", createdAt=now))
     insert(db, "job", dict(id=ids["job"], workspaceId=workspace, title="E2E 后端工程师", requirements="订单系统 API", createdAt=now, createdBy=owner))
     insert(db, "application", dict(id=ids["application"], workspaceId=workspace, candidateId=ids["candidate"], jobId=ids["job"], stage="interview", createdAt=now, createdBy=owner, createdByType="user"))
     insert(db, "interviewer_agent", dict(id=ids["agent"], workspaceId=workspace, name="E2E 面试官", prompt="自然简短地交流，只追问未清楚的事实。", createdAt=now, updatedAt=now, createdBy=owner))
-    insert(db, "interview_round", dict(id=ids["round"], workspaceId=workspace, applicationId=ids["application"], kind="ai", label=f"E2E {name}", interviewerAgentId=ids["agent"], questionSelection=json.dumps({"version": 1, "conversationQuestionSetIds": [], "formQuestionSetIds": []}), createdAt=now, createdBy=owner, sequence=1, status="in_progress", startedAt=now))
+    filename = "E2E synthetic résumé.pdf"
+    object_key = f'{ids["resume"]}.pdf'
+    markdown = "合成简历：候选人曾参与订单项目。简历声称峰值 9000 QPS，仅作背景，不能当本次口头回答。"
+    insert(db, "resume", dict(id=ids["resume"], workspaceId=workspace, pdfObjectKey=object_key, markdown=markdown, sha256=ids["resume"], createdAt=now))
+    insert(db, "resume_submission", dict(id=ids["submission"], workspaceId=workspace, resumeId=ids["resume"], originalFilename=filename, createdAt=now))
+    insert(db, "resume_upload_batch", dict(id=ids["batch"], workspaceId=workspace, createdBy=owner, createdAt=now))
+    insert(db, "resume_upload_item", dict(id=ids["upload"], batchId=ids["batch"], workspaceId=workspace, submissionId=ids["submission"], filename=filename, objectKey=object_key, size=1, status="accepted"))
+    insert(db, "application_resume", dict(id=str(uuid.uuid4()), workspaceId=workspace, applicationId=ids["application"], resumeId=ids["resume"], submissionId=ids["submission"], createdAt=now, status="available"))
+    insert(db, "interview_round", dict(id=ids["round"], workspaceId=workspace, applicationId=ids["application"], resumeId=ids["resume"], kind="ai", label=f"E2E {name}", interviewerAgentId=ids["agent"], questionSelection=json.dumps({"version": 1, "conversationQuestionSetIds": [], "formQuestionSetIds": []}), createdAt=now, createdBy=owner, sequence=1, status="in_progress", startedAt=now))
     content = interview_context().content.model_dump()
     content["candidate"] = {"id": ids["candidate"], "name": "E2E 合成候选人"}
     content["interviewer"]["id"] = ids["agent"]
@@ -53,7 +62,7 @@ def seed(db, name):
     content["questions"]["form"] = []
     content["form"]["answers"] = {}
     content["questions"]["conversation"] = [{"id": str(uuid.uuid4()), "question": {"content": question, "difficulty": "medium", "evaluationCriteria": "如实记录", "evaluationFocus": focus, "followUpDirections": "只追问不清楚的地方，不扩展原题。"}} for question, focus in QUESTIONS]
-    content["resumes"][0]["markdown"] = "合成简历：候选人曾参与订单项目。简历声称峰值 9000 QPS，仅作背景，不能当本次口头回答。"
+    content["resumes"] = [{"id": ids["resume"], "pdfObjectKey": object_key, "submissionId": ids["submission"], "markdown": markdown, "parsedProfile": None}]
     token = secrets.token_hex(32)
     insert(db, "interview_session", dict(interviewRoundId=ids["round"], workspaceId=workspace, capturedAt=now, content=json.dumps(content, ensure_ascii=False), contextToken=token, roomName=f'e2e-{ids["round"]}'))
     db.commit()
@@ -92,8 +101,9 @@ class AcceptanceRun:
     async def connect(self):
         self.http = aiohttp.ClientSession(proxy=os.getenv("https_proxy") or os.getenv("HTTPS_PROXY"))
         context = await self.client.load()
-        model = realtime_model(text_only=True, http_session=self.http, on_connection_event=lambda kind, **kw: self.result["connections"].append({"kind": kind, **kw}))
-        self.agent = InterviewAgent(context, self.client, model=model)
+        self.usage = InterviewUsageReporter(self.client)
+        model = realtime_model(text_only=True, http_session=self.http, on_usage=self.usage.emit, on_connection_event=lambda kind, **kw: self.result["connections"].append({"kind": kind, **kw}))
+        self.agent = InterviewAgent(context, self.client, model=model, usage=self.usage)
         self.session = AgentSession(userdata=self.agent.ledger)
         self.session.on("conversation_item_added", lambda event: self.agent.observe(event.item) if isinstance(event.item, llm.ChatMessage) else None)
         self.session.on("metrics_collected", self.metrics)
@@ -130,6 +140,7 @@ class AcceptanceRun:
             finally:
                 after = self.agent.ledger.progress.usage.model_dump()
                 self.result["reconciliationUsage"].append({key: after[key] - before[key] for key in after})
+                await self.usage.close()
                 await self.http.close()
                 self.session = None
                 self.save()
@@ -140,6 +151,13 @@ class AcceptanceRun:
         self.result["persisted"] = {"version": 1, "ledger": saved, "transcript": rows, "status": self.status()}
         sources = {row["id"]: row for row in rows}
         if self.result["mode"] == "realtime-text-real-api-d1":
+            usage_rows = [dict(row) for row in self.db.execute(
+                "SELECT stage, provider, model, inputTokens, outputTokens, retry FROM model_usage WHERE interviewRoundId=? AND submissionId=? ORDER BY occurredAt,id",
+                (self.ids["round"], self.ids["submission"]),
+            )]
+            self.result["usageRows"] = usage_rows
+            for stage in ("interview_realtime", "interview_reconciliation"):
+                self.check(f"{stage} usage persisted with provider counts", any(row["stage"] == stage and row["inputTokens"] > 0 and row["outputTokens"] > 0 for row in usage_rows))
             self.check("all spoken user turns persisted", all(any(row["role"] == "user" and row["text"] == item["user"] for row in rows) for item in self.result["turns"]))
         answers = saved["progress"]["answers"]
         self.check("every answer has exact candidate transcript evidence", all(a["evidence"] and all(e["turnId"] in sources and sources[e["turnId"]]["role"] == "user" and e["quote"] in sources[e["turnId"]]["text"] for e in a["evidence"]) for a in answers))

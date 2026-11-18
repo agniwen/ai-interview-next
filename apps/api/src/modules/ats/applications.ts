@@ -11,7 +11,7 @@ import {
   resumeProcessingRun as run,
   resumeSubmission as submission,
 } from "@ai-interview/db/schema";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, ne, sql } from "drizzle-orm";
 import { outboxEntry } from "./outbox";
 import { completedResumeFilter } from "./queries";
 
@@ -81,11 +81,11 @@ function evaluationStatements(
 export async function createApplication(
   db: Database,
   workspaceId: string,
-  input: { jobId: string; resumeId: string },
+  input: { jobId: string; resumeId: string; submissionId?: string },
   actorId: string,
 ) {
   const { jobId, resumeId } = input;
-  const [pdf, target] = await Promise.all([
+  const [pdf, target, submissions] = await Promise.all([
     db
       .select({ candidateId: resume.candidateId })
       .from(resume)
@@ -96,22 +96,41 @@ export async function createApplication(
       .from(job)
       .where(and(eq(job.workspaceId, workspaceId), eq(job.id, jobId)))
       .get(),
+    db
+      .select({ id: submission.id })
+      .from(submission)
+      .where(
+        and(
+          eq(submission.workspaceId, workspaceId),
+          eq(submission.resumeId, resumeId),
+          input.submissionId ? eq(submission.id, input.submissionId) : undefined,
+        ),
+      )
+      .limit(2),
   ]);
   if (!pdf || !target) {
     return { error: "APPLICATION_INPUT_UNAVAILABLE" as const, version: 1 as const };
   }
+  if (submissions.length > 1 || (input.submissionId && submissions.length === 0)) {
+    return { error: "APPLICATION_SUBMISSION_REQUIRED" as const, version: 1 as const };
+  }
+  const submissionId = submissions[0]?.id ?? null;
   const { candidateId } = pdf;
   if (!candidateId) {
     return { error: "RESUME_CANDIDATE_REQUIRED" as const, version: 1 as const };
   }
   const existing = await db
-    .select({ id: application.id, resumeId: applicationResume.resumeId })
+    .select({
+      id: application.id,
+      resumeId: applicationResume.resumeId,
+      submissionId: applicationResume.submissionId,
+    })
     .from(application)
     .leftJoin(
       applicationResume,
       and(
         eq(applicationResume.applicationId, application.id),
-        eq(applicationResume.resumeId, resumeId),
+        ne(applicationResume.status, "removed"),
       ),
     )
     .where(
@@ -125,6 +144,24 @@ export async function createApplication(
     )
     .get();
   if (existing?.resumeId) {
+    if (
+      existing.resumeId !== resumeId ||
+      (existing.submissionId && existing.submissionId !== submissionId)
+    ) {
+      return { error: "APPLICATION_RESUME_ALREADY_BOUND" as const, version: 1 as const };
+    }
+    if (submissionId && !existing.submissionId) {
+      await db
+        .update(applicationResume)
+        .set({ submissionId })
+        .where(
+          and(
+            eq(applicationResume.applicationId, existing.id),
+            eq(applicationResume.resumeId, resumeId),
+            isNull(applicationResume.submissionId),
+          ),
+        );
+    }
     return { applicationId: existing.id, runId: null, version: 1 as const };
   }
   const applicationId = existing?.id ?? crypto.randomUUID();
@@ -137,6 +174,7 @@ export async function createApplication(
       id: crypto.randomUUID(),
       resumeId,
       status: "available",
+      submissionId,
       workspaceId,
     }),
     ...evaluationStatements(db, runId, {
@@ -189,9 +227,20 @@ export async function matchSubmissionJob(
     await db.update(submission).set({ jobId }).where(eq(submission.id, id));
     return { applicationId: null, runId: null, version: 1 as const };
   }
-  const [existing] = await db
-    .select({ id: application.id })
+  const existing = await db
+    .select({
+      id: application.id,
+      resumeId: applicationResume.resumeId,
+      submissionId: applicationResume.submissionId,
+    })
     .from(application)
+    .leftJoin(
+      applicationResume,
+      and(
+        eq(applicationResume.applicationId, application.id),
+        ne(applicationResume.status, "removed"),
+      ),
+    )
     .where(
       and(
         eq(application.workspaceId, workspaceId),
@@ -200,7 +249,15 @@ export async function matchSubmissionJob(
         isNull(application.closedAt),
         isNull(application.deletedAt),
       ),
-    );
+    )
+    .get();
+  if (
+    existing?.resumeId &&
+    (existing.resumeId !== record.resumeId ||
+      (existing.submissionId && existing.submissionId !== id))
+  ) {
+    return { error: "APPLICATION_RESUME_ALREADY_BOUND" as const, version: 1 as const };
+  }
   if (existing && existing.id === record.applicationId) {
     return { applicationId: existing.id, runId: null, version: 1 as const };
   }
@@ -222,9 +279,14 @@ export async function matchSubmissionJob(
         entry.pdf.candidateId && entry.pdf.candidateId !== record.resolvedCandidateId
           ? "pending_confirmation"
           : "available",
+      submissionId: id,
       workspaceId,
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      set: { submissionId: id },
+      setWhere: isNull(applicationResume.submissionId),
+      target: [applicationResume.applicationId, applicationResume.resumeId],
+    });
   const actions = [
     attachResume,
     updateSubmission,

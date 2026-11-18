@@ -4,7 +4,14 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import {
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  tableCardHeaderSurface,
+} from "@/components/ui/table";
+import type { TableVariant } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
 export const virtualListFeatures = tableFeatures({});
@@ -28,7 +35,9 @@ export function VirtualListTable<Row extends { id: string }>({
   loadingLabel,
   loadMore,
   retryLabel,
+  scrollAreaClassName,
   total,
+  variant = "default",
 }: {
   className?: string;
   columns: VirtualListColumns<Row>;
@@ -42,7 +51,9 @@ export function VirtualListTable<Row extends { id: string }>({
   loadingLabel: string;
   loadMore: () => Promise<unknown>;
   retryLabel: string;
+  scrollAreaClassName?: string;
   total: number;
+  variant?: TableVariant;
 }) {
   const table = useTable({
     columns,
@@ -83,11 +94,12 @@ export function VirtualListTable<Row extends { id: string }>({
 
   return (
     <ScrollArea
-      className="h-80 rounded-xl sm:h-96"
+      className={cn("h-80 rounded-xl sm:h-96", scrollAreaClassName)}
       overscrollContain
       viewportProps={{ ref: viewport }}
     >
       <table
+        data-variant={variant}
         aria-label={label}
         aria-rowcount={total + 1}
         className={cn("w-full table-fixed border-separate border-spacing-0 text-sm", className)}
@@ -97,12 +109,17 @@ export function VirtualListTable<Row extends { id: string }>({
             <col key={column.id} style={{ width: columnWidths?.[index] }} />
           ))}
         </colgroup>
-        <thead className="sticky top-0 z-10 bg-background">
+        <thead
+          className={cn(
+            "sticky top-0 z-10 bg-background",
+            variant === "card" && tableCardHeaderSurface,
+          )}
+        >
           {table.getHeaderGroups().map((group) => (
             <TableRow aria-rowindex={1} key={group.id}>
               {group.headers.map((header) => (
                 <TableHead
-                  className="border-b bg-muted/40 px-4 last:pe-6"
+                  className={cn("px-4 last:pe-6", variant === "default" && "border-b bg-muted/40")}
                   key={header.id}
                   scope="col"
                   style={{ height: headerHeight }}
@@ -113,10 +130,15 @@ export function VirtualListTable<Row extends { id: string }>({
             </TableRow>
           ))}
         </thead>
-        <tbody>
+        <TableBody>
           {top > 0 && (
             <tr aria-hidden="true">
-              <td aria-hidden="true" colSpan={columnCount} style={{ height: top }} />
+              <td
+                aria-hidden="true"
+                className="border-0!"
+                colSpan={columnCount}
+                style={{ height: top }}
+              />
             </tr>
           )}
           {items.map((item) => {
@@ -141,10 +163,15 @@ export function VirtualListTable<Row extends { id: string }>({
           })}
           {bottom > 0 && (
             <tr aria-hidden="true">
-              <td aria-hidden="true" colSpan={columnCount} style={{ height: bottom }} />
+              <td
+                aria-hidden="true"
+                className="border-0!"
+                colSpan={columnCount}
+                style={{ height: bottom }}
+              />
             </tr>
           )}
-        </tbody>
+        </TableBody>
       </table>
       {isFetchingNextPage && (
         <output className="block px-4 py-2 text-center text-xs text-muted-foreground">

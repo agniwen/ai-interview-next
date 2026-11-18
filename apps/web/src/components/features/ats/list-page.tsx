@@ -31,6 +31,7 @@ import { ScrollAreaPrimitive, ScrollBar } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
+  tableCardHeaderSurface,
   TableCell,
   TableHead,
   TableHeader,
@@ -52,12 +53,11 @@ export interface AtsPageProps<Query extends ListSearch = ListSearch> {
 
 type AtsRows = { id: string; cells: ReactNode[]; action?: ReactNode }[];
 
-const tableHeaderSurface = "bg-background bg-linear-to-b from-muted/72 to-muted/72";
 const actionColumnClassName =
   "sticky right-0 z-10 w-px text-right in-data-overflow-x-end:before:pointer-events-none in-data-overflow-x-end:before:absolute in-data-overflow-x-end:before:inset-y-0 in-data-overflow-x-end:before:left-0 in-data-overflow-x-end:before:w-px in-data-overflow-x-end:before:bg-border";
 // 用表框底色遮住圆角外侧露出的滚动内容。 / Cover scrolling content outside the rounded corners with the frame surface.
 const actionCornerMask = cn(
-  tableHeaderSurface,
+  tableCardHeaderSurface,
   "pointer-events-none absolute -right-px hidden size-[var(--radius-xl)] in-data-overflow-x-end:block",
 );
 
@@ -96,7 +96,7 @@ export function AtsTable({
   const renderCell = (content: ReactNode) =>
     loading ? <Skeleton loading>{content}</Skeleton> : content;
   return (
-    <Frame className={cn("w-full", tableHeaderSurface)}>
+    <Frame className={cn("w-full", tableCardHeaderSurface)}>
       <ScrollAreaPrimitive.Root
         className="min-w-0 data-has-overflow-x:pb-3.5"
         overflowEdgeThreshold={1}
@@ -110,7 +110,10 @@ export function AtsTable({
                 </TableHead>
               ))}
               {hasRowActions && (
-                <TableHead className={cn(actionColumnClassName, tableHeaderSurface)} scope="col">
+                <TableHead
+                  className={cn(actionColumnClassName, tableCardHeaderSurface)}
+                  scope="col"
+                >
                   {renderCell(m.ats_action())}
                 </TableHead>
               )}

@@ -110,12 +110,6 @@ export async function applicationResumeOptions(
   workspaceId: string,
   { offsetMinutes, page, pageSize, search }: ResumeOptionsQuery,
 ) {
-  const firstSubmission = db
-    .select({ id: submission.id })
-    .from(submission)
-    .where(and(eq(submission.workspaceId, workspaceId), eq(submission.resumeId, resume.id)))
-    .orderBy(asc(submission.createdAt), asc(submission.id))
-    .limit(1);
   const firstUpload = db
     .select({ id: item.id })
     .from(item)
@@ -153,14 +147,18 @@ export async function applicationResumeOptions(
       filename: submission.originalFilename,
       id: resume.id,
       profile: resume.parsedProfile,
+      submissionId: submission.id,
     })
     .from(resume)
-    .leftJoin(submission, eq(submission.id, sql`(${firstSubmission})`))
+    .leftJoin(
+      submission,
+      and(eq(submission.resumeId, resume.id), eq(submission.workspaceId, workspaceId)),
+    )
     .leftJoin(item, eq(item.id, sql`(${firstUpload})`))
     .leftJoin(batch, and(eq(batch.workspaceId, workspaceId), eq(batch.id, item.batchId)))
     .leftJoin(user, eq(user.id, batch.createdBy))
     .where(and(completedResumeFilter(db, workspaceId), match))
-    .orderBy(desc(createdAt), desc(resume.id))
+    .orderBy(desc(createdAt), desc(resume.id), desc(submission.id))
     .limit(pageSize + 1)
     .offset((page - 1) * pageSize);
   return {
@@ -280,23 +278,6 @@ export async function listCandidates(
   return { page, pageSize, rows, total: result?.count ?? 0, version: 1 as const };
 }
 
-function firstAcceptedResumeUpload(db: Database) {
-  return db
-    .select({ id: item.id })
-    .from(submission)
-    .innerJoin(
-      item,
-      and(
-        eq(item.submissionId, submission.id),
-        eq(item.workspaceId, submission.workspaceId),
-        eq(item.status, "accepted"),
-      ),
-    )
-    .where(and(eq(submission.workspaceId, resume.workspaceId), eq(submission.resumeId, resume.id)))
-    .orderBy(asc(submission.createdAt), asc(submission.id), asc(item.id))
-    .limit(1);
-}
-
 export async function listCandidateResumes(db: Database, workspaceId: string, candidateId: string) {
   const matches = await db
     .select({
@@ -305,6 +286,7 @@ export async function listCandidateResumes(db: Database, workspaceId: string, ca
       ),
       filename: item.filename,
       record: { createdAt: resume.createdAt, id: resume.id },
+      submissionId: item.submissionId,
       uploadId: item.id,
     })
     .from(candidate)
@@ -312,15 +294,15 @@ export async function listCandidateResumes(db: Database, workspaceId: string, ca
       resume,
       and(eq(resume.workspaceId, candidate.workspaceId), eq(resume.candidateId, candidate.id)),
     )
-    .leftJoin(item, eq(item.id, sql`(${firstAcceptedResumeUpload(db)})`))
+    .leftJoin(item, eq(item.id, sql`(${personalResumes.firstAcceptedResumeUpload(db)})`))
     .where(and(eq(candidate.workspaceId, workspaceId), eq(candidate.id, candidateId)))
     .orderBy(desc(resume.createdAt), desc(resume.id));
 
   if (!matches.length) {
     return;
   }
-  const rows = matches.flatMap(({ canJoinRecruitment, filename, record, uploadId }) =>
-    record ? [{ ...record, canJoinRecruitment, filename, uploadId }] : [],
+  const rows = matches.flatMap(({ canJoinRecruitment, filename, record, submissionId, uploadId }) =>
+    record ? [{ ...record, canJoinRecruitment, filename, submissionId, uploadId }] : [],
   );
   return { rows, total: rows.length, version: 1 as const };
 }
@@ -380,6 +362,7 @@ export async function listResumes(
         id: item.id,
         identityStatus: submission.identityStatus,
         inRecruitment: personalResumes.activeResumeRecruitment(db, workspaceId),
+        isDuplicate: submission.isDuplicate,
         jobId: submission.jobId,
         jobTitle: job.title,
         linkedCandidateName: candidate.name,
@@ -668,7 +651,7 @@ export async function applicationDetail(
     .leftJoin(resume, applicationResumeForDisplay(db))
     .innerJoin(job, eq(job.id, application.jobId))
     .leftJoin(recruitmentProject, eq(recruitmentProject.id, job.projectId))
-    .leftJoin(item, eq(item.id, sql`(${firstAcceptedResumeUpload(db)})`))
+    .leftJoin(item, eq(item.id, sql`(${personalResumes.applicationResumeUpload(db)})`))
     .leftJoin(user, and(eq(application.createdByType, "user"), eq(user.id, application.createdBy)))
     .where(
       and(

@@ -10,6 +10,7 @@ import {
   interviewTurnsInput,
   agentEventsInput,
 } from "./input";
+import { agentUsageInput, recordInterviewUsage } from "./usage";
 import { recordAgentEvents } from "./events";
 import {
   agentReportSession,
@@ -47,6 +48,23 @@ export const interviewSessionRoutes = new Hono<{ Bindings: ApiBindings }>()
     c.header("Cache-Control", "private, no-store");
     return next();
   })
+  .post(
+    "/:id/usage",
+    validateContextId,
+    validateCredential,
+    sValidator("json", agentUsageInput),
+    async (c) => {
+      const result = await recordInterviewUsage(
+        createDatabase(c.env.AUTH_DB),
+        c.req.valid("param").id,
+        c.req.valid("header").authorization,
+        c.req.valid("json"),
+      );
+      return result
+        ? c.json(result, 200)
+        : c.json({ error: "INTERVIEW_CONTEXT_UNAVAILABLE", version: 1 as const }, 404);
+    },
+  )
   .post(
     "/:id/events",
     validateContextId,

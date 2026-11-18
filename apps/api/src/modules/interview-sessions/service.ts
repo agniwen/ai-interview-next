@@ -59,6 +59,7 @@ export async function readInterviewMaterials(
         markdown: resume.markdown,
         parsedProfile: resume.parsedProfile,
         pdfObjectKey: resume.pdfObjectKey,
+        submissionId: applicationResume.submissionId,
       })
       .from(applicationResume)
       .innerJoin(resume, eq(resume.id, applicationResume.resumeId))
@@ -66,11 +67,17 @@ export async function readInterviewMaterials(
         and(
           eq(applicationResume.applicationId, round.applicationId),
           eq(applicationResume.status, "available"),
+          round.resumeId ? eq(applicationResume.resumeId, round.resumeId) : undefined,
         ),
       )
       .orderBy(asc(applicationResume.createdAt), asc(applicationResume.id)),
   ]);
-  return { ...materials, resumes };
+  return {
+    ...materials,
+    resumes: resumes.map(({ submissionId, ...record }) =>
+      submissionId ? { ...record, submissionId } : record,
+    ),
+  };
 }
 
 export async function captureSession(

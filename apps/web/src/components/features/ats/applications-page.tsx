@@ -15,6 +15,7 @@ import { ApplicationStatusBadge } from "./application-status-badge";
 import { atsKeys } from "./query-keys";
 import { atsApi, atsStatus, getResumeCandidateDisplay, readAts } from "./client";
 import { CreateApplicationDialog } from "./create-application-dialog";
+import type { ApplicationResumeSelection } from "./create-application-dialog";
 import { JobPreviewCard } from "./job-preview-card";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
@@ -32,7 +33,7 @@ export function ApplicationsPage({
   query,
   onQueryChange,
 }: AtsPageProps<ApplicationListSearch>) {
-  const createDialog = useMemo(() => createDialogHandle<string>(), []);
+  const createDialog = useMemo(() => createDialogHandle<ApplicationResumeSelection>(), []);
   const param = { workspaceId };
   const { data, isError, refetch } = useQuery({
     queryFn: async ({ signal }) =>

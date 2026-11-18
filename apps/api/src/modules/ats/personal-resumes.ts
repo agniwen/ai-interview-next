@@ -10,7 +10,7 @@ import {
   resumeUploadItem as item,
   user,
 } from "@ai-interview/db/schema";
-import { and, eq, exists, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, exists, inArray, isNull, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
 export const uploadCandidateJoin = eq(
@@ -34,6 +34,10 @@ export function activeResumeRecruitment(db: Database, workspaceId: string) {
         and(
           eq(applicationResume.workspaceId, workspaceId),
           eq(applicationResume.resumeId, resume.id),
+          or(
+            isNull(applicationResume.submissionId),
+            eq(applicationResume.submissionId, submission.id),
+          ),
           eq(applicationResume.status, "available"),
           isNull(application.closedAt),
           isNull(application.deletedAt),
@@ -70,4 +74,40 @@ export function personalResumeRows(db: Database, needsAttention: SQL, filters: S
     .where(filters)
     .as("ranked_resume_uploads");
   return inArray(item.id, db.select({ id: ranked.id }).from(ranked).where(eq(ranked.position, 1)));
+}
+
+export function firstAcceptedResumeUpload(db: Database, selectedSubmission?: SQL) {
+  return db
+    .select({ id: item.id })
+    .from(submission)
+    .innerJoin(
+      item,
+      and(
+        eq(item.submissionId, submission.id),
+        eq(item.workspaceId, submission.workspaceId),
+        eq(item.status, "accepted"),
+      ),
+    )
+    .where(
+      and(
+        eq(submission.workspaceId, resume.workspaceId),
+        eq(submission.resumeId, resume.id),
+        selectedSubmission ? eq(submission.id, selectedSubmission) : undefined,
+      ),
+    )
+    .orderBy(asc(submission.createdAt), asc(submission.id), asc(item.id))
+    .limit(1);
+}
+
+export function applicationResumeUpload(db: Database) {
+  const selected = db
+    .select({ id: applicationResume.submissionId })
+    .from(applicationResume)
+    .where(
+      and(
+        eq(applicationResume.applicationId, application.id),
+        eq(applicationResume.resumeId, resume.id),
+      ),
+    );
+  return firstAcceptedResumeUpload(db, sql`coalesce((${selected}), ${submission.id})`);
 }

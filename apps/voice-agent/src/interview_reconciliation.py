@@ -3,6 +3,7 @@ Reconcile saved transcripts at wrap-up when Realtime quotes differ from final tr
 """
 import json
 import os
+from collections.abc import Callable
 from typing import Literal
 
 from openai import AsyncOpenAI
@@ -37,7 +38,7 @@ asked 必须逐字引用未被打断的面试官实际提问；可对应自然�
 summary 用简短中文段落总结截至本批的已知事实和仍缺的内容，不输出内部编号，不把未采集说成候选人没有能力。"""
 
 
-async def reconcile_report(ledger: InterviewLedger) -> None:
+async def reconcile_report(ledger: InterviewLedger, *, on_usage: Callable[[dict], None] | None = None) -> None:
     # 模型只选择已保存的候选人片段 ID；程序保留原文，避免误引面试官或改写引文导致整条答案被丢弃。
     # The model selects saved candidate source IDs; verbatim evidence prevents wrong-speaker or rewritten quotes from dropping answers.
     sources = {}
@@ -69,7 +70,7 @@ async def reconcile_report(ledger: InterviewLedger) -> None:
         size += len(turn["text"])
     async with AsyncOpenAI(api_key=os.environ["OPENAI_KEY"], timeout=45, max_retries=1) as client:
         for turns in batches:
-            response = await client.responses.parse(
+            raw = await client.responses.with_raw_response.parse(
                 model=os.getenv("OPENAI_REPORT_MODEL", "gpt-5.4-mini"),
                 instructions=INSTRUCTIONS,
                 input=json.dumps({"version": 1, "questions": [{"id": q.code, "content": q.content} for q in ledger.plan.questions], "state": reviewed.state(details=True), "turns": turns}, ensure_ascii=False, separators=(",", ":")),
@@ -77,16 +78,36 @@ async def reconcile_report(ledger: InterviewLedger) -> None:
                 text_format=collection_type,
                 store=False,
             )
-            result = response.output_parsed
-            if result is None:
-                raise ValueError("Interview reconciliation returned no structured result")
-            reviewed.record([AnswerProposal(point=update.point, status=update.status, summary=update.summary, quotes=[sources[source_id] for source_id in update.sourceIds]) for update in result.updates], result.asked)
-            reviewed.progress.summary = result.summary
-            if response.usage:
-                usage = ledger.progress.usage
-                usage.inputTokens += response.usage.input_tokens
-                usage.cachedInputTokens += response.usage.input_tokens_details.cached_tokens
-                usage.outputTokens += response.usage.output_tokens
+            retry = True
+            try:
+                response = raw.parse()
+                result = response.output_parsed
+                if result is None:
+                    raise ValueError("Interview reconciliation returned no structured result")
+                reviewed.record([AnswerProposal(point=update.point, status=update.status, summary=update.summary, quotes=[sources[source_id] for source_id in update.sourceIds]) for update in result.updates], result.asked)
+                reviewed.progress.summary = result.summary
+                if response.usage:
+                    usage = ledger.progress.usage
+                    usage.inputTokens += response.usage.input_tokens
+                    usage.cachedInputTokens += response.usage.input_tokens_details.cached_tokens
+                    usage.outputTokens += response.usage.output_tokens
+                retry = response.status != "completed"
+            finally:
+                if on_usage:
+                    data = raw.http_response.json()
+                    measurement = data.get("usage")
+                    if measurement:
+                        details = measurement.get("input_tokens_details") or {}
+                        on_usage({
+                            "stage": "interview_reconciliation",
+                            "requestId": data["id"],
+                            "occurredAt": round(data["created_at"] * 1000),
+                            "model": data["model"],
+                            "inputTokens": measurement["input_tokens"],
+                            "outputTokens": measurement["output_tokens"],
+                            **({"cachedInputTokens": details["cached_tokens"]} if details.get("cached_tokens") is not None else {}),
+                            "retry": retry,
+                        })
     ledger.progress.answers = reviewed.progress.answers
     ledger.progress.asked = reviewed.progress.asked
     ledger.progress.summary = reviewed.progress.summary

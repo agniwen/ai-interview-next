@@ -172,6 +172,13 @@ export class AgentRuntime {
         await tx.doc(ChatDoc, id);
       },
     });
+    const savedAgent = await conversation.agent(context);
+    if (savedAgent.model?.modelId !== options.modelId) {
+      await conversation.configure(
+        { model: { modelId: options.modelId, provider: "agent-chat" } },
+        context,
+      );
+    }
     const runtime = new AgentRuntime(
       harness,
       conversation,

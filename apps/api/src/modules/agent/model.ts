@@ -5,24 +5,29 @@ import type { Model } from "@earendil-works/pi-ai";
 import * as openAICompletionsApi from "@earendil-works/pi-ai/api/openai-completions";
 
 export interface AgentModelConfig {
-  AGENT_CHAT_KEY: string;
-  AGENT_CHAT_BASE_URL: string;
-  AGENT_CHAT_MODEL: string;
+  DEEPSEEK_API_KEY: string;
+  DEEPSEEK_BASE_URL: string;
+  DEEPSEEK_MODEL: string;
 }
 
 export function createAgentModels(config: AgentModelConfig) {
   const model: Model<"openai-completions"> = {
     api: "openai-completions",
-    baseUrl: config.AGENT_CHAT_BASE_URL,
-    compat: { supportsDeveloperRole: false, supportsReasoningEffort: false, supportsStore: false },
+    baseUrl: config.DEEPSEEK_BASE_URL,
+    compat: {
+      supportsDeveloperRole: false,
+      supportsReasoningEffort: false,
+      supportsStore: false,
+      thinkingFormat: "deepseek",
+    },
     contextWindow: 128_000,
     cost: { cacheRead: 0, cacheWrite: 0, input: 0, output: 0 },
-    id: config.AGENT_CHAT_MODEL,
+    id: config.DEEPSEEK_MODEL,
     input: ["text"],
     maxTokens: 8192,
-    name: config.AGENT_CHAT_MODEL,
+    name: config.DEEPSEEK_MODEL,
     provider: "agent-chat",
-    reasoning: false,
+    reasoning: true,
   };
   const models = createModels();
   models.setProvider(
@@ -31,10 +36,10 @@ export function createAgentModels(config: AgentModelConfig) {
       auth: {
         apiKey: {
           name: "Agent Chat",
-          resolve: () => Promise.resolve({ auth: { apiKey: config.AGENT_CHAT_KEY } }),
+          resolve: () => Promise.resolve({ auth: { apiKey: config.DEEPSEEK_API_KEY } }),
         },
       },
-      baseUrl: config.AGENT_CHAT_BASE_URL,
+      baseUrl: config.DEEPSEEK_BASE_URL,
       id: "agent-chat",
       models: [model],
       name: "Agent Chat",

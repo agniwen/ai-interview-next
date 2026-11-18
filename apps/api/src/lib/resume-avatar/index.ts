@@ -2,8 +2,8 @@ import { Buffer } from "node:buffer";
 import { decode } from "jpeg-js";
 import { PNG } from "pngjs/browser.js";
 import type { ResumeImageType, ResumeMediaType } from "../resume-file";
-import { jevImageMaxSide, jevImageMinSide, locateResumePortrait } from "./jev";
-import type { PortraitBox } from "./jev";
+import { avatarImageMaxSide, avatarImageMinSide } from "./deepseek";
+import type { createDeepSeekPortraitLocator, PortraitBox } from "./deepseek";
 
 const maxAvatarSide = 512;
 const maxJpegMegapixels = 12;
@@ -72,7 +72,7 @@ export function cropResumePortrait(
 
 export function createResumeAvatarExtractor(
   renderFirstPage: (bytes: Uint8Array) => Promise<Uint8Array>,
-  apiKey: string,
+  locatePortrait: ReturnType<typeof createDeepSeekPortraitLocator>,
 ) {
   return async function extractResumeAvatar(
     bytes: Uint8Array,
@@ -82,24 +82,25 @@ export function createResumeAvatarExtractor(
     const imageType = mediaType === "application/pdf" ? "image/png" : mediaType;
     const image = decodePortraitImage(imageBytes, imageType);
     const scale = Math.min(
-      jevImageMaxSide / Math.max(image.width, image.height),
-      Math.max(1, jevImageMinSide / Math.min(image.width, image.height)),
+      avatarImageMaxSide / Math.max(image.width, image.height),
+      Math.max(1, avatarImageMinSide / Math.min(image.width, image.height)),
     );
-    const width = Math.max(jevImageMinSide, Math.round(image.width * scale));
-    const height = Math.max(jevImageMinSide, Math.round(image.height * scale));
+    const width = Math.max(avatarImageMinSide, Math.round(image.width * scale));
+    const height = Math.max(avatarImageMinSide, Math.round(image.height * scale));
     const box =
       width === image.width && height === image.height
-        ? await locateResumePortrait(imageBytes, imageType, apiKey)
-        : await locateResumePortrait(
-            resamplePortraitImage(
+        ? await locatePortrait({ bytes: imageBytes, height, mediaType: imageType, width })
+        : await locatePortrait({
+            bytes: resamplePortraitImage(
               image,
               { height: image.height, left: 0, top: 0, width: image.width },
               width,
               height,
             ),
-            "image/png",
-            apiKey,
-          );
+            height,
+            mediaType: "image/png",
+            width,
+          });
     return box ? cropPortraitImage(image, box) : null;
   };
 }

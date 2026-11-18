@@ -32,7 +32,6 @@ export function createDefaultResumeStructurer({
   return async (text) => {
     const response = await request(endpoint, {
       body: JSON.stringify({
-        enable_thinking: false,
         max_tokens: 8192,
         messages: [
           { content: resumeStructuringPrompt, role: "system" },
@@ -41,6 +40,7 @@ export function createDefaultResumeStructurer({
         model,
         response_format: { type: "json_object" },
         temperature: 0.1,
+        thinking: { type: "disabled" },
       }),
       headers: {
         Authorization: `Bearer ${apiKey}`,

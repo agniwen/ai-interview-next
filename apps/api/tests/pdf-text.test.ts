@@ -1,88 +1,77 @@
 import { describe, expect, it, vi } from "vitest";
-import { createVercelGatewayPdfTextExtractor } from "../src/lib/pdf-text/vercel-gateway";
+import { createDeepSeekTextExtractor } from "../src/lib/pdf-text/deepseek";
 
+const options = { apiKey: "test-key", baseUrl: "https://api.deepseek.com", timeoutMs: 1000 };
 const pdf = new TextEncoder().encode("x%PDF-1.7x").subarray(1, -1);
-const apiKey = "test-gateway-key";
 
-describe("Vercel AI Gateway PDF text extraction", () => {
-  it("sends the PDF bytes to Haiku in one request and returns its Markdown", async () => {
-    const text = "# 工作经历\n\n- 软件工程师\n";
-    const fetchPdf = vi.fn<typeof fetch>(async (url, init) => {
-      const request = new Request(url, init);
-      expect(new URL(request.url).origin).toBe("https://ai-gateway.vercel.sh");
-      expect(request.method).toBe("POST");
-      expect(request.headers.get("authorization")).toBe(`Bearer ${apiKey}`);
-      expect(request.headers.get("ai-language-model-id")).toBe("anthropic/claude-haiku-5.5");
-      expect(await request.json()).toMatchObject({
-        prompt: [
-          {
-            content: [
-              {
-                data: { data: "JVBERi0xLjc=", type: "data" },
-                mediaType: "application/pdf",
-                type: "file",
-              },
-              { text: expect.stringContaining("Return only Markdown"), type: "text" },
-            ],
-            role: "user",
-          },
+describe("DeepSeek resume OCR", () => {
+  it.each(["application/pdf", "image/jpeg", "image/png"] as const)(
+    "uploads %s with its filename and joins complete pages",
+    async (mediaType) => {
+      const send = vi.fn<typeof fetch>(async (url, init) => {
+        const request = new Request(url, init);
+        expect(request.url).toBe("https://api.deepseek.com/v1/tools/ocr");
+        expect(request.headers.get("authorization")).toBe("Bearer test-key");
+        const form = await request.formData();
+        expect(form.get("purpose")).toBe("text_recognition");
+        const file = form.get("file") as File;
+        expect(file.type).toBe(mediaType);
+        expect(file.name).toBe(`resume.${mediaType.split("/")[1]}`);
+        expect(await file.text()).toBe("%PDF-1.7");
+        return Response.json({
+          pages: [
+            { finish_reason: "stop", index: 1, text: "第二页" },
+            {
+              finish_reason: "stop",
+              index: 0,
+              text: "<｜ref｜>text<｜/ref｜><｜box｜>[[1,2,3,4]]<｜/box｜>第一页",
+            },
+          ],
+        });
+      });
+      const extract = createDeepSeekTextExtractor({ ...options, fetch: send });
+      await expect(extract(pdf, mediaType)).resolves.toEqual({ text: "第一页\n\n第二页" });
+      expect(send).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("replaces only truncated pages with their complete layout recognition output", async () => {
+    const responses = [
+      {
+        pages: [
+          { finish_reason: "stop", index: 0, text: "保留第一页" },
+          { finish_reason: "length", index: 1, text: "截断内容" },
         ],
-      });
-      return Response.json({
-        content: [{ text, type: "text" }],
-        finishReason: { raw: "STOP", unified: "stop" },
-        usage: {
-          inputTokens: { noCache: 10, total: 10 },
-          outputTokens: { text: 8, total: 8 },
-        },
-      });
+      },
+      {
+        pages: [
+          { finish_reason: "stop", index: 0, text: "备用第一页" },
+          { finish_reason: "stop", index: 1, text: "补齐第二页" },
+        ],
+      },
+    ];
+    const purposes: (FormDataEntryValue | null)[] = [];
+    const extract = createDeepSeekTextExtractor({
+      ...options,
+      async fetch(url, init) {
+        const form = await new Request(url, init).formData();
+        purposes.push(form.get("purpose"));
+        return Response.json(responses[purposes.length - 1]);
+      },
     });
-    const extractPdfText = createVercelGatewayPdfTextExtractor({ apiKey, fetch: fetchPdf });
-
-    await expect(extractPdfText(pdf)).resolves.toEqual({ text });
-    expect(fetchPdf).toHaveBeenCalledTimes(1);
+    await expect(extract(pdf)).resolves.toEqual({ text: "保留第一页\n\n补齐第二页" });
+    expect(purposes).toEqual(["text_recognition", "rich_layout_recognition"]);
   });
 
-  it("propagates a gateway failure without retrying the request", async () => {
-    const fetchPdf = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(
-        Response.json({ error: { message: "Rate limit exceeded" } }, { status: 429 }),
-      );
-    const extractPdfText = createVercelGatewayPdfTextExtractor({ apiKey, fetch: fetchPdf });
-
-    await expect(extractPdfText(pdf)).rejects.toThrow("Rate limit exceeded");
-    expect(fetchPdf).toHaveBeenCalledTimes(1);
-  });
-
-  it("sends an image resume to OCR with its image media type", async () => {
-    const image = Uint8Array.of(0xff, 0xd8, 0xff);
-    const fetchImage = vi.fn<typeof fetch>(async (url, init) => {
-      expect(await new Request(url, init).json()).toMatchObject({
-        prompt: [
-          {
-            content: [
-              {
-                data: { data: "/9j/", type: "data" },
-                mediaType: "image/jpeg",
-                type: "file",
-              },
-              { text: expect.stringContaining("Transcribe all visible text"), type: "text" },
-            ],
-            role: "user",
-          },
-        ],
-      });
-      return Response.json({
-        content: [{ text: "# Resume", type: "text" }],
-        finishReason: { raw: "STOP", unified: "stop" },
-        usage: {
-          inputTokens: { noCache: 10, total: 10 },
-          outputTokens: { text: 8, total: 8 },
-        },
-      });
+  it.each([
+    Response.json({ pages: [{ finish_reason: "length", index: 0, text: "partial" }] }),
+    Response.json({ error: { code: "gateway_timeout_error" } }),
+    Response.json({}, { status: 429 }),
+  ])("rejects incomplete or failed recognition", async (response) => {
+    const extract = createDeepSeekTextExtractor({
+      ...options,
+      fetch: () => Promise.resolve(response.clone()),
     });
-    const extract = createVercelGatewayPdfTextExtractor({ apiKey, fetch: fetchImage });
-    await expect(extract(image, "image/jpeg")).resolves.toEqual({ text: "# Resume" });
+    await expect(extract(pdf)).rejects.toThrow();
   });
 });

@@ -65,19 +65,50 @@ function ApplicationOptionField({
   );
 }
 
+const applicationErrors = {
+  APPLICATION_INPUT_UNAVAILABLE: m.ats_error,
+  APPLICATION_RESUME_ALREADY_BOUND: m.ats_application_resume_already_bound,
+  APPLICATION_SUBMISSION_REQUIRED: m.ats_application_submission_required,
+  RESUME_CANDIDATE_REQUIRED: m.ats_application_candidate_required,
+};
+
+async function submitApplication(
+  workspaceId: string,
+  input: { jobId: string; resumeId: string; submissionId?: string | null },
+) {
+  const response = await atsApi.applications.$post({
+    json: { ...input, submissionId: input.submissionId ?? undefined, version: 1 },
+    param: { workspaceId },
+  });
+  if (response.status === 409) {
+    const result = await response.json();
+    if ("error" in result) {
+      throw new Error(applicationErrors[result.error]());
+    }
+  }
+  return readAts(response);
+}
+
+export interface ApplicationResumeSelection {
+  resumeId: string;
+  submissionId?: string | null;
+}
+
 function ApplicationForm({
   onClose,
-  resumeId: fixedResumeId,
+  selection,
   workspaceId,
 }: {
   onClose: () => void;
-  resumeId?: string;
+  selection?: ApplicationResumeSelection;
   workspaceId: string;
 }) {
   const client = useQueryClient();
   const [resume, setResume] = useState<ApplicationResumeOption | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  const fixedResumeId = selection?.resumeId;
   const resumeId = fixedResumeId ?? resume?.id;
+  const submissionId = selection?.submissionId ?? resume?.submissionId;
   const title = fixedResumeId ? m.ats_join_recruitment() : m.ats_create_application();
   const param = { workspaceId };
   const options = useQuery({
@@ -86,16 +117,8 @@ function ApplicationForm({
   });
   const phase = useSkeletonPhase(options.isPending);
   const mutation = useMutation({
-    async mutationFn(input: { jobId: string; resumeId: string }) {
-      const response = await atsApi.applications.$post({ json: { ...input, version: 1 }, param });
-      if (response.status === 409) {
-        const result = await response.json();
-        if ("error" in result && result.error === "RESUME_CANDIDATE_REQUIRED") {
-          throw new Error(m.ats_application_candidate_required());
-        }
-      }
-      return readAts(response);
-    },
+    mutationFn: (input: { jobId: string; resumeId: string; submissionId?: string | null }) =>
+      submitApplication(workspaceId, input),
     async onSuccess() {
       await Promise.all([
         client.invalidateQueries({ queryKey: atsKeys.applications(workspaceId).queryKey }),
@@ -154,7 +177,7 @@ function ApplicationForm({
           loading={mutation.isPending}
           onClick={() => {
             if (resumeId && jobId) {
-              mutation.mutate({ jobId, resumeId });
+              mutation.mutate({ jobId, resumeId, submissionId });
             }
           }}
         >
@@ -172,13 +195,15 @@ function ApplicationForm({
 export function CreateApplicationDialog({
   handle,
   resumeId,
+  submissionId,
   workspaceId,
 }: {
-  handle?: ReturnType<typeof createDialogHandle<string>>;
+  handle?: ReturnType<typeof createDialogHandle<ApplicationResumeSelection>>;
   resumeId?: string;
+  submissionId?: string | null;
   workspaceId: string;
 }) {
-  const localHandle = useMemo(() => createDialogHandle<string>(), []);
+  const localHandle = useMemo(() => createDialogHandle<ApplicationResumeSelection>(), []);
   const dialog = handle ?? localHandle;
   return (
     <Dialog handle={dialog}>
@@ -191,9 +216,9 @@ export function CreateApplicationDialog({
           )}
           <DialogPopup>
             <ApplicationForm
-              key={payload ?? resumeId}
+              key={payload?.submissionId ?? payload?.resumeId ?? submissionId ?? resumeId}
               onClose={() => dialog.close()}
-              resumeId={payload ?? resumeId}
+              selection={payload ?? (resumeId ? { resumeId, submissionId } : undefined)}
               workspaceId={workspaceId}
             />
           </DialogPopup>

@@ -222,6 +222,7 @@ class RealtimeModel(llm.RealtimeModel):
         transcript_wait: float = 3.0,
         http_session: aiohttp.ClientSession | None = None,
         text_only: bool = False,
+        on_usage: Callable[[dict], None] | None = None,
     ) -> None:
         if not (api_key or os.environ.get("QWEN_KEY")):
             raise ValueError("QWEN_KEY is required for Qwen Realtime")
@@ -247,6 +248,7 @@ class RealtimeModel(llm.RealtimeModel):
                 mutable_tools=True,
             )
         )
+        self.on_usage = on_usage
         self._text_only = text_only
         self._model = model
         self._api_key = api_key or os.environ["QWEN_KEY"]
@@ -1514,6 +1516,19 @@ class RealtimeSession(llm.RealtimeSession):
         usage = event.get("usage") or {}
         input_details = usage.get("input_tokens_details") or {}
         output_details = usage.get("output_tokens_details") or {}
+        if self._model.on_usage and "input_tokens" in usage and "output_tokens" in usage:
+            self._model.on_usage({
+                "stage": "interview_realtime",
+                "requestId": response.id,
+                "occurredAt": round(response.started * 1000),
+                "model": event.get("model") or self._model.model,
+                "inputTokens": usage["input_tokens"],
+                "outputTokens": usage["output_tokens"],
+                **({"cachedInputTokens": input_details["cached_tokens"]} if input_details.get("cached_tokens") is not None else {}),
+                **({"inputAudioTokens": input_details["audio_tokens"]} if input_details.get("audio_tokens") is not None else {}),
+                **({"outputAudioTokens": output_details["audio_tokens"]} if output_details.get("audio_tokens") is not None else {}),
+                "retry": event.get("status") != "completed",
+            })
         duration = time.time() - response.started
         self.emit(
             "metrics_collected",

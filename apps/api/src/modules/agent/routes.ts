@@ -32,7 +32,7 @@ export const agentRoutes = new Hono<AuthenticatedEnv>()
       }),
     ),
     async (c) => {
-      if (!c.env.AGENT_CHAT_KEY) {
+      if (!c.env.DEEPSEEK_API_KEY) {
         return c.json({ error: "AGENT_NOT_CONFIGURED" }, 503);
       }
       const { id, messageId, text } = c.req.valid("json");

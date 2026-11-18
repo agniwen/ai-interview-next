@@ -115,7 +115,7 @@ export const resume = sqliteTable(
   },
   (table) => [
     uniqueIndex("resume_workspace_id_uq").on(table.workspaceId, table.id),
-    uniqueIndex("resume_workspace_sha256_uq").on(table.workspaceId, table.sha256),
+    index("resume_workspace_sha256_idx").on(table.workspaceId, table.sha256),
     foreignKey({
       columns: [table.workspaceId, table.candidateId],
       foreignColumns: [candidate.workspaceId, candidate.id],
@@ -232,6 +232,7 @@ export const resumeSubmission = sqliteTable(
     identityStatus: text("identityStatus", { enum: ["pending", "pending_review", "resolved"] })
       .notNull()
       .default("pending"),
+    isDuplicate: integer("isDuplicate", { mode: "boolean" }).notNull().default(false),
     /** 本次投递的岗位，待定岗时为空。 / Target job. Null while the job is undetermined. */
     jobId: text("jobId"),
     /** 本次上传时提供的文件名。 / File name provided with this upload. */
@@ -297,6 +298,7 @@ export const applicationResume = sqliteTable(
     resumeId: text("resumeId").notNull(),
     /** 材料待确认、可使用或已从当前材料中移除。 / Whether the material awaits confirmation, is available, or has been removed. */
     status: text("status", { enum: ["pending_confirmation", "available", "removed"] }).notNull(),
+    submissionId: text("submissionId").references(() => resumeSubmission.id),
     /** 应聘材料所属工作区。 / Workspace that owns the application material. */
     workspaceId: workspaceIdColumn(),
   },

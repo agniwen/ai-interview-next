@@ -37,7 +37,6 @@ export function createResumeEvaluator({
   return async (input, transport) => {
     const response = await transport(`${baseUrl}/chat/completions`, {
       body: JSON.stringify({
-        enable_thinking: false,
         max_tokens: 8192,
         messages: [
           { content: evaluationPrompt, role: "system" },
@@ -46,6 +45,7 @@ export function createResumeEvaluator({
         model,
         response_format: { type: "json_object" },
         temperature: 0.1,
+        thinking: { type: "disabled" },
       }),
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       method: "POST",

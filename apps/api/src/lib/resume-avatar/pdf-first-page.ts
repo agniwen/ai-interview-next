@@ -1,7 +1,7 @@
 import { init } from "@embedpdf/pdfium";
 import type { WrappedPdfiumModule } from "@embedpdf/pdfium";
 import { PNG } from "pngjs/browser.js";
-import { jevImageMaxSide } from "./jev";
+import { avatarImageMaxSide } from "./deepseek";
 
 export function createPdfFirstPageRenderer(wasm: WebAssembly.Module) {
   let engine: Promise<WrappedPdfiumModule> | undefined;
@@ -35,7 +35,7 @@ export function createPdfFirstPageRenderer(wasm: WebAssembly.Module) {
       }
       const pageWidth = pdfium.FPDF_GetPageWidthF(page);
       const pageHeight = pdfium.FPDF_GetPageHeightF(page);
-      const scale = jevImageMaxSide / Math.max(pageWidth, pageHeight);
+      const scale = avatarImageMaxSide / Math.max(pageWidth, pageHeight);
       const width = Math.max(1, Math.round(pageWidth * scale));
       const height = Math.max(1, Math.round(pageHeight * scale));
       bitmap = pdfium.FPDFBitmap_Create(width, height, 1);

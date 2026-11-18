@@ -6,6 +6,8 @@ import type React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
+export const tableCardHeaderSurface = "bg-background bg-linear-to-b from-muted/72 to-muted/72";
+
 export type TableVariant = "default" | "card";
 
 export type TableProps = React.ComponentProps<"table"> & {

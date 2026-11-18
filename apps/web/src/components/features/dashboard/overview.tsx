@@ -31,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import * as m from "@/paraglide/messages";
 import { atsApi, atsStatus, getResumeCandidateDisplay, readAts } from "../ats/client";
 import { CreateApplicationDialog } from "../ats/create-application-dialog";
+import type { ApplicationResumeSelection } from "../ats/create-application-dialog";
 import { listParams } from "../ats/list-search";
 import type { ApplicationListSearch, ResumeListSearch } from "../ats/list-search";
 import { atsKeys } from "../ats/query-keys";
@@ -335,11 +336,13 @@ function ResumeRecruitmentAction({
   handle,
   inRecruitment,
   resumeId,
+  submissionId,
   workspaceId,
 }: {
-  handle?: ReturnType<typeof createDialogHandle<string>>;
+  handle?: ReturnType<typeof createDialogHandle<ApplicationResumeSelection>>;
   inRecruitment: boolean;
   resumeId: string | null;
+  submissionId: string | null;
   workspaceId: string;
 }) {
   if (inRecruitment) {
@@ -355,13 +358,17 @@ function ResumeRecruitmentAction({
   return handle ? (
     <DialogTrigger
       handle={handle}
-      payload={resumeId}
+      payload={{ resumeId, submissionId }}
       render={<Button size="sm" variant="outline" />}
     >
       {m.ats_join_recruitment()}
     </DialogTrigger>
   ) : (
-    <CreateApplicationDialog resumeId={resumeId} workspaceId={workspaceId} />
+    <CreateApplicationDialog
+      resumeId={resumeId}
+      submissionId={submissionId}
+      workspaceId={workspaceId}
+    />
   );
 }
 
@@ -391,7 +398,7 @@ function ResumeSummary({ row }: { row: FollowedResume }) {
 
 function buildFollowedResumesColumns(
   previewDialog: ReturnType<typeof createDialogHandle<ResumePreviewPayload>>,
-  recruitmentDialog: ReturnType<typeof createDialogHandle<string>>,
+  recruitmentDialog: ReturnType<typeof createDialogHandle<ApplicationResumeSelection>>,
   workspaceId: string,
 ) {
   return resumeColumn.columns([
@@ -407,6 +414,7 @@ function buildFollowedResumesColumns(
             handle={recruitmentDialog}
             inRecruitment={row.inRecruitment}
             resumeId={row.parseStatus === "succeeded" ? row.resumeId : null}
+            submissionId={row.submissionId}
             workspaceId={workspaceId}
           />
           <ResumeOverviewAction
@@ -428,7 +436,7 @@ function buildFollowedResumesColumns(
 function FollowedResumes({ workspaceId }: { workspaceId: string }) {
   const client = useQueryClient();
   const candidateDialog = useMemo(() => createDialogHandle<string>(), []);
-  const recruitmentDialog = useMemo(() => createDialogHandle<string>(), []);
+  const recruitmentDialog = useMemo(() => createDialogHandle<ApplicationResumeSelection>(), []);
   const previewDialog = useMemo(() => createDialogHandle<ResumePreviewPayload>(), []);
   const resumes = useInfiniteQuery({
     getNextPageParam: nextListPage,
@@ -524,6 +532,7 @@ function FollowedResumes({ workspaceId }: { workspaceId: string }) {
                     <ResumeRecruitmentAction
                       inRecruitment={row.inRecruitment}
                       resumeId={row.parseStatus === "succeeded" ? row.resumeId : null}
+                      submissionId={row.submissionId}
                       workspaceId={workspaceId}
                     />
                   )}

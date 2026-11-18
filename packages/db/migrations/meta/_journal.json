@@ -280,6 +280,20 @@
       "when": 1794219780429,
       "tag": "20261109102300_chubby_doctor_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1794973512210,
+      "tag": "20261118034512_sloppy_warbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1794974595683,
+      "tag": "20261118040315_vengeful_rictor",
+      "breakpoints": true
     }
   ],
   "version": "7"

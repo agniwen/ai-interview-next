@@ -4,13 +4,13 @@ import { WorkflowEntrypoint } from "cloudflare:workers";
 import type { WorkflowEvent, WorkflowStep } from "cloudflare:workers";
 import type { MessageBatch } from "@cloudflare/workers-types";
 import type { ApiBindings } from "../../env";
-import { createVercelGatewayPdfTextExtractor } from "../../lib/pdf-text/vercel-gateway";
+import { createDeepSeekTextExtractor } from "../../lib/pdf-text/deepseek";
 import { createResumeAvatarExtractor } from "../../lib/resume-avatar";
 import {
-  jevAvatarModel,
-  jevAvatarPromptVersion,
-  jevAvatarTimeoutMs,
-} from "../../lib/resume-avatar/jev";
+  avatarPromptVersion,
+  avatarTimeoutMs,
+  createDeepSeekPortraitLocator,
+} from "../../lib/resume-avatar/deepseek";
 import { createPdfFirstPageRenderer } from "../../lib/resume-avatar/pdf-first-page";
 import { createResumeEvaluator } from "../../lib/resume-evaluation";
 import { createDefaultResumeStructurer } from "../../lib/resume-structuring/default";
@@ -55,9 +55,9 @@ export class ResumeWorkflow extends WorkflowEntrypoint<ApiBindings, WorkflowInpu
 
 export async function resumeQueueHandler(batch: MessageBatch, env: ApiBindings) {
   const db = createDatabase(env.AUTH_DB);
-  const { AGENT_CHAT_BASE_URL: baseUrl, AGENT_CHAT_MODEL: model, AGENT_CHAT_KEY: apiKey } = env;
+  const { DEEPSEEK_BASE_URL: baseUrl, DEEPSEEK_MODEL: model, DEEPSEEK_API_KEY: apiKey } = env;
   const timeoutMs = 120_000;
-  const extractAvatar = createResumeAvatarExtractor(renderPdfFirstPage, env.AI_GATEWAY_API_KEY);
+  const ocrTimeoutMs = 185_000;
   const structuring = {
     endpoint: baseUrl,
     maxTokens: 8192,
@@ -78,25 +78,35 @@ export async function resumeQueueHandler(batch: MessageBatch, env: ApiBindings) 
           db,
           {
             avatarParameters: {
-              model: jevAvatarModel,
-              promptVersion: jevAvatarPromptVersion,
-              timeoutMs: jevAvatarTimeoutMs,
+              model,
+              promptVersion: avatarPromptVersion,
+              timeoutMs: avatarTimeoutMs,
               version: 1,
             },
             evaluate: createResumeEvaluator({ apiKey, baseUrl, model, timeoutMs }),
             evaluateParameters: { ...structuring, promptVersion: 3 },
             extract: (transport) =>
-              createVercelGatewayPdfTextExtractor({
-                apiKey: env.AI_GATEWAY_API_KEY,
+              createDeepSeekTextExtractor({
+                apiKey,
+                baseUrl,
                 fetch: transport,
-                timeoutMs,
+                timeoutMs: ocrTimeoutMs,
               }),
-            extractAvatar,
+            extractAvatar: (bytes, mediaType, transport) =>
+              createResumeAvatarExtractor(
+                renderPdfFirstPage,
+                createDeepSeekPortraitLocator({
+                  apiKey,
+                  baseUrl,
+                  fetch: transport,
+                  model,
+                }),
+              )(bytes, mediaType),
             extractParameters: {
-              endpoint: "https://ai-gateway.vercel.sh",
-              model: "anthropic/claude-haiku-5.5",
+              endpoint: `${baseUrl}/v1/tools/ocr`,
+              model: "deepseek-ocr",
               promptVersion: 1,
-              timeoutMs,
+              timeoutMs: ocrTimeoutMs * 2,
             },
             storage: resumeObjectStore(env),
             structure: (transport) =>

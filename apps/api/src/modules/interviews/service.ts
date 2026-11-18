@@ -2,6 +2,7 @@ import type { Database } from "@ai-interview/db";
 import {
   application,
   applicationActivity,
+  applicationResume,
   candidate,
   interviewerAgent,
   interviewRound,
@@ -209,6 +210,18 @@ export async function createInterview(
   const id: string = crypto.randomUUID();
   const createdAt = new Date();
   const assignments = assignmentValues(workspaceId, id, input);
+  const material = await db
+    .select({ resumeId: applicationResume.resumeId })
+    .from(applicationResume)
+    .where(
+      and(
+        eq(applicationResume.workspaceId, workspaceId),
+        eq(applicationResume.applicationId, applicationId),
+        eq(applicationResume.status, "available"),
+      ),
+    )
+    .orderBy(asc(applicationResume.createdAt), asc(applicationResume.id))
+    .get();
   await db.batch([
     db.insert(interviewRound).values({
       ...roundSettings(input),
@@ -216,6 +229,7 @@ export async function createInterview(
       createdAt,
       createdBy: userId,
       id,
+      resumeId: material?.resumeId,
       sequence: creation.sequence,
       status: "scheduled",
       workspaceId,

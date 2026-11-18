@@ -9,7 +9,7 @@ import {
   resumeUploadItem as item,
 } from "@ai-interview/db/schema";
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import type { BatchItem } from "drizzle-orm/batch";
+import { duplicateResumeFile } from "./uploads";
 import { matchesResumeMediaType, resumeFileDigest } from "../../lib/resume-file";
 import type { OperationAudit } from "../mcp/audit";
 import type { ResumeObjectStore } from "./contracts";
@@ -80,6 +80,7 @@ export async function getImportedResume(db: Database, workspaceId: string, uploa
     .select({
       candidateId: submission.resolvedCandidateId,
       identityStatus: submission.identityStatus,
+      isDuplicate: submission.isDuplicate,
       parseStatus: run.status,
       pdfMatchId: submission.pdfMatchedCandidateId,
       phoneMatchId: submission.phoneMatchedCandidateId,
@@ -147,102 +148,25 @@ async function readExternalOriginal(
     return { error: "INVALID_PDF" } as const;
   }
   const sha256 = await resumeFileDigest(bytes);
-  const { workspaceId } = file;
   const existing = await db
-    .select()
+    .select({ candidateId: resume.candidateId })
     .from(resume)
-    .where(and(eq(resume.workspaceId, workspaceId), eq(resume.sha256, sha256)))
+    .where(
+      and(
+        eq(resume.workspaceId, file.workspaceId),
+        eq(resume.sha256, sha256),
+        isNull(resume.phoneMatchDisabledAt),
+      ),
+    )
+    .orderBy(resume.createdAt, resume.id)
     .get();
-  const canonical = existing
-    ? await db
-        .select()
-        .from(run)
-        .where(and(eq(run.resumeId, existing.id), eq(run.kind, "parse")))
-        .get()
-    : undefined;
-  if (canonical?.status === "queued" || canonical?.status === "running") {
-    return { error: "RESUME_ALREADY_PROCESSING" } as const;
-  }
-
-  return { bytes, canonical, existing, sha256 };
+  return { bytes, existing, sha256 };
 }
 
 type ExternalOriginal = Exclude<
   Awaited<ReturnType<typeof readExternalOriginal>>,
   { error: string }
 >;
-
-function externalParseWrites(
-  db: Database,
-  original: ExternalOriginal,
-  parse: {
-    candidateId: string | null;
-    createdAt: Date;
-    file: typeof item.$inferSelect;
-    markdown: string | null;
-    phone: string | null;
-    profile: ResumeParsedProfile;
-    pdfObjectKey: string;
-    resumeId: string;
-    runId: string;
-  },
-) {
-  const { canonical, existing, sha256 } = original;
-  const { candidateId, createdAt, file, markdown, phone, profile, pdfObjectKey, resumeId, runId } =
-    parse;
-  const { workspaceId } = file;
-  const parsed = {
-    extractedPhoneNormalized: phone,
-    markdown,
-    parseStatus: "succeeded" as const,
-    parsedProfile: profile,
-  };
-  const ownership = candidateId && !existing?.candidateId ? { candidateId } : {};
-  const writes: BatchItem<"sqlite">[] = [];
-  if (existing) {
-    const updated = { ...(canonical?.status === "succeeded" ? {} : parsed), ...ownership };
-    if (Object.keys(updated).length) {
-      writes.push(db.update(resume).set(updated).where(eq(resume.id, resumeId)));
-    }
-  } else {
-    writes.push(
-      db.insert(resume).values({
-        ...parsed,
-        ...ownership,
-        createdAt,
-        id: resumeId,
-        pdfObjectKey,
-        sha256,
-        workspaceId,
-      }),
-    );
-  }
-  if (canonical) {
-    if (canonical.status !== "succeeded") {
-      writes.push(
-        db
-          .update(run)
-          .set({ executionId: file.id, stage: "structure", status: "succeeded" })
-          .where(eq(run.id, runId)),
-      );
-    }
-  } else {
-    writes.push(
-      db.insert(run).values({
-        createdAt,
-        executionId: file.id,
-        id: runId,
-        kind: "parse",
-        resumeId,
-        stage: "structure",
-        status: "succeeded",
-        uploadItemId: file.id,
-        workspaceId,
-      }),
-    );
-  }
-  return writes;
-}
 
 async function recordExternalImport(
   db: Database,
@@ -253,7 +177,7 @@ async function recordExternalImport(
   audit: OperationAudit,
 ) {
   const { workspaceId } = file;
-  const { bytes, canonical, existing } = original;
+  const { bytes, existing, sha256 } = original;
   const identity = await matchExternalProfile(
     db,
     workspaceId,
@@ -261,8 +185,8 @@ async function recordExternalImport(
     existing?.candidateId ?? null,
   );
   const createdAt = new Date();
-  const resumeId = existing?.id ?? file.id;
-  const runId = canonical?.id ?? file.id;
+  const resumeId = file.id;
+  const runId = file.id;
   const createCandidate = identity.newCandidateName
     ? {
         createdAt,
@@ -277,10 +201,8 @@ async function recordExternalImport(
     : null;
   const candidateId = identity.matched?.id ?? createCandidate?.id ?? null;
   const identityStatus = candidateId ? "resolved" : "pending_review";
-  const pdfObjectKey = existing?.pdfObjectKey ?? `${workspaceId}/originals/${resumeId}.pdf`;
-  if (!existing) {
-    await storage.write(pdfObjectKey, new Uint8Array(bytes).buffer, "application/pdf");
-  }
+  const pdfObjectKey = `${workspaceId}/originals/${resumeId}.pdf`;
+  await storage.write(pdfObjectKey, new Uint8Array(bytes).buffer, "application/pdf");
   await db.batch([
     audit.success(
       {
@@ -294,21 +216,34 @@ async function recordExternalImport(
       createdAt,
     ),
     ...(createCandidate ? [db.insert(candidate).values(createCandidate)] : []),
-    ...externalParseWrites(db, original, {
+    db.insert(resume).values({
       candidateId,
       createdAt,
-      file,
+      extractedPhoneNormalized: identity.phone,
+      id: resumeId,
       markdown: input.markdown ?? null,
+      parseStatus: "succeeded",
+      parsedProfile: input.profile,
       pdfObjectKey,
-      phone: identity.phone,
-      profile: input.profile,
+      sha256,
+      workspaceId,
+    }),
+    db.insert(run).values({
+      createdAt,
+      executionId: runId,
+      id: runId,
+      kind: "parse",
       resumeId,
-      runId,
+      stage: "structure",
+      status: "succeeded",
+      uploadItemId: file.id,
+      workspaceId,
     }),
     db.insert(submission).values({
       createdAt,
       id: file.id,
       identityStatus,
+      isDuplicate: duplicateResumeFile(db, workspaceId, sha256, resumeId),
       originalFilename: file.filename,
       pdfMatchedCandidateId: identity.pdfMatchId,
       phoneMatchedCandidateId: identity.phoneMatchId,

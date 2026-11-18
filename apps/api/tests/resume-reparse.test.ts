@@ -1,4 +1,5 @@
 import {
+  applicationResume,
   resume,
   resumeProcessingAttempt,
   resumeProcessingRun,
@@ -13,6 +14,7 @@ import type { ResumeStageDependencies } from "../src/modules/ats/stages";
 import { runResumeWorkflow } from "../src/modules/ats/workflow";
 import { resumeObjectStore } from "../src/modules/ats/storage";
 import { account, atsTest, read } from "./ats-fixture";
+import { addInterviewMember } from "./interview-fixture";
 
 it.each([{ missingAvatar: true }, { missingAvatar: false }])(
   "reparses from OCR and fills a missing avatar or keeps an existing one (missing: $missingAvatar)",
@@ -292,4 +294,114 @@ it("reports queued stage attempts as queued in resume lists, filters and process
     rows: [{ id: upload.id, parseStatus: "succeeded" }],
     total: 1,
   });
+});
+
+it("processes repeated uploads independently and binds the selected upload to the application", async () => {
+  const owner = await account("duplicate-resume-owner@example.com");
+  const collaborator = await addInterviewMember(
+    owner.workspaceId,
+    "duplicate-resume-colleague@example.com",
+  );
+  const { workspaceId } = owner;
+  const db = atsTest.platform.database;
+  const bytes = new Uint8Array(new TextEncoder().encode("%PDF-1.7\n%%EOF\n"));
+  const parameters = { model: "test", promptVersion: 1, timeoutMs: 1000 };
+  let extractions = 0;
+  const deps: ResumeStageDependencies = {
+    avatarParameters: { ...parameters, version: 1 },
+    evaluate: () => Promise.reject(new Error("Unexpected evaluation")),
+    evaluateParameters: parameters,
+    extract: () => () => {
+      extractions += 1;
+      return Promise.resolve({ text: "# Candidate" });
+    },
+    extractAvatar: () => Promise.resolve(null),
+    extractParameters: parameters,
+    storage: resumeObjectStore(atsTest.env),
+    structure: () => () =>
+      Promise.resolve({
+        identity: { name: "Candidate", phones: [{ owner: "candidate", value: "+8613800000000" }] },
+        version: 1,
+      }),
+    structureParameters: parameters,
+  };
+  const uploadAndParse = async (person: typeof owner, filename: string) => {
+    const {
+      uploads: [upload],
+    } = await read(
+      person.call(`ats/${workspaceId}/uploads`, {
+        files: [{ filename, size: bytes.length }],
+        version: 1,
+      }),
+    );
+    expect(
+      await person.request(upload.url, {
+        body: bytes,
+        headers: { "content-type": upload.contentType },
+        method: "PUT",
+      }),
+    ).toMatchObject({ status: 204 });
+    const { runId } = await read(
+      person.call(`ats/${workspaceId}/uploads/${upload.id}/confirm`, {}),
+    );
+    await runResumeWorkflow(
+      db,
+      {
+        checkpoint: (_name, execute) => execute(),
+        sleep: () => Promise.reject(new Error("Unexpected retry")),
+        waitForAttempt: (_name, attemptId) =>
+          consumeResumeStage(db, deps, { attemptId, runId, version: 1 }),
+      },
+      { runId, version: 1 },
+      runId,
+      () => Promise.resolve(),
+    );
+    return upload.id;
+  };
+  const first = await uploadAndParse(owner, "original.pdf");
+  const second = await uploadAndParse(collaborator, "duplicate.pdf");
+  expect(extractions).toBe(2);
+  expect(await read(owner.ats("resumes"))).toMatchObject({
+    rows: expect.arrayContaining([
+      expect.objectContaining({
+        id: first,
+        isDuplicate: false,
+        parseStatus: "succeeded",
+        resumeId: first,
+      }),
+      expect.objectContaining({
+        id: second,
+        isDuplicate: true,
+        parseStatus: "succeeded",
+        resumeId: second,
+      }),
+    ]),
+    total: 2,
+  });
+  const target = await read(
+    owner.ats("jobs", { requirements: "TypeScript", title: "Engineer", version: 1 }),
+  );
+  const application = await read(
+    owner.ats("applications", {
+      jobId: target.id,
+      resumeId: second,
+      submissionId: second,
+      version: 1,
+    }),
+  );
+  expect(application.runId).toEqual(expect.any(String));
+  expect(
+    await owner.ats("applications", {
+      jobId: target.id,
+      resumeId: first,
+      submissionId: first,
+      version: 1,
+    }),
+  ).toMatchObject({ status: 409 });
+  expect(
+    await db
+      .select()
+      .from(applicationResume)
+      .where(eq(applicationResume.applicationId, application.applicationId)),
+  ).toMatchObject([{ resumeId: second, submissionId: second }]);
 });

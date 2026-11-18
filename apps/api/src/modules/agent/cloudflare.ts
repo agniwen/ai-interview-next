@@ -47,7 +47,7 @@ export class AgentSessionObject extends DurableObject<ApiBindings> {
             summary.id,
             JSON.stringify(summary),
           ),
-        modelId: this.env.AGENT_CHAT_MODEL,
+        modelId: this.env.DEEPSEEK_MODEL,
         models,
         onWake: () => {
           this.ctx.waitUntil(this.refreshAlarm());

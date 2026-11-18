@@ -24,6 +24,7 @@ import { Empty, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages";
 import { CreateApplicationDialog } from "./create-application-dialog";
+import type { ApplicationResumeSelection } from "./create-application-dialog";
 import { atsKeys } from "./query-keys";
 import { atsApi, readAts } from "./client";
 
@@ -43,7 +44,7 @@ export function CandidateResumesDialog({
   workspaceId: string;
 }) {
   const preview = useMemo(() => createDialogHandle<{ filename: string; id: string }>(), []);
-  const recruitment = useMemo(() => createDialogHandle<string>(), []);
+  const recruitment = useMemo(() => createDialogHandle<ApplicationResumeSelection>(), []);
   const { data, isError, isPending, refetch } = useQuery({
     queryFn: async () =>
       readAts(await atsApi.candidates[":id"].resumes.$get({ param: { id, workspaceId } })),
@@ -125,7 +126,7 @@ export function CandidateResumesDialog({
                   {row.canJoinRecruitment && (
                     <DialogTrigger
                       handle={recruitment}
-                      payload={row.id}
+                      payload={{ resumeId: row.id, submissionId: row.submissionId }}
                       render={<Button className="shrink-0" size="sm" variant="outline" />}
                     >
                       {m.ats_join_recruitment()}

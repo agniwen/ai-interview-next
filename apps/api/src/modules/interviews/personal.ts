@@ -21,6 +21,7 @@ import {
   gte,
   isNotNull,
   isNull,
+  ne,
   notExists,
   or,
   sql,
@@ -54,6 +55,19 @@ export function personalInterviewPredicates(db: Database, workspaceId: string, u
         eq(resumeUploadItem.status, "accepted"),
         eq(resumeUploadBatch.workspaceId, workspaceId),
         eq(resumeUploadBatch.createdBy, userId),
+        notExists(
+          db
+            .select({ id: applicationResume.id })
+            .from(applicationResume)
+            .where(
+              and(
+                eq(applicationResume.workspaceId, workspaceId),
+                eq(applicationResume.applicationId, interviewRound.applicationId),
+                eq(applicationResume.resumeId, resumeSubmission.resumeId),
+                ne(applicationResume.submissionId, resumeSubmission.id),
+              ),
+            ),
+        ),
         or(
           eq(resumeSubmission.resumeId, interviewRound.resumeId),
           and(

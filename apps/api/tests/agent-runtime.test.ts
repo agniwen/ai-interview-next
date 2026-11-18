@@ -47,9 +47,9 @@ async function fixture(registry?: Registry) {
     throw new Error("Missing test server address");
   }
   const { models } = createAgentModels({
-    AGENT_CHAT_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
-    AGENT_CHAT_KEY: "test",
-    AGENT_CHAT_MODEL: "test-chat",
+    DEEPSEEK_API_KEY: "test",
+    DEEPSEEK_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
+    DEEPSEEK_MODEL: "test-chat",
   });
   const work: Promise<unknown>[] = [];
   const directory = await mkdtemp(path.join(tmpdir(), "sainoa-agent-"));

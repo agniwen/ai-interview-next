@@ -14,6 +14,7 @@ export interface InterviewSessionSnapshot {
     pdfObjectKey: string;
     markdown: string | null;
     parsedProfile: ResumeParsedProfile | null;
+    submissionId?: string;
   }[];
   questions: InterviewQuestions;
   form: InterviewFormContent;

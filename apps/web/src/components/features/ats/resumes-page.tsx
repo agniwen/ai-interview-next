@@ -26,6 +26,7 @@ import * as m from "@/paraglide/messages";
 import { atsKeys } from "./query-keys";
 import { atsApi, atsStatus, getResumeCandidateDisplay, readAts } from "./client";
 import { CreateApplicationDialog } from "./create-application-dialog";
+import type { ApplicationResumeSelection } from "./create-application-dialog";
 import { AtsListPage } from "./list-page";
 import type { AtsPageProps } from "./list-page";
 import { listParams, resumeStatuses } from "./list-search";
@@ -54,7 +55,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
     ]);
   }
   const candidateDialog = useMemo(() => createDialogHandle<string>(), []);
-  const recruitmentDialog = useMemo(() => createDialogHandle<string>(), []);
+  const recruitmentDialog = useMemo(() => createDialogHandle<ApplicationResumeSelection>(), []);
   const previewDialog = useMemo(() => createDialogHandle<{ filename: string; id: string }>(), []);
   const { data, isError, refetch } = useQuery({
     queryFn: async ({ signal }) =>
@@ -130,6 +131,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
               kind={getResumeDocumentFileIconKind({ fileName: row.filename })}
             />
             <span className="min-w-0 truncate">{row.filename}</span>
+            {row.isDuplicate && <Badge variant="outline">{m.ats_duplicate_resume()}</Badge>}
           </>
         );
         return {
@@ -157,7 +159,7 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
               {recruitmentResumeId && (
                 <DialogTrigger
                   handle={recruitmentDialog}
-                  payload={recruitmentResumeId}
+                  payload={{ resumeId: recruitmentResumeId, submissionId: row.submissionId }}
                   render={<Button variant="outline" size="sm" />}
                 >
                   {m.ats_join_recruitment()}
@@ -271,7 +273,11 @@ export function ResumesPage({ workspaceId, query, onQueryChange }: AtsPageProps<
                     )}
                   </Dialog>
                   {resumeId && (
-                    <CreateApplicationDialog resumeId={resumeId} workspaceId={workspaceId} />
+                    <CreateApplicationDialog
+                      resumeId={resumeId}
+                      submissionId={row?.submissionId}
+                      workspaceId={workspaceId}
+                    />
                   )}
                 </>
               }

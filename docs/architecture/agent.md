@@ -24,7 +24,7 @@
 - Agent 使用 pi-durable，保留未来自主部署与选择存储后端的能力，见 [运行宿主决策](../adr/0002-portable-agent-runtime.md)。
 - 首版实现文本聊天、流式回答、会话恢复、队列与停止；暂不接业务工具、文件附件和子 Agent。运行层保留后续接入边界，已确认的子任务停止规则在后续引入子任务时同样适用。
 - 首版由服务端统一配置一个模型，用户无需填写 API Key，页面暂不提供模型切换；服务商、模型 ID 与密钥由服务端配置管理，密钥不下发浏览器。
-- 模型通过阿里云 DashScope 的 OpenAI 兼容接口调用；服务端配置为 `AGENT_CHAT_MODEL=deepseek-v4.1-flash`、`AGENT_CHAT_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1`，密钥使用 `AGENT_CHAT_KEY`。保留用户指定地址，联调时验证账户权限及端点可用性，不自动替换模型或地址。
+- 招聘助手与自动标题使用 DeepSeek 官方 Chat Completions。API Worker 通过 `DEEPSEEK_API_KEY` 鉴权，`DEEPSEEK_BASE_URL` 和 `DEEPSEEK_MODEL` 在 Wrangler 中配置。
 
 ## 业务工具与远程 MCP 的已确认方案
 
@@ -54,15 +54,15 @@ MCP 入口为 `/api/mcp`，使用 MCP 2026-07-28、HTTP 和 OAuth 工作区授�
 - `apps/web/src/components/features/agent`：聊天、队列和个人中心回收站；`lib/agent` 处理请求和 SSE。
 - 回收站入口在个人中心，路径为 `/w/$workspaceId/account/trash`，聊天侧栏仅显示正常会话。
 
-本地在 `apps/api/.env` 配置 `AGENT_CHAT_KEY`，模型和地址使用 Wrangler vars。运行项目已有开发命令，API 和 Web 必须使用相同的开发服务注册目录。部署使用既有脚本，DO 的 SQLite 类迁移已写入 Wrangler 配置。
+本地在 `apps/api/.env` 配置 `DEEPSEEK_API_KEY`，模型和地址使用 Wrangler vars。运行项目已有开发命令，API 和 Web 必须使用相同的开发服务注册目录。部署使用既有脚本，DO 的 SQLite 类迁移已写入 Wrangler 配置。
 
-已通过本地真实 DashScope 调用；SQLite 重开测试验证暂停、历史和队列持久化。后续自部署仍需补齐 HTTP 宿主、调度器与目标存储适配，当前不包含独立的自部署服务入口。
+SQLite 重开测试验证暂停、历史和队列持久化。后续自部署仍需补齐 HTTP 宿主、调度器与目标存储适配，当前不包含独立的自部署服务入口。
 
 ## 接入参考
 
 - [pi-durable 官方文档](https://github.com/earendil-works/pi/blob/main/packages/durable/README.md)
 - [Cloudflare 与 React 官方示例](https://github.com/earendil-works/pi-durable-cloudflare)
-- [阿里云 DeepSeek API](https://help.aliyun.com/zh/model-studio/deepseek-api)：官方文档列有所选模型；当前服务接入章节使用带业务空间 ID 的地域地址，用户指定的 DashScope 地址已通过本地真实调用验证。
+- [DeepSeek 工具调用](https://api-docs.deepseek.com/zh-cn/guides/tool_calls/)
 
 参考示例的连接、事件状态与展示分层；最终协议和组件组合需适配本项目的鉴权、工作区边界与既有组件。
 

@@ -117,10 +117,12 @@ export function ApplicationResumeField({
       <FieldLabel htmlFor="ats-application-resume">{m.ats_resumes()}</FieldLabel>
       <Combobox
         filter={null}
-        isItemEqualToValue={(item, selected) => item.id === selected.id}
+        isItemEqualToValue={(item, selected) =>
+          (item.submissionId ?? item.id) === (selected.submissionId ?? selected.id)
+        }
         items={rows}
         itemToStringLabel={(row) => row.filename ?? m.ats_unnamed_resume()}
-        itemToStringValue={(row) => row.id}
+        itemToStringValue={(row) => row.submissionId ?? row.id}
         onInputValueChange={(input, details) => {
           if (details.reason === "input-change" || details.reason === "clear-press") {
             setSearch(input.trim());
@@ -167,7 +169,7 @@ export function ApplicationResumeField({
           <ComboboxList>
             <ComboboxCollection>
               {(row: ApplicationResumeOption) => (
-                <ComboboxItem className="py-1.5" key={row.id} value={row}>
+                <ComboboxItem className="py-1.5" key={row.submissionId ?? row.id} value={row}>
                   <ResumeOptionContent row={row} />
                 </ComboboxItem>
               )}

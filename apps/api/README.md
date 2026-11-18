@@ -94,7 +94,7 @@ wrangler.jsonc
 
 - 岗位支持独立的 Markdown `internalCriteria`（内部标准，最多 30,000 字符），创建时省略默认为空，编辑省略保留原值，空字符串可清空；岗位详情返回此字段。
 - 岗位创建和编辑使用可选的 `departmentId` 选择当前工作区部门，`null` 可取消关联；岗位详情返回 `departmentId` 和当前部门名称 `department`。部门改名后详情展示新名称。历史岗位的手填名称通过迁移按工作区归并为部门，无法确定的创建人保留为空。
-- 简历列表返回每条记录的 `source`，目前为 `manual_upload`（人工上传）。来源保存在上传批次中，由上传入口设置，历史批次默认回填为人工上传；增加新渠道时扩展来源类型及对应展示文案。
+- 简历列表返回每条记录的 `source`，目前为 `manual_upload`（人工上传）。来源保存在上传批次中，由上传入口设置，历史批次默认回填为人工上传；增加新渠道时扩展来源类型及对应展示文案。文件内容重复时，仍生成独立的上传与处理记录，并返回 `isDuplicate`。
 
 - 招聘流程详情返回 AI 评价历史 `evaluations` 和成员评价 `feedback`。成员评价包含作者、时间及 Markdown 正文；界面第一条固定为 AI 评价，默认展示最新版本，可前后切换历史版本，重新评价成功后在原位置展示新版本。其后的成员消息按时间和 ID 排序。
 - AI 每次完成评价、成员每次添加评价时，与评价结果在同一批事务中保存一条活动记录。AI 活动以 `Sainoa Agent` 为执行者，成员活动记录实际作者；记录关联评价 ID，发生时间与评价保存时间一致。
@@ -269,7 +269,7 @@ Web 不需要这些认证 env，通过 Service Binding 调用 API；Web 与 API 
 
 - `POST /api/candidate-interviews/:token/start` 接受 `{ version: 1 }`。只有候选人明确点击开始时调用；AI 面试没有预约时间限制。要求已进入准备流程，存在表单题时必须已提交答案。实际开始时，在同一 D1 批事务中保存 `interview_session` 快照、`startedAt` 和 `in_progress` 状态，现有表单及轮次编辑接口随即锁定。重复请求复用首次开始的时间和材料。
   Call start only on an explicit candidate action. AI interviews have no admission schedule. Preparation must exist and all form answers must be submitted. One D1 batch persists the session snapshot, actual start time and running status, locking form and round edits. Repeated starts preserve the original evidence and timestamp.
-- 快照包含岗位要求及内部标准、候选人姓名、当前可用简历的原文与结构化资料、面试官 Agent 配置、已绑定题目和已提交答案；待确认和已移除材料不参与。后续岗位、简历、题库或 Agent 编辑不改变本轮依据。
+- 快照包含岗位要求及内部标准、候选人姓名、本轮绑定简历的原文与结构化资料、面试官 Agent 配置、已绑定题目和已提交答案；待确认和已移除材料不参与。后续岗位、简历、题库或 Agent 编辑不改变本轮依据。
   The snapshot includes job requirements and internal criteria, candidate name, currently available resume text and profiles, interviewer configuration, bound questions and submitted answers. Pending and removed materials are excluded. Later edits do not alter this round's evidence.
 - `POST /api/candidate-interviews/:token/connection` 只允许已开始且仍有效的 AI 面试，返回 `{ version: 1, serverUrl, participantToken }`，前端通过官方 `TokenSource.literal` 使用这些连接信息。它不隐式开始面试；浏览器提交的房间、参与者身份与 Agent 配置不作为权限依据。15 分钟令牌仅允许本轮房间的麦克风、摄像头、音频接收和数据通信，不授予房间管理或屏幕共享权限。
   Connection requests only serve valid running AI interviews and return the official endpoint-compatible connection shape. They never implicitly start an interview or trust client-supplied room, identity or agent settings. Fifteen-minute tokens grant the round's microphone, camera, subscription and data access, without room administration or screen sharing.

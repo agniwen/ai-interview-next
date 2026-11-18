@@ -6,11 +6,31 @@ import {
   resumeUploadBatch as batch,
   resumeUploadItem as item,
 } from "@ai-interview/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, exists, inArray, ne } from "drizzle-orm";
 import { resumeMediaType } from "../../lib/resume-file";
 import type { OperationAudit } from "../mcp/audit";
 import type { ResumeObjectStore } from "./contracts";
 import { outboxEntry } from "./outbox";
+
+export function duplicateResumeFile(
+  db: Database,
+  workspaceId: string,
+  sha256: string,
+  resumeId: string,
+) {
+  return exists(
+    db
+      .select({ id: resume.id })
+      .from(resume)
+      .where(
+        and(
+          eq(resume.workspaceId, workspaceId),
+          eq(resume.sha256, sha256),
+          ne(resume.id, resumeId),
+        ),
+      ),
+  );
+}
 
 export async function createUploadBatch(
   db: Database,
@@ -178,9 +198,9 @@ export async function reparseResume(db: Database, workspaceId: string, uploadId:
   await db.batch([
     db
       .update(run)
-      .set({ executionId, stage: "extract_text", status: "queued" })
+      .set({ executionId, stage: "extract_text", status: "queued", uploadItemId: uploadId })
       .where(eq(run.id, entry.id)),
-    // 重置去重状态，确保本次从原件重新 OCR，旧产物保留至新结果写入。 / Reset deduplication state to rerun OCR from the original, retaining artifacts until replaced.
+    // 从原件重新 OCR，旧产物保留至新结果写入。 / Rerun OCR from the original and retain prior artifacts until replaced.
     db
       .update(resume)
       .set({ parseStatus: "pending" })

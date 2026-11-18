@@ -7,6 +7,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from collections.abc import Callable
 from typing import Literal
 
 from dotenv import load_dotenv
@@ -17,6 +18,7 @@ from livekit.plugins import ai_coustics
 from interview_context import InterviewContext, InterviewSessionClient
 from interview_reconciliation import reconcile_report
 from interview_transcript import InterviewTranscriptPublisher
+from interview_usage import InterviewUsageReporter
 from interview_runtime import InterviewRuntime, ObservedRealtimeModel
 from qwen_realtime import DEFAULT_BASE_URL, DEFAULT_MODEL
 from interview_progress import (
@@ -28,9 +30,10 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 logger = logging.getLogger("interview")
 
 
-def realtime_model(*, text_only: bool = False, http_session: aiohttp.ClientSession | None = None, on_connection_event=lambda *args, **kwargs: None) -> ObservedRealtimeModel:
+def realtime_model(*, text_only: bool = False, http_session: aiohttp.ClientSession | None = None, on_connection_event=lambda *args, **kwargs: None, on_usage: Callable[[dict], None] | None = None) -> ObservedRealtimeModel:
     return ObservedRealtimeModel(
         on_connection_event=on_connection_event,
+        on_usage=on_usage,
         model=os.getenv("QWEN_REALTIME_MODEL", DEFAULT_MODEL),
         api_key=os.environ["QWEN_KEY"],
         base_url=os.getenv("QWEN_REALTIME_BASE_URL", DEFAULT_BASE_URL),
@@ -60,9 +63,10 @@ get_interview_state 给出缺项与最近原话；需要精确引文时调用它
 
 
 class InterviewAgent(Agent):
-    def __init__(self, context: InterviewContext, client: InterviewSessionClient, *, model: llm.RealtimeModel | None = None) -> None:
+    def __init__(self, context: InterviewContext, client: InterviewSessionClient, *, model: llm.RealtimeModel | None = None, usage: InterviewUsageReporter | None = None) -> None:
         self.context = context
         self.client = client
+        self.usage = usage
         self.ledger = InterviewLedger(context.ledger, context.turns)
         self.ledger.progress.finalized = False
         self.ledger.progress.endReason = None
@@ -204,7 +208,7 @@ class InterviewAgent(Agent):
         self.ledger.resolve()
         await self.persist()
         if self.ledger.plan and any(turn.role == "user" for turn in self.ledger.turns.values()):
-            await reconcile_report(self.ledger)
+            await reconcile_report(self.ledger, on_usage=self.usage.emit if self.usage else None)
         if self.ledger.progress.endReason is None:
             self.ledger.progress.endReason = "interrupted"
         self.ledger.progress.finalized = True
@@ -227,7 +231,8 @@ async def voice_agent(ctx: JobContext) -> None:
     await ctx.connect()
     runtime = InterviewRuntime(client, ctx.job.id, ctx.room.local_participant)
     runtime.record("agent_resumed" if context.ledger else "agent_started")
-    interviewer = InterviewAgent(context, client, model=realtime_model(on_connection_event=runtime.record))
+    usage = InterviewUsageReporter(client)
+    interviewer = InterviewAgent(context, client, usage=usage, model=realtime_model(on_connection_event=runtime.record, on_usage=usage.emit))
     session = AgentSession(userdata=interviewer.ledger)
     transcripts = InterviewTranscriptPublisher(ctx.room.local_participant, context.participantIdentity)
     ctx.add_shutdown_callback(transcripts.close)
@@ -249,7 +254,7 @@ async def voice_agent(ctx: JobContext) -> None:
             runtime.record("report_failed", reason=type(error).__name__, recoverable=True)
             raise
         finally:
-            await runtime.close()
+            await asyncio.gather(runtime.close(), usage.close())
 
     ctx.add_shutdown_callback(finalize)
 

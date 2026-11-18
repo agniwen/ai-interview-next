@@ -16,6 +16,7 @@ import { interviewRoutes } from "./modules/interviews/routes";
 import { interviewSessionRoutes } from "./modules/interview-sessions/routes";
 import { candidateInterviewRoutes } from "./modules/candidate-interviews/routes";
 import { questionSetRoutes } from "./modules/question-sets/routes";
+import { usageRoutes } from "./modules/usage/routes";
 import { workspaceRoutes } from "./modules/workspaces/routes";
 import type { ApiBindings } from "./env";
 
@@ -28,6 +29,7 @@ const protectedApi = new Hono<AuthenticatedEnv>()
   .route("/question-sets", questionSetRoutes)
   .route("/interviews", interviewRoutes)
   .route("/workspaces", workspaceRoutes)
+  .route("/usage", usageRoutes)
   .route("/mcp-management", mcpManagement);
 
 export const app = new Hono<{ Bindings: ApiBindings }>()

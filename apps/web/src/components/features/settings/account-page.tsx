@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ListActions, ListContent, ListDescription, ListItem } from "@/components/ui/list";
@@ -9,7 +10,13 @@ import * as m from "@/paraglide/messages";
  * 账号设置页面的内容组合，存在工作区时额外提供该工作区的 Agent 回收站入口。
  * Account settings composition, adding the workspace Agent trash entry when a workspace is available.
  */
-export function AccountPageContent({ workspaceId }: { workspaceId?: string }) {
+export function AccountPageContent({
+  workspaceId,
+  usage,
+}: {
+  workspaceId?: string;
+  usage?: ReactNode;
+}) {
   return (
     <main
       id="main-content"
@@ -20,6 +27,7 @@ export function AccountPageContent({ workspaceId }: { workspaceId?: string }) {
         <p className="text-sm text-muted-foreground">{m.account_description()}</p>
       </div>
       <AccountSettings />
+      {usage}
       {workspaceId && (
         <SettingsGroup title={m.agent_trash()}>
           <ListItem className="flex-row items-center gap-4">

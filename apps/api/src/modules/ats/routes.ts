@@ -140,7 +140,15 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
   )
   .post(
     "/:workspaceId/applications",
-    sValidator("json", z.strictObject({ jobId: z.uuid(), resumeId: z.uuid(), version })),
+    sValidator(
+      "json",
+      z.strictObject({
+        jobId: z.uuid(),
+        resumeId: z.uuid(),
+        submissionId: z.uuid().optional(),
+        version,
+      }),
+    ),
     async (c) => {
       const db = c.get("database");
       const result = await createApplication(
@@ -488,6 +496,9 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
       if (!result) {
         return c.json({ error: "MATCH_NOT_FOUND", version: 1 as const }, 404);
       }
+      if ("error" in result) {
+        return c.json(result, 409);
+      }
       if (result.runId) {
         c.executionCtx.waitUntil(flushResumeOutbox(c.env, db, result.runId));
       }
@@ -516,7 +527,7 @@ export const atsRoutes = new Hono<AuthenticatedEnv>()
           id: c.get("userId"),
           type: "user",
         });
-        if (result?.runId) {
+        if (result && "runId" in result && result.runId) {
           c.executionCtx.waitUntil(flushResumeOutbox(c.env, db, result.runId));
         }
       }
