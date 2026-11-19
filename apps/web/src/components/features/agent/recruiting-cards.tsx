@@ -261,7 +261,7 @@ function Details({ card }: { card: RecruitingCard }) {
         initial={reduceMotion ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: reduceMotion ? 0 : 0.2, ease: "easeOut" }}
-        className="space-y-6 px-5 pt-19 pb-5"
+        className="space-y-6 px-5 pt-15 pb-5"
       >
         <p className="text-xs text-muted-foreground">{m.agent_card_snapshot()}</p>
         <dl className="space-y-4">
