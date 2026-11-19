@@ -1,6 +1,6 @@
 # Google 登录
 
-认证使用 Better Auth + Drizzle ORM + Cloudflare D1，仅开放 Google 登录。Better Auth handler、认证配置和 D1 binding 均位于 `apps/api`；Web 的 `/api/auth/*` 只通过 Service Binding `API` 将原始请求转发给 `sainoa-api`，并直接返回响应。浏览器继续通过 Web 同源 Cookie 维护会话，Google 回调和登录页面地址不变。D1 binding 为 `AUTH_DB`，数据库名为 `sainoa-auth`；此前架构文档中的 PostgreSQL 属于候选方案。
+认证使用 Better Auth + Drizzle ORM + Cloudflare D1，仅开放 Google 登录。Better Auth handler、认证配置和 D1 binding 均位于 `apps/api`；Web 的 `/api/auth/*` 只通过 Service Binding `API` 将原始请求转发给 `sainoa-api`，并直接返回响应。浏览器通过 Web 同源 Cookie 维护会话。D1 binding 为 `AUTH_DB`，数据库名为 `sainoa-auth`；此前架构文档中的 PostgreSQL 属于候选方案。
 
 登录页面统一为 `/sign-in`，按语言 Cookie 显示对应语言。首次 Google 登录自动创建账号、初始工作区和 owner 成员关系。成功后返回指定的工作区或邀请页面；未指定目标时，通过 `/workspaces` 进入最后激活的工作区。工作区与退出入口位于正式页面，详见 [工作区设计](../architecture/workspaces.md)。
 
@@ -12,16 +12,16 @@
 
 两个应用的 `dev` 脚本通过 `CLOUDFLARE_DEV_REGISTRY_PATH` 使用仓库根目录的 `.wrangler/registry`，使当前 Wrangler 和 Cloudflare Vite 插件能发现彼此。使用已有脚本启动即可。
 
-Google Cloud Console 中创建 OAuth「Web application」客户端，配置同意屏幕；测试模式下添加测试用户。允许的 JavaScript 来源为 `http://localhost:3000` 和 `https://sanioa.akumanoko.com`，授权重定向 URI 为：
+Google Cloud Console 中创建 OAuth「Web application」客户端，配置同意屏幕；测试模式下添加测试用户。允许的 JavaScript 来源为 `http://localhost:3000` 和 `https://sainoa.akumanoko.com`，授权重定向 URI 为：
 
 - `http://localhost:3000/api/auth/callback/google`
-- `https://sanioa.akumanoko.com/api/auth/callback/google`
+- `https://sainoa.akumanoko.com/api/auth/callback/google`
 
 回调路径不带语言前缀。不要将 Client Secret 放进客户端环境变量或提交进仓库。
 
 ## 生产 env 与 Cloudflare 发布
 
-将 `apps/api/.env.production.example` 复制为同目录的 `.env.production`，填入完整的四个变量。这是本地保存的生产配置，不提交 Git。生产 `BETTER_AUTH_URL` 为 `https://sanioa.akumanoko.com`，仍使用浏览器访问的 Web 来源；`BETTER_AUTH_SECRET` 使用与本地不同的随机密钥。Google 客户端必须允许该来源和对应回调地址。
+将 `apps/api/.env.production.example` 复制为同目录的 `.env.production`，填入所需变量。这是本地保存的生产配置，不提交 Git。生产 `BETTER_AUTH_URL` 为浏览器访问的 Web 来源 `https://sainoa.akumanoko.com`，`BETTER_AUTH_SECRET` 使用与本地不同的随机密钥。切换已有部署的 Web 域名前，先在 Google OAuth 客户端添加新来源和回调地址，再更新现有 `.env.production` 中的 `BETTER_AUTH_URL`。
 
 API 的发布脚本显式指定 `--env-file .env.production --secrets-file .env.production`。前者选择发布时的 env 文件，后者将这些变量随本次代码发布一起上传为 API Worker Secrets，避免把本地 URL 或密钥误用于线上。`.env` 仍只用于本地开发；普通构建不会自动上传其中的变量。本次四个认证变量统一由 env 文件管理并存入 Secrets，其中 URL 和 Client ID 本身并非敏感值。
 

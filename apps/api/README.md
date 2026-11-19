@@ -106,7 +106,7 @@ wrangler.jsonc
 
 工作区使用服务端生成的 8 位小写字母数字 ID；注册时的初始工作区与 Organization 创建钩子共用生成与查重逻辑，重复时重新生成，slug 与 ID 一致。
 
-生产 API 域名为 `https://sainoa-api.akumanoko.com`，健康检查为 <https://sainoa-api.akumanoko.com/health>。域名由 `wrangler.jsonc` 的 Custom Domain 配置管理，发布 API 时由 Cloudflare 配置 DNS 与 HTTPS。Web 继续通过 Service Binding 调用 API；`BETTER_AUTH_URL` 和 Google 回调仍使用 Web 域名 `https://sanioa.akumanoko.com`。
+生产 API 域名为 `https://sainoa-api.akumanoko.com`，健康检查为 <https://sainoa-api.akumanoko.com/health>。域名由 `wrangler.jsonc` 的 Custom Domain 配置管理，发布 API 时由 Cloudflare 配置 DNS 与 HTTPS。Web 通过 Service Binding 调用 API，`BETTER_AUTH_URL` 和 Google 回调使用 Web 域名 `https://sainoa.akumanoko.com`。
 
 Web 的 `src/routes/api/$.ts` 统一转发 `/api/*`，支持所有 HTTP 方法，原样保留路径、查询参数、请求体、Cookie、状态码和响应。后续业务模块在 API 的 `app.ts` 挂载 `/api/<name>` 后，浏览器可直接请求同源的 `/api/<name>`，无需为每个接口增加 Web route。Web 不在此入口解析请求体或执行业务校验，输入校验和授权由 API 负责。`/health` 是 API 自身的入口，不属于这个 Web 转发前缀。
 

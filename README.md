@@ -113,7 +113,9 @@ Web 测试使用独立的 `apps/web/vitest.config.ts`，默认 Node 环境，支
 
 ## Cloudflare 部署
 
-Web 部署目标为 Worker `sainoa-web`，自定义域名为 `sanioa.akumanoko.com`（按指定域名拼写），通过 Service Binding `API` 将 `/api/*` 请求转发到 `sainoa-api`。`apps/web/wrangler.jsonc` 中的 Custom Domain 配置由 Wrangler 在部署时创建对应 DNS 和 HTTPS 绑定。
+Web 部署目标为 Worker `sainoa-web`，主域名为 `sainoa.akumanoko.com`，通过 Service Binding `API` 将 `/api/*` 请求转发到 `sainoa-api`。`apps/web/wrangler.jsonc` 中的 Custom Domain 配置由 Wrangler 在部署时创建对应 DNS 和 HTTPS 绑定。
+
+旧域名 `sanioa.akumanoko.com` 保留绑定，Cloudflare 的 Single Redirect 将它永久跳转到主域名，保留路径和查询参数，使已发出的面试链接仍然指向同一场面试。切换域名前按 [Google 登录配置](docs/auth/google-login.md#生产-env-与-cloudflare-发布) 更新生产认证配置。
 
 在 `apps/web/wrangler.jsonc` 中配置 Worker 名称和资源绑定。首次部署前，在应用目录执行 `bunx --no-install wrangler login`；然后从根目录运行 `bun run deploy`。CI 可提供 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID`。
 
